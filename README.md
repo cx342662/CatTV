@@ -3,9 +3,7 @@
 </div>
 
 <div align="center">
-  <img src="images/avbox.svg" width="120" alt="AVBox"/>
-  <br/>
-  <a href="https://t.me/github_AVBox"><img src="https://img.shields.io/badge/Telegram_AVBox_Group-26A5E4?logo=telegram&logoColor=white" alt="Telegram AVBox Group"/></a>
+  <img src="app/src/main/res/drawable/cattv_launcher_foreground.png" width="120" alt="CatTV"/>
 </div>
 
 # 免责声明与用户协议
