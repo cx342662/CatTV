@@ -14,15 +14,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -36,7 +33,6 @@ private val VersionPillShape = RoundedCornerShape(24.dp)
 
 private val AppBadgeSize = 76.dp
 
-private const val AppIconGlyphScale = 1.26f
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -52,21 +48,18 @@ internal fun AppInfoHeaderCard(versionName: String) {
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier
-                    .size(AppBadgeSize)
-                    .clip(MaterialShapes.Cookie12Sided.toShape())
-                    .background(scheme.surfaceBright),
-                contentAlignment = Alignment.Center,
-            ) {
-               Image(
-    painter = painterResource(R.drawable.cattv_launcher_foreground),
-    contentDescription = null,
+          Box(
     modifier = Modifier
         .size(AppBadgeSize)
-        .scale(AppIconGlyphScale),
-)
-            }
+        .background(scheme.surfaceBright),
+    contentAlignment = Alignment.Center,
+) {
+    Image(
+        painter = painterResource(R.drawable.cattv_launcher_foreground),
+        contentDescription = null,
+        modifier = Modifier.size(AppBadgeSize),
+    )
+}
             Spacer(Modifier.width(20.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
