@@ -20,8 +20,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -49,19 +49,17 @@ internal fun AppInfoHeaderCard(versionName: String) {
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-          Box(
-    modifier = Modifier
-        .size(AppBadgeSize)
-        .clip(RoundedCornerShape(20.dp))
-        .background(Color.White),
-    contentAlignment = Alignment.Center,
-) {
-    Image(
-        painter = painterResource(R.drawable.cattv_launcher_foreground),
-        contentDescription = null,
-        modifier = Modifier.size(AppBadgeSize),
-    )
-}
+            Box(
+                modifier = Modifier.size(AppBadgeSize),
+                contentAlignment = Alignment.Center,
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.cattv_logo_hollow),
+                    contentDescription = null,
+                    modifier = Modifier.size(68.dp),
+                    contentScale = ContentScale.Fit,
+                )
+            }
             Spacer(Modifier.width(20.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(

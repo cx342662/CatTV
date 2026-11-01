@@ -208,7 +208,7 @@ fun HomePage(
                         .padding(horizontal = 12.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    val capsuleLogo = remember { ContextCompat.getDrawable(context, R.drawable.cattv_home_logo) }
+                    val capsuleLogo = remember { ContextCompat.getDrawable(context, R.drawable.cattv_logo_hollow) }
                     Box(
                         modifier = Modifier
                             .size(26.dp)

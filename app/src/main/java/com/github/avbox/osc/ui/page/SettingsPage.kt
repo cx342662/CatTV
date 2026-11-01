@@ -304,7 +304,20 @@ fun SettingsPage(
                         onClick = { aboutSheet = true },
                     )
                 }
-
+                SettingsCard(SettingsCardPosition.LAST) {
+                    SettingsRow(
+                        title = stringResource(R.string.settings_update),
+                        subtitle = stringResource(R.string.settings_update_subtitle),
+                        iconRes = R.drawable.ic_settings_update,
+                        onClick = {
+                            Toast.makeText(
+                                context,
+                                context.getString(R.string.settings_update_unavailable),
+                                Toast.LENGTH_LONG,
+                            ).show()
+                        },
+                    )
+                }
             }
         }
     }
