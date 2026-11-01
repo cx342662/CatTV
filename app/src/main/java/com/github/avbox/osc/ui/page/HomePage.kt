@@ -122,7 +122,7 @@ import kotlin.math.roundToInt
 
 private val HomeSourceCapsuleMaxWidth = 240.dp
 
-private const val CapsuleLogoZoom = 1.5f
+private const val CapsuleLogoZoom = 1.0f
 
 private val HomeTopBarControlSpacing = 8.dp
 
@@ -208,7 +208,7 @@ fun HomePage(
                         .padding(horizontal = 12.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    val capsuleLogo = remember { ContextCompat.getDrawable(context, R.drawable.ic_launcher_foreground) }
+                    val capsuleLogo = remember { ContextCompat.getDrawable(context, R.drawable.cattv_home_logo) }
                     Box(
                         modifier = Modifier
                             .size(26.dp)

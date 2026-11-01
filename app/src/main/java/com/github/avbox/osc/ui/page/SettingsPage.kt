@@ -2,9 +2,6 @@
 
 package com.github.avbox.osc.ui.page
 
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import android.os.SystemClock
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
@@ -60,7 +57,6 @@ import com.github.avbox.osc.ui.settings.UiSettingsState
 import com.github.avbox.osc.util.DefaultConfig
 import com.github.avbox.osc.util.HistoryHelper
 import com.github.avbox.osc.util.SearchSettingsState
-import com.github.avbox.osc.util.SpiderStorageNotice
 import com.github.avbox.osc.api.TmdbPoster
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -309,14 +305,6 @@ fun SettingsPage(
                     )
                 }
 
-                SettingsCard(SettingsCardPosition.LAST) {
-                    SettingsRow(
-                        title = stringResource(R.string.settings_github),
-                        subtitle = stringResource(R.string.settings_github_subtitle),
-                        iconRes = R.drawable.ic_settings_github,
-                        onClick = { openExternalUrl(context, GITHUB_REPO_URL) },
-                    )
-                }
             }
         }
     }
@@ -359,16 +347,6 @@ private fun AboutSheet(versionName: String, onDismiss: () -> Unit) {
 
 private const val AboutSheetHeightFraction = 0.6f
 
-private const val GITHUB_REPO_URL = "https://github.com/XiaochangXu/AVBox"
-
-private fun openExternalUrl(context: Context, url: String) {
-    try {
-        SpiderStorageNotice.suppress()
-        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-    } catch (e: Exception) {
-        Toast.makeText(context, context.getString(R.string.toast_no_app_for_link), Toast.LENGTH_SHORT).show()
-    }
-}
 
 @Composable
 fun TextEditDialog(

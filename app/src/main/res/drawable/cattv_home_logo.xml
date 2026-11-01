@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="96"
+    android:viewportHeight="96">
+    <!-- Minimal hollow cat mark for the small home source capsule only. -->
+    <path
+        android:pathData="M18,42 L16,18 C15.5,14.5 17.5,13.5 20.5,16 L36,29 C43.5,26 52.5,26 60,29 L75.5,16 C78.5,13.5 80.5,14.5 80,18 L78,42 C83,51 81,64 73,72 C66,79 57,83 48,83 C39,83 30,79 23,72 C15,64 13,51 18,42 Z"
+        android:fillColor="#00000000"
+        android:strokeColor="#0A75F0"
+        android:strokeWidth="4.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <path
+        android:pathData="M32,49 C35,44 40,44 43,49 M53,49 C56,44 61,44 64,49"
+        android:fillColor="#00000000"
+        android:strokeColor="#0A75F0"
+        android:strokeWidth="4.2"
+        android:strokeLineCap="round"/>
+    <path
+        android:pathData="M45,55 C46,53 50,53 51,55 C50,59 46,59 45,55 Z"
+        android:fillColor="#0A75F0"/>
+    <path
+        android:pathData="M48,59 C46,64 42,64 40,61 M48,59 C50,64 54,64 56,61"
+        android:fillColor="#00000000"
+        android:strokeColor="#0A75F0"
+        android:strokeWidth="3.8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <path
+        android:pathData="M25,51 L8,46 M24,58 L8,62 M71,51 L88,46 M72,58 L88,62"
+        android:fillColor="#00000000"
+        android:strokeColor="#0A75F0"
+        android:strokeWidth="3.8"
+        android:strokeLineCap="round"/>
+</vector>

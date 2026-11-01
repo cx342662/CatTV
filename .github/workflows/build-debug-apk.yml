@@ -7,6 +7,7 @@ on:
     paths:
       - ".github/workflows/build-debug-apk.yml"
       - "app/**"
+      - "scripts/**"
       - "quickjs/**"
       - "pyramid/**"
       - "gradle/**"
@@ -59,6 +60,12 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
+
+      - name: Prepare clean CatTV branding assets
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check pillow
+          python scripts/prepare_cattv_icons.py
 
       - name: Build debug APK
         run: |
