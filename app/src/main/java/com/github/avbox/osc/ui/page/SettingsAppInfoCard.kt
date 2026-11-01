@@ -54,7 +54,7 @@ internal fun AppInfoHeaderCard(versionName: String) {
                 contentAlignment = Alignment.Center,
             ) {
                 Image(
-                    painter = painterResource(R.drawable.cattv_launcher_foreground),
+                    painter = painterResource(R.drawable.cattv_logo_clear),
                     contentDescription = null,
                     modifier = Modifier.size(68.dp),
                     contentScale = ContentScale.Fit,
