@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Generate CatTV Android launcher icons from the transparent cat artwork.
 
-The Android adaptive icon foreground is transparent and fits the central safe
-zone; Android supplies the white background and its own mask. Legacy icons get
-a rounded white backing plate, but never crop the mascot.
+The Android adaptive icon foreground is transparent and keeps the complete mascot
+inside Android's 66% adaptive-icon safe circle. Android supplies the white background
+and its own mask. Legacy icons get a rounded white backing plate without cropping.
 """
 from pathlib import Path
 from PIL import Image, ImageDraw
@@ -15,11 +15,11 @@ TARGET = RES / "drawable" / "cattv_launcher_foreground.png"
 CANVAS = 512
 
 cat = Image.open(SOURCE).convert("RGBA")
-# Transparent source already has a margin around the mascot. Keeping it at 88%
-# of the full foreground makes the visible cat fit Android's 66% safe zone.
-cat = cat.resize((448, 448), Image.Resampling.LANCZOS)
+# Fit the entire cat (including both ears) within the 66% adaptive-icon safe circle.
+# 300/512 = 58.6%, leaving extra margin for OEM launcher masks.
+cat = cat.resize((300, 300), Image.Resampling.LANCZOS)
 foreground = Image.new("RGBA", (CANVAS, CANVAS), (0, 0, 0, 0))
-foreground.alpha_composite(cat, ((CANVAS - 448) // 2, (CANVAS - 448) // 2))
+foreground.alpha_composite(cat, ((CANVAS - 300) // 2, (CANVAS - 300) // 2))
 foreground.save(TARGET, "PNG", optimize=True)
 
 for density, size in {
