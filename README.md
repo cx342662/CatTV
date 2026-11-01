@@ -1,4 +1,5 @@
 <div align="center">
+  <img src="images/cattv-logo-readme.jpg" width="168" alt="CatTV 猫咪播放图标" />
   <h1>CatTV</h1>
   <p><strong>随心乐享，每一天</strong></p>
   <p>一款面向 Android 手机的轻量视频播放器，支持本地播放与用户自主配置点播、直播源。</p>
