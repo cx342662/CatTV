@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="app/src/main/res/drawable/cattv_launcher_foreground.png" width="128" alt="CatTV" />
+  <img src="images/cattv-readme-logo.svg" width="128" alt="CatTV" />
 </p>
 
 <h1 align="center">CatTV</h1>
