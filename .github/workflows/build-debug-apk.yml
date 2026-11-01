@@ -36,14 +36,18 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
+      # GitHub's ubuntu-latest image already includes Android command-line tools.
+      # Avoid android-actions/setup-android@v3 here: it attempts to install the
+      # removed legacy "tools" package and fails before Gradle can start.
       - name: Install Android SDK platform and NDK
         run: |
           set -euo pipefail
-          yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager "platforms;android-37" "ndk;27.2.12479018"
+          echo "ANDROID_HOME=${ANDROID_HOME:-}"
+          test -n "${ANDROID_HOME:-}"
+          SDKMANAGER="$(command -v sdkmanager)"
+          echo "Using sdkmanager: $SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" --install "platform-tools" "platforms;android-37" "ndk;27.2.12479018"
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
