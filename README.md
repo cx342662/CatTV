@@ -78,18 +78,21 @@ CatTV 在 AVBox 的开源代码基础上进行品牌调整、适配和后续优�
 2. 如本声明部分条款被认定为无效或不可执行，不影响其余条款的效力。
 3. 开发者保留随时修订本声明的权利，修订后的声明自发布之日起生效。
 
-# 截图展示
+## 应用截图
 
-<table>
-  <tr>
-    <td align="center"><img src="images/1.jpg" width="270"/><br/><sub>首页</sub></td>
-    <td align="center"><img src="images/2.jpg" width="270"/><br/><sub>播放页</sub></td>
-    <td align="center"><img src="images/3.jpg" width="270"/><br/><sub>历史页</sub></td>
-    <td align="center"><img src="images/4.jpg" width="270"/><br/><sub>设置页</sub></td>
-   </tr>
-</table>
+<div align="center">
 
-<p align="center">
-  <img src="images/5.jpg" alt="首页"/>
-  <br/><sub>宽屏首页</sub>
-</p>
+### 手机端
+
+<img src="images/screenshots/home.jpg" alt="首页" width="23%" />
+<img src="images/screenshots/detail.jpg" alt="播放页" width="23%" />
+<img src="images/screenshots/history.jpg" alt="记录页" width="23%" />
+<img src="images/screenshots/mine.jpg" alt="设置页" width="23%" />
+
+<br/><br/>
+
+### 电视端
+
+<img src="images/screenshots/tv-home.jpg" alt="宽屏首页" width="96%" />
+
+</div>
