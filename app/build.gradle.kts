@@ -45,14 +45,25 @@ android {
     }
 
     signingConfigs {
-        val storeFilePath = project.findProperty("RELEASE_STORE_FILE") as String? ?: ".key/app-release.jks"
-        val storeFileResolved = rootProject.file(storeFilePath)
-        if (storeFileResolved.exists()) {
+        // Only create the release signing config when the complete private signing
+        // material is supplied. Debug builds must never try to read a legacy JKS
+        // from the repository or cast missing passwords to non-null strings.
+        val releaseStorePath = project.findProperty("RELEASE_STORE_FILE") as String?
+        val releaseStorePassword = project.findProperty("RELEASE_STORE_PASSWORD") as String?
+        val releaseKeyAlias = project.findProperty("RELEASE_KEY_ALIAS") as String?
+        val releaseKeyPassword = project.findProperty("RELEASE_KEY_PASSWORD") as String?
+        val releaseStoreFile = releaseStorePath?.let { rootProject.file(it) }
+
+        if (releaseStoreFile?.isFile == true &&
+            !releaseStorePassword.isNullOrBlank() &&
+            !releaseKeyAlias.isNullOrBlank() &&
+            !releaseKeyPassword.isNullOrBlank()
+        ) {
             create("release") {
-                storeFile = storeFileResolved
-                storePassword = project.findProperty("RELEASE_STORE_PASSWORD") as String
-                keyAlias = project.findProperty("RELEASE_KEY_ALIAS") as String
-                keyPassword = project.findProperty("RELEASE_KEY_PASSWORD") as String
+                storeFile = releaseStoreFile
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
             }
         }
     }
