@@ -100,7 +100,7 @@ CatTV 在 AVBox 的开源代码基础上进行品牌调整、适配和后续优�
     </td>
     <td align="center">
       <img src="images/4.jpg" alt="CatTV 我的页面" width="180" />
-      <br />我的页
+      <br />设置页
     </td>
   </tr>
 </table>
