@@ -1,10 +1,12 @@
-<div align="right">
-  <a href="skill/SKILL.md">Project Rules</a>
+<div align="center">
+  <img src="app/src/main/res/drawable/cattv_launcher_foreground.png" width="190" alt="CatTV 应用图标" />
+  <h1>CatTV</h1>
+  <p><strong>随心乐享，每一天</strong></p>
+  <p>一款支持用户自主配置点播与直播源的 Android 播放器</p>
+  <p><a href="skill/SKILL.md">Project Rules</a></p>
 </div>
 
-<div align="center">
-  <img src="app/src/main/res/drawable/cattv_launcher_foreground.png" width="120" alt="CatTV"/>
-</div>
+---
 
 # 免责声明与用户协议
 
