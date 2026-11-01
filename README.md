@@ -82,9 +82,31 @@ CatTV 在 AVBox 的开源代码基础上进行品牌调整、适配和后续优�
 
 <div align="center">
 
-<img src="images/cattv-showcase.jpg" alt="CatTV 手机端首页、播放页、记录页、我的页及电视端首页展示" width="100%" />
+### 手机端
 
-<p>手机端： 首页 · 播放页 · 记录页 · 我的页</p>
-<p>电视端：宽屏首页</p>
+<table>
+  <tr>
+    <td align="center">
+      <img src="images/1.jpg" alt="CatTV 手机端首页" width="180" />
+      <br />首页
+    </td>
+    <td align="center">
+      <img src="images/2.jpg" alt="CatTV 播放详情页" width="180" />
+      <br />播放页
+    </td>
+    <td align="center">
+      <img src="images/3.jpg" alt="CatTV 记录页" width="180" />
+      <br />记录页
+    </td>
+    <td align="center">
+      <img src="images/4.jpg" alt="CatTV 我的页面" width="180" />
+      <br />我的页
+    </td>
+  </tr>
+</table>
+
+### 电视端
+
+<img src="images/5.jpg" alt="CatTV 电视端宽屏首页" width="100%" />
 
 </div>
