@@ -25,6 +25,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -38,6 +39,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.github.avbox.osc.R
+import com.github.avbox.osc.util.CatTvUpdater
 import com.github.avbox.osc.io.FileUtils
 import com.github.avbox.osc.net.HttpClients
 import com.github.avbox.osc.ui.ConfigManageActivity
@@ -146,6 +148,10 @@ fun SettingsPage(
     val context = LocalContext.current
     val versionName = remember { DefaultConfig.appVersionName(context) ?: "" }
     var aboutSheet by remember { mutableStateOf(false) }
+    val updateScope = rememberCoroutineScope()
+    var updateBusy by remember { mutableStateOf(false) }
+    var pendingUpdate by remember { mutableStateOf<CatTvUpdater.UpdateInfo?>(null) }
+
 
     val listState = rememberScrollState()
 
@@ -310,11 +316,22 @@ fun SettingsPage(
                         subtitle = stringResource(R.string.settings_update_subtitle),
                         iconRes = R.drawable.ic_settings_update,
                         onClick = {
-                            Toast.makeText(
-                                context,
-                                context.getString(R.string.settings_update_unavailable),
-                                Toast.LENGTH_LONG,
-                            ).show()
+                            if (updateBusy) return@SettingsRow
+                            updateBusy = true
+                            updateScope.launch {
+                                try {
+                                    val info = CatTvUpdater.checkForUpdate(context)
+                                    if (info == null) {
+                                        Toast.makeText(context, "当前已经是最新版本，或尚未发布可更新版本", Toast.LENGTH_LONG).show()
+                                    } else {
+                                        pendingUpdate = info
+                                    }
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "检查更新失败：${e.message ?: "网络错误"}", Toast.LENGTH_LONG).show()
+                                } finally {
+                                    updateBusy = false
+                                }
+                            }
                         },
                     )
                 }
@@ -324,6 +341,38 @@ fun SettingsPage(
 
     if (aboutSheet) {
         AboutSheet(versionName = versionName, onDismiss = { aboutSheet = false })
+    }
+
+    pendingUpdate?.let { update ->
+        AVBoxAlertDialog(
+            onDismissRequest = { pendingUpdate = null },
+            title = { Text("发现 CatTV 新版本 ${update.versionName}") },
+            text = { Text("是否下载并安装此版本？下载完成后需要你确认安装。") },
+            dismissButton = {
+                TextButton(onClick = { pendingUpdate = null }) {
+                    Text(stringResource(R.string.common_cancel))
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    pendingUpdate = null
+                    if (!updateBusy) {
+                        updateBusy = true
+                        updateScope.launch {
+                            try {
+                                CatTvUpdater.downloadAndInstall(context, update)
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "更新失败：${e.message ?: "请稍后重试"}", Toast.LENGTH_LONG).show()
+                            } finally {
+                                updateBusy = false
+                            }
+                        }
+                    }
+                }) {
+                    Text(stringResource(R.string.common_confirm))
+                }
+            },
+        )
     }
 
 }
