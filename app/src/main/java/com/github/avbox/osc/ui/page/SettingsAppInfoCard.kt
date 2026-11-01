@@ -1,5 +1,6 @@
 package com.github.avbox.osc.ui.page
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -58,19 +59,18 @@ internal fun AppInfoHeaderCard(versionName: String) {
                     .background(scheme.surfaceBright),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_launcher_foreground),
-                    contentDescription = null,
-                    tint = contentColor,
-                    modifier = Modifier
-                        .size(AppBadgeSize)
-                        .scale(AppIconGlyphScale),
-                )
+               Image(
+    painter = painterResource(R.drawable.cattv_launcher_foreground),
+    contentDescription = null,
+    modifier = Modifier
+        .size(AppBadgeSize)
+        .scale(AppIconGlyphScale),
+)
             }
             Spacer(Modifier.width(20.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "AudioVideoBox",
+                  text = "CatTV",
                     style = MaterialTheme.typography.headlineMedium,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
