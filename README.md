@@ -1,14 +1,11 @@
 <div align="center">
-
-# CatTV
-
-**随心乐享，每一天**
-
-一款面向 Android 手机的轻量视频播放器，支持本地播放与用户自主配置点播、直播源。
-
-![Android](https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white)
-![License](https://img.shields.io/badge/License-AGPL--3.0-blue)
-
+  <h1>CatTV</h1>
+  <p><strong>随心乐享，每一天</strong></p>
+  <p>一款面向 Android 手机的轻量视频播放器，支持本地播放与用户自主配置点播、直播源。</p>
+  <p>
+    <img src="https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white" alt="Android" />
+    <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0" />
+  </p>
 </div>
 
 ---
