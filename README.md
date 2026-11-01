@@ -38,12 +38,18 @@
 
 1. 本软件代码以 **GNU Affero General Public License v3.0（AGPL-3.0）** 开源，源代码及许可证详见仓库根目录 `LICENSE` 文件。
 2. 本软件基于以下上游项目开发，相关权利归原作者所有：
+   - [AVBox（XiaochangXu）](https://github.com/XiaochangXu/AVBox)
    - [TVBoxOS](https://github.com/q215613905/TVBoxOS)
    - [FongMi/TV](https://github.com/FongMi/TV)
 3. 基于本软件进行二次开发或分发时，必须遵守 AGPL-3.0 许可证条款，保留原始版权声明和出处链接，并以相同许可证公开衍生作品的源代码。
 4. 本软件名称、Logo 及相关标识的权利归项目开发者所有，未经授权不得用于商业宣传或误导性使用。
 
-### 致谢\n\n特别感谢 **[XiaochangXu](https://github.com/XiaochangXu)** 开发并持续维护 [AVBox](https://github.com/XiaochangXu/AVBox) 项目。CatTV 在 AVBox 的开源代码基础上进行品牌调整、适配和后续优化，感谢原作者的技术积累、持续改进与开源分享。我们尊重并保留原项目的版权声明、出处及 AGPL-3.0 许可证要求。\n\n## 五、免责条款
+### 致谢
+
+特别感谢 **[XiaochangXu](https://github.com/XiaochangXu)** 开发并持续维护 [AVBox](https://github.com/XiaochangXu/AVBox) 项目。
+
+CatTV 在 AVBox 的开源代码基础上进行品牌调整、适配和后续优化。感谢原作者的技术积累、持续改进与开源分享。我们尊重并保留原项目的版权声明、出处及 AGPL-3.0 许可证要求。
+
 
 1. 本软件按"现状"提供，开发者不就软件的适用性、稳定性、无错误或无中断提供任何明示或暗示的担保。
 2. 因用户自行配置第三方源或访问第三方网站而产生的任何法律纠纷、数据安全风险或经济损失，由用户及相关第三方自行承担，开发者不承担责任。
