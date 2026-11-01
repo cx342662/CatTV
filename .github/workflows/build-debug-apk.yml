@@ -50,7 +50,12 @@ jobs:
           echo "$(dirname "$SDKMANAGER")" >> "$GITHUB_PATH"
           echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
           yes | "$SDKMANAGER" --licenses >/dev/null || true
-          "$SDKMANAGER" --install "platform-tools" "platforms;android-37" "build-tools;36.0.0" "ndk;27.2.12479018"
+          "$SDKMANAGER" --install "platform-tools" "platforms;android-37.0" "build-tools;37.0.0" "ndk;27.2.12479018"
+          # API 37 is published as android-37.0, while this project's AGP
+          # resolves compileSdk 37 via the legacy android-37 directory name.
+          if [ -d "$ANDROID_HOME/platforms/android-37.0" ] && [ ! -e "$ANDROID_HOME/platforms/android-37" ]; then
+            ln -s android-37.0 "$ANDROID_HOME/platforms/android-37"
+          fi
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
