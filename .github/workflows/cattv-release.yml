@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout tested CatTV branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: cattv-branding
       - name: Set up Java 21
