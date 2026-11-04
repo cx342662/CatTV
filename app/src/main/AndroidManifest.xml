@@ -70,6 +70,8 @@
 
         <activity
             android:name=".ui.LivePlayActivity"
+            android:supportsPictureInPicture="true"
+            android:resizeableActivity="true"
             android:configChanges="orientation|screenSize|keyboardHidden|screenLayout|smallestScreenSize" />
         <activity
             android:name=".ui.DetailActivity"
