@@ -44,7 +44,7 @@ private val DimText = Color(0xFFD0D5DE)
 @Composable
 internal fun FullscreenLiveChannelPanel(
     channelList: LiveChannelListUi,
-    onToggleGroup: (Int) -> Unit,
+    onBrowseGroup: (Int) -> Unit,
     onSelectChannel: (Int, Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -88,11 +88,10 @@ internal fun FullscreenLiveChannelPanel(
                         .fillMaxWidth()
                         .onFocusChanged { focused = it.isFocused }
                         .clickable {
-                            // Persist the selected category in the ViewModel as well as
-                            // local UI state. Previously only locked groups invoked this
-                            // callback, so normal category taps were lost when the
-                            // overlay recomposed/reopened and the list fell back to group 0.
-                            onToggleGroup(item.groupIndex)
+                            // Browsing a category must not expand/collapse the legacy
+                            // channel rows. That structural rebuild was resetting the
+                            // left category LazyColumn to its first item.
+                            onBrowseGroup(item.groupIndex)
                         }
                         .focusable(),
                     shape = RoundedCornerShape(7.dp),
