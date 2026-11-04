@@ -11,6 +11,7 @@ internal class LivePageActions(
 internal class LivePlayerActions(
     val videoView: () -> PlayerKernelView?,
     val onExitFullscreen: () -> Unit,
+    val onHideChannels: () -> Unit,
     val onEpgSheetOpen: () -> Unit,
     val onSettingsSheetOpen: () -> Unit,
     val onTimeshiftSeek: (Float) -> Unit,
