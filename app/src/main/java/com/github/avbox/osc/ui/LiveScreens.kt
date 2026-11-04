@@ -292,10 +292,10 @@ private fun PlayerArea(state: LivePlayUiState, actions: LivePlayActions, modifie
                 onDismiss = actions.player.onHideChannels,
                 modifier = Modifier
                     .align(Alignment.CenterStart)
-                    .padding(top = 56.dp, bottom = 12.dp)
-                    .fillMaxWidth(0.58f)
-                    .widthIn(max = 540.dp)
-                    .fillMaxHeight(0.84f),
+                    .padding(top = 52.dp, bottom = 0.dp)
+                    .fillMaxWidth(0.53f)
+                    .widthIn(max = 520.dp)
+                    .fillMaxHeight(),
             )
         }
         if (!state.frame.isFullBox) {
