@@ -125,14 +125,14 @@ internal fun LiveScreen(state: LivePlayUiState, actions: LivePlayActions) {
 
             PageState.READY -> LiveReadyContent(state, actions)
         }
-        if (state.epg.sheetVisible) {
+        if (!state.isInPictureInPictureMode && state.epg.sheetVisible) {
             EpgSheet(
                 epg = state.epg,
                 onDismiss = actions.epg.onDismiss,
                 onRowClicked = actions.epg.onRowClicked,
             )
         }
-        if (state.settings.sheetVisible) {
+        if (!state.isInPictureInPictureMode && state.settings.sheetVisible) {
             SettingsSheet(
                 settings = state.settings,
                 onItemClick = actions.settings.onItemClick,
@@ -140,7 +140,7 @@ internal fun LiveScreen(state: LivePlayUiState, actions: LivePlayActions) {
                 onDismiss = actions.settings.onDismiss,
             )
         }
-        state.passwordDialogTarget?.let {
+        if (!state.isInPictureInPictureMode) state.passwordDialogTarget?.let {
             LivePasswordDialog(
                 onConfirm = actions.page.onPasswordConfirm,
                 onDismiss = actions.page.onPasswordDismiss,
