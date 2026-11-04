@@ -262,7 +262,6 @@ private fun HomeChannelListSection(
                 val selected = group.groupIndex == selectedGroup?.groupIndex
                 Surface(
                     modifier = Modifier.fillMaxWidth().clickable {
-                        selectedGroupIndex = group.groupIndex
                         onSelectGroup(group.groupIndex)
                     },
                     shape = RoundedCornerShape(9.dp),
