@@ -421,7 +421,8 @@ class DetailActivity : BaseActivity(), PageHost {
     override fun onResume() {
         super.onResume()
         applyStatusBarAppearance()
-        if (!isInPictureInPictureMode) playContainer?.hostResume()
+        if (isInPictureInPictureMode) return
+        playContainer?.hostResume()
         syncEpisodeAfterMusicPage()
         val container = playContainer ?: return
         vm.applyPlaybackEntry(
