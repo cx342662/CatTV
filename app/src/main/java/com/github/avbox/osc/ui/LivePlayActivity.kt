@@ -194,6 +194,11 @@ class LivePlayActivity : BaseActivity() {
         nowday = Date()
         epgController.epgDayPresented = FORMAT_DATE1.format(nowday)
         initVideoView()
+        // Enter immersive playback directly; never show the legacy list page.
+        // Keep navigator closed until a deliberate tap / remote OK.
+        applyFullscreen(true)
+        overlay.cancelOverlayHide()
+        vm.setOverlayVisible(false)
         findViewById<ComposeView>(R.id.compose_view).setContent {
             AVBoxTheme(manageStatusBarIcons = false) {
                 SheetHostScaffold {
