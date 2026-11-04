@@ -38,6 +38,7 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.ScreenRotation
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.Icon
@@ -414,6 +415,21 @@ private fun PlayerArea(state: LivePlayUiState, actions: LivePlayActions, modifie
                 )
             }
             PlayerCornerButtons(actions.player, Modifier.align(Alignment.TopEnd))
+        }
+        // Keep only the white rotation icon; remove the orange fullscreen pill and label.
+        if (!state.frame.isFullBox || state.overlay.visible) {
+            IconButton(
+                onClick = if (state.frame.isFullBox) actions.player.onExitFullscreen
+                    else actions.player.onEnterFullscreen,
+                modifier = Modifier.align(Alignment.CenterEnd).padding(end = 10.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.ScreenRotation,
+                    contentDescription = "旋转屏幕",
+                    tint = Color.White,
+                    modifier = Modifier.size(28.dp),
+                )
+            }
         }
     }
 }
