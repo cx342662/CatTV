@@ -6,7 +6,6 @@ import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.app.PictureInPictureParams
 import android.os.Build
-import android.graphics.Rect
 import android.util.Rational
 import android.view.KeyEvent
 import android.os.Handler
