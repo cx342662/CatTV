@@ -53,6 +53,7 @@ class LivePlayActivity : BaseActivity() {
 
     companion object {
         private const val TAG = "LivePlayActivity"
+        const val EXTRA_INITIAL_CHANNEL_NAME = "com.github.avbox.osc.extra.LIVE_CHANNEL_NAME"
         private const val SYSBAR_APPEARANCE_REASSERT_DELAY_MS = 400L
         private const val CONNECT_TIMEOUT_SWITCH_DELAY = 3500L
         private val FORMAT_DATE1 = SimpleDateFormat("MM-dd", Locale.getDefault())
@@ -169,6 +170,7 @@ class LivePlayActivity : BaseActivity() {
         overlay = LiveOverlayController(vm, liveHost, handler, lifecycleScope)
         catchupController = LiveCatchupController(vm, liveHost, overlay)
         channelSourceLoader = LiveChannelSourceLoader(vm, liveHost, overlay)
+        channelSourceLoader.selectInitialChannel(intent?.getStringExtra(EXTRA_INITIAL_CHANNEL_NAME))
         syncLandscapeNow()
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
