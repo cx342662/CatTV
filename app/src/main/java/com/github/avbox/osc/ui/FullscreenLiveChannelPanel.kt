@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -34,16 +36,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.layout.ContentScale
+import coil3.compose.AsyncImage
 import com.github.avbox.osc.bean.LiveChannelGroup
 import com.github.avbox.osc.bean.LiveChannelItem
 
-private val PanelBackground = Color(0xEB11151B)
-private val GroupBackground = Color(0xF01C222B)
+private val PanelGradient = Brush.horizontalGradient(
+    colors = listOf(Color(0xE6000000), Color(0x99000000), Color(0x12000000)),
+)
 private val SelectedBackground = Color(0xFF394C6B)
 private val FocusedBackground = Color(0xFF354255)
 private val MainText = Color(0xFFF4F6FA)
@@ -82,9 +88,7 @@ internal fun FullscreenLiveChannelPanel(
     }
 
     Column(
-        modifier = modifier
-            .clip(RoundedCornerShape(topEnd = 18.dp, bottomEnd = 18.dp))
-            .background(PanelBackground),
+        modifier = modifier.background(PanelGradient),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -103,7 +107,7 @@ internal fun FullscreenLiveChannelPanel(
         }
         Row(modifier = Modifier.fillMaxSize()) {
             LazyColumn(
-                modifier = Modifier.width(126.dp).fillMaxHeight().background(GroupBackground),
+                modifier = Modifier.width(126.dp).fillMaxHeight(),
                 verticalArrangement = Arrangement.spacedBy(1.dp),
             ) {
                 itemsIndexed(groups, key = { _, item -> "group_${item.groupIndex}" }) { _, item ->
@@ -184,6 +188,16 @@ private fun ChannelPanelRow(
             fontSize = 12.sp,
             modifier = Modifier.width(32.dp),
         )
+        val logo = item.channelLogo.orEmpty()
+        if (logo.startsWith("http://", true) || logo.startsWith("https://", true)) {
+            AsyncImage(
+                model = logo,
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.size(width = 36.dp, height = 28.dp),
+            )
+            Spacer(modifier = Modifier.width(10.dp))
+        }
         Text(
             text = item.channelName.orEmpty(),
             color = MainText,
