@@ -104,7 +104,9 @@ internal fun LiveScreen(state: LivePlayUiState, actions: LivePlayActions) {
             .fillMaxSize()
             .background(background),
     ) {
-        when (state.frame.pageState) {
+        if (state.isInPictureInPictureMode) {
+            PlayerArea(state = state, actions = actions, modifier = Modifier.fillMaxSize())
+        } else when (state.frame.pageState) {
             PageState.LOADING -> LoadStateBox(
                 state = LoadState.Loading,
                 emptyText = "",
@@ -334,6 +336,7 @@ private fun PlayerArea(state: LivePlayUiState, actions: LivePlayActions, modifie
                 modifier = Modifier.fillMaxSize(),
             )
         }
+        if (!state.isInPictureInPictureMode) {
         if (state.player.snapshotVisible) {
             Box(modifier = Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
                 state.player.snapshotBitmap?.let { bitmap ->
@@ -443,6 +446,7 @@ private fun PlayerArea(state: LivePlayUiState, actions: LivePlayActions, modifie
                     )
                 }
             }
+        }
         }
     }
 }
