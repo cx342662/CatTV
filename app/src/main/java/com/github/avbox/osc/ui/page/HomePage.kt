@@ -390,6 +390,9 @@ fun HomePage(
                         }
                     }
                 }
+                item(key = "live_channels") {
+                    HomeLiveChannels(modifier = Modifier.padding(start = navStart))
+                }
                 item(key = "cats") {
                     HomeCategoryChips(
                         sorts = sorts,
