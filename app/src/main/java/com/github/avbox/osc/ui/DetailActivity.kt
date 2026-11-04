@@ -467,9 +467,6 @@ class DetailActivity : BaseActivity(), PageHost {
         if (!enterPictureInPictureMode(params)) {
             enteringPictureInPicture = false
             Toast.makeText(this, "无法进入画中画模式", Toast.LENGTH_SHORT).show()
-        } else {
-            // Show the phone home screen / previous app behind the system PiP window.
-            moveTaskToBack(true)
         }
     }
 
