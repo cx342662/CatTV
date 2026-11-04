@@ -246,8 +246,7 @@ class LivePlayActivity : BaseActivity() {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
         vm.setPictureInPictureMode(isInPictureInPictureMode)
         if (isInPictureInPictureMode) {
-            overlay.cancelOverlayHide()
-            vm.setOverlayVisible(false)
+            // Keep the existing page state intact: the whole app UI is rendered in PiP.
         } else {
             enteringPictureInPicture = false
             applyStatusBarAppearance()
@@ -265,8 +264,14 @@ class LivePlayActivity : BaseActivity() {
         }
         if (isInPictureInPictureMode || enteringPictureInPicture) return
 
+        // Preserve the current Activity's full UI shape in PiP (portrait or landscape),
+        // rather than forcing a 16:9 crop that would hide the channel list and app chrome.
+        val decor = window.decorView
+        val width = decor.width.coerceAtLeast(1)
+        val height = decor.height.coerceAtLeast(1)
+        val ratio = (width.toFloat() / height.toFloat()).coerceIn(1f / 2.39f, 2.39f)
         val params = PictureInPictureParams.Builder()
-            .setAspectRatio(Rational(16, 9))
+            .setAspectRatio(Rational((ratio * 1000).toInt().coerceAtLeast(1), 1000))
             .build()
         enteringPictureInPicture = true
         val entered = enterPictureInPictureMode(params)
