@@ -67,6 +67,12 @@ jobs:
           python -m pip install --disable-pip-version-check pillow
           python scripts/prepare_cattv_icons.py
 
+      - name: Run unit tests
+        run: |
+          set -euo pipefail
+          chmod +x ./gradlew
+          ./gradlew :app:testDebugUnitTest --no-daemon --stacktrace
+
       - name: Build debug APK
         run: |
           set -euo pipefail
@@ -93,7 +99,7 @@ jobs:
       - name: Upload CatTV debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: CatTV-debug-arm64-v8a
+          name: CatTV-1.3.2-live-redesign-arm64-v8a
           path: app/build/outputs/apk/debug/AVBox_debug.apk
           if-no-files-found: error
           retention-days: 14
