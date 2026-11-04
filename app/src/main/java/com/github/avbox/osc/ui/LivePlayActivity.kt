@@ -814,7 +814,11 @@ class LivePlayActivity : BaseActivity() {
             onRowClicked = { onEpgRowClicked(it) },
         ),
         list = LiveChannelListActions(
+            // Legacy single-column list still expands/collapses groups.
             onToggleGroup = { selectChannelGroup(it, -1) },
+            // Two-column portrait/fullscreen layouts only browse categories.
+            // Do not rebuild LiveChannelRows here; it resets the category list.
+            onBrowseGroup = { vm.setTappedGroupIndex(it) },
             onSelectChannel = { groupIndex, position ->
                 selectChannel(groupIndex, position)
                 if (fullScreen) vm.setOverlayVisible(false)
