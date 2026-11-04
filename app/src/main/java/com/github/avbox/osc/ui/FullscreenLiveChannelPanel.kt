@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -42,8 +43,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.util.Date
 import androidx.compose.ui.layout.ContentScale
 import coil3.compose.AsyncImage
+import com.github.avbox.osc.bean.EpgInfo
 import com.github.avbox.osc.bean.LiveChannelGroup
 import com.github.avbox.osc.bean.LiveChannelItem
 
@@ -58,6 +61,8 @@ private val DimText = Color(0xFFAEB8C5)
 @Composable
 internal fun FullscreenLiveChannelPanel(
     channelList: LiveChannelListUi,
+    epg: LiveEpgUi,
+    onEpgRowClicked: (Int) -> Boolean,
     onToggleGroup: (Int) -> Unit,
     onSelectChannel: (Int, Int) -> Unit,
     onDismiss: () -> Unit,
@@ -159,6 +164,51 @@ internal fun FullscreenLiveChannelPanel(
                             channel.channelIndex == channelList.playingChannelIndex,
                         onClick = { onSelectChannel(selectedGroup, index) },
                     )
+                }
+            }
+            // FongMi's third rail displays EPG alongside the selected channel
+            // rather than opening a separate bright bottom sheet.
+            if (selectedGroup == channelList.playingGroupIndex && epg.epgList.isNotEmpty()) {
+                LazyColumn(
+                    modifier = Modifier.width(200.dp).fillMaxHeight(),
+                    contentPadding = PaddingValues(vertical = 8.dp),
+                ) {
+                    item {
+                        Text(
+                            text = "节目单",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MainText,
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        )
+                    }
+                    itemsIndexed(epg.epgList) { index, item ->
+                        val now = Date()
+                        val currentlyPlaying = item.startdateTime != null && item.enddateTime != null &&
+                            !now.before(item.startdateTime) && !now.after(item.enddateTime)
+                        val available = item.startdateTime != null && !now.before(item.startdateTime) &&
+                            (epg.canCatchup || currentlyPlaying)
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(if (currentlyPlaying) SelectedBackground else Color.Transparent)
+                                .clickable(enabled = available) { onEpgRowClicked(index) }
+                                .padding(horizontal = 14.dp, vertical = 10.dp),
+                        ) {
+                            Text(
+                                text = "${item.start.orEmpty()}-${item.end.orEmpty()}",
+                                fontSize = 11.sp,
+                                color = DimText,
+                            )
+                            Text(
+                                text = item.title.orEmpty(),
+                                fontSize = 13.sp,
+                                color = MainText,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
                 }
             }
         }
