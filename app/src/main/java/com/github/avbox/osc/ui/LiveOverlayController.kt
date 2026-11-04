@@ -82,6 +82,10 @@ internal class LiveOverlayController(
         handler.postDelayed(hideOverlayRun, OVERLAY_HIDE_DELAY)
     }
 
+    fun cancelOverlayHide() {
+        handler.removeCallbacks(hideOverlayRun)
+    }
+
     fun showGestureHint(isBrightness: Boolean, percent: Int) {
         val label = host.text(if (isBrightness) R.string.live_brightness else R.string.live_volume)
         vm.updatePlayer { it.copy(gestureHintText = host.text(R.string.live_gesture_hint, label, percent)) }
