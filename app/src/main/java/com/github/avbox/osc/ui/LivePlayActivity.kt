@@ -222,9 +222,9 @@ class LivePlayActivity : BaseActivity() {
     override fun onResume() {
         super.onResume()
         applyStatusBarAppearance()
+        if (isInPictureInPictureMode) return
         exitingLivePlay = false
         val takenOverByVod = PlaybackService.peek()?.enterLiveState() ?: false
-        if (isInPictureInPictureMode) return
         rebindLiveControllerIfNeeded()
         if (takenOverByVod) {
             replayCurrentChannelAfterTakeover()
