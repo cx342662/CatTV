@@ -92,7 +92,6 @@ internal fun FullscreenLiveChannelPanel(
                             // local UI state. Previously only locked groups invoked this
                             // callback, so normal category taps were lost when the
                             // overlay recomposed/reopened and the list fell back to group 0.
-                            selectedGroup = item.groupIndex
                             onToggleGroup(item.groupIndex)
                         }
                         .focusable(),
