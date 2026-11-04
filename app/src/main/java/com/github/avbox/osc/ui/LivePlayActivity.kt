@@ -4,6 +4,10 @@ package com.github.avbox.osc.ui
 
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
+import android.app.PictureInPictureParams
+import android.os.Build
+import android.graphics.Rect
+import android.util.Rational
 import android.view.KeyEvent
 import android.os.Handler
 import android.os.Looper
@@ -75,6 +79,7 @@ class LivePlayActivity : BaseActivity() {
     private var sourceSwitchJob: Job? = null
     private val livePlayerManager = LivePlayerManager()
     private var exitingLivePlay = false
+    private var enteringPictureInPicture = false
     private var nowday = Date()
 
     private val epgController = LiveEpgController(object : LiveEpgController.Host {
@@ -229,7 +234,47 @@ class LivePlayActivity : BaseActivity() {
 
     override fun onPause() {
         super.onPause()
-        if (!exitingLivePlay) kernelView?.pause()
+        // Keep the live stream running while Android displays the system PiP window.
+        if (!exitingLivePlay && !isInPictureInPictureMode && !enteringPictureInPicture) {
+            kernelView?.pause()
+        }
+    }
+
+    override fun onPictureInPictureModeChanged(
+        isInPictureInPictureMode: Boolean,
+        newConfig: Configuration,
+    ) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+        vm.setPictureInPictureMode(isInPictureInPictureMode)
+        if (isInPictureInPictureMode) {
+            overlay.cancelOverlayHide()
+            vm.setOverlayVisible(false)
+        } else {
+            enteringPictureInPicture = false
+            applyStatusBarAppearance()
+        }
+    }
+
+    private fun enterLivePictureInPicture() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            Toast.makeText(this, "当前 Android 版本不支持画中画", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (!packageManager.hasSystemFeature("android.software.picture_in_picture")) {
+            Toast.makeText(this, "当前设备不支持画中画", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (isInPictureInPictureMode || enteringPictureInPicture) return
+
+        val params = PictureInPictureParams.Builder()
+            .setAspectRatio(Rational(16, 9))
+            .build()
+        enteringPictureInPicture = true
+        val entered = enterPictureInPictureMode(params)
+        if (!entered) {
+            enteringPictureInPicture = false
+            Toast.makeText(this, "无法进入画中画模式", Toast.LENGTH_SHORT).show()
+        }
     }
 
     override fun onDestroy() {
@@ -800,6 +845,7 @@ class LivePlayActivity : BaseActivity() {
             videoView = { kernelView },
             onEnterFullscreen = { applyFullscreen(true) },
             onExitFullscreen = { applyFullscreen(false) },
+            onEnterPictureInPicture = { enterLivePictureInPicture() },
             onHideChannels = {
                 overlay.cancelOverlayHide()
                 vm.setOverlayVisible(false)
