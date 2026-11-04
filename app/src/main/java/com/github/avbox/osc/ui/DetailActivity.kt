@@ -3,6 +3,9 @@ package com.github.avbox.osc.ui
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
+import android.app.PictureInPictureParams
+import android.os.Build
+import android.util.Rational
 import android.content.res.Configuration
 import android.net.Uri
 import android.os.Looper
@@ -50,6 +53,7 @@ class DetailActivity : BaseActivity(), PageHost {
     private var appliedFullscreen = false
     private var pendingEpisodeSync = false
     private var videoSizeWatchArmed = false
+    private var enteringPictureInPicture = false
 
     private val localSubtitlePicker = registerForActivityResult(
         ActivityResultContracts.OpenDocument()
@@ -424,8 +428,46 @@ class DetailActivity : BaseActivity(), PageHost {
     }
 
     override fun onPause() {
-        playContainer?.hostPause()
+        if (!isInPictureInPictureMode && !enteringPictureInPicture) {
+            playContainer?.hostPause()
+        }
         super.onPause()
+    }
+
+    override fun onPictureInPictureModeChanged(
+        isInPictureInPictureMode: Boolean,
+        newConfig: Configuration,
+    ) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+        if (!isInPictureInPictureMode) {
+            enteringPictureInPicture = false
+            applyStatusBarAppearance()
+            playContainer?.hostResume()
+        }
+    }
+
+    fun enterVodPictureInPicture() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            Toast.makeText(this, "当前 Android 版本不支持画中画", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (!packageManager.hasSystemFeature("android.software.picture_in_picture")) {
+            Toast.makeText(this, "当前设备不支持画中画", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (isInPictureInPictureMode || enteringPictureInPicture) return
+        val decor = window.decorView
+        val width = decor.width.coerceAtLeast(1)
+        val height = decor.height.coerceAtLeast(1)
+        val ratio = (width.toFloat() / height.toFloat()).coerceIn(1f / 2.39f, 2.39f)
+        val params = PictureInPictureParams.Builder()
+            .setAspectRatio(Rational((ratio * 1000).toInt().coerceAtLeast(1), 1000))
+            .build()
+        enteringPictureInPicture = true
+        if (!enterPictureInPictureMode(params)) {
+            enteringPictureInPicture = false
+            Toast.makeText(this, "无法进入画中画模式", Toast.LENGTH_SHORT).show()
+        }
     }
 
     override fun onDestroy() {
