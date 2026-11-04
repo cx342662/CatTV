@@ -54,6 +54,8 @@ class DetailActivity : BaseActivity(), PageHost {
     private var pendingEpisodeSync = false
     private var videoSizeWatchArmed = false
     private var enteringPictureInPicture = false
+    var isPictureInPictureUi by mutableStateOf(false)
+        private set
 
     private val localSubtitlePicker = registerForActivityResult(
         ActivityResultContracts.OpenDocument()
@@ -439,6 +441,7 @@ class DetailActivity : BaseActivity(), PageHost {
         newConfig: Configuration,
     ) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+        isPictureInPictureUi = isInPictureInPictureMode
         if (!isInPictureInPictureMode) {
             enteringPictureInPicture = false
             applyStatusBarAppearance()
