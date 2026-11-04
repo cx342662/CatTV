@@ -27,11 +27,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -43,6 +45,7 @@ import com.github.avbox.osc.bean.LiveChannelItem
 private val PanelBackground = Color(0xEB11151B)
 private val GroupBackground = Color(0xF01C222B)
 private val SelectedBackground = Color(0xFF394C6B)
+private val FocusedBackground = Color(0xFF354255)
 private val MainText = Color(0xFFF4F6FA)
 private val DimText = Color(0xFFAEB8C5)
 
@@ -105,10 +108,12 @@ internal fun FullscreenLiveChannelPanel(
             ) {
                 itemsIndexed(groups, key = { _, item -> "group_${item.groupIndex}" }) { _, item ->
                     val selected = item.groupIndex == selectedGroup
+                    var focused by remember { mutableStateOf(false) }
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(if (selected) SelectedBackground else Color.Transparent)
+                            .background(if (selected) SelectedBackground else if (focused) FocusedBackground else Color.Transparent)
+                            .onFocusChanged { focused = it.isFocused }
                             .clickable {
                                 selectedGroup = item.groupIndex
                                 if (channelList.lockedGroups.contains(item.groupIndex)) {
@@ -162,10 +167,12 @@ private fun ChannelPanelRow(
     selected: Boolean,
     onClick: () -> Unit,
 ) {
+    var focused by remember { mutableStateOf(false) }
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(if (selected) SelectedBackground else Color.Transparent)
+            .background(if (selected) SelectedBackground else if (focused) FocusedBackground else Color.Transparent)
+            .onFocusChanged { focused = it.isFocused }
             .clickable(onClick = onClick)
             .focusable()
             .padding(horizontal = 16.dp, vertical = 13.dp),
