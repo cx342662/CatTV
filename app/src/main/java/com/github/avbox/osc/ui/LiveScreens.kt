@@ -265,14 +265,16 @@ private fun PlayerArea(state: LivePlayUiState, actions: LivePlayActions, modifie
         if (state.overlay.visible) {
             FullscreenLiveChannelPanel(
                 channelList = state.channelList,
+                epg = state.epg,
+                onEpgRowClicked = actions.epg.onRowClicked,
                 onToggleGroup = actions.list.onToggleGroup,
                 onSelectChannel = actions.list.onSelectChannel,
                 onDismiss = actions.player.onHideChannels,
                 modifier = Modifier
                     .align(Alignment.CenterStart)
                     .padding(top = 52.dp, bottom = 0.dp)
-                    .fillMaxWidth(0.53f)
-                    .widthIn(max = 520.dp)
+                    .fillMaxWidth(if (state.epg.epgList.isNotEmpty()) 0.79f else 0.53f)
+                    .widthIn(max = if (state.epg.epgList.isNotEmpty()) 760.dp else 520.dp)
                     .fillMaxHeight(),
             )
         }
