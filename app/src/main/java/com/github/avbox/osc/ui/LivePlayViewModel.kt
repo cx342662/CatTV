@@ -98,6 +98,7 @@ internal data class LiveOverlayUi(
 )
 
 internal data class LivePlayUiState(
+    val isInPictureInPictureMode: Boolean = false,
     val frame: LivePageFrame = LivePageFrame(),
     val player: LivePlayerUi = LivePlayerUi(),
     val overlay: LiveOverlayUi = LiveOverlayUi(),
@@ -113,6 +114,10 @@ internal class LivePlayViewModel : ViewModel() {
 
     private val _state = MutableStateFlow(LivePlayUiState())
     val state: StateFlow<LivePlayUiState> = _state.asStateFlow()
+
+    internal fun setPictureInPictureMode(enabled: Boolean) {
+        _state.update { it.copy(isInPictureInPictureMode = enabled) }
+    }
 
     internal fun updateEpg(transform: (LiveEpgUi) -> LiveEpgUi) {
         _state.update { it.copy(epg = transform(it.epg)) }
