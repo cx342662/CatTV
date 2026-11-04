@@ -37,6 +37,8 @@ import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.PictureInPictureAlt
+import androidx.compose.material.icons.filled.ScreenRotation
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ContainedLoadingIndicator
@@ -102,7 +104,9 @@ internal fun LiveScreen(state: LivePlayUiState, actions: LivePlayActions) {
             .fillMaxSize()
             .background(background),
     ) {
-        when (state.frame.pageState) {
+        if (state.isInPictureInPictureMode) {
+            PlayerArea(state = state, actions = actions, modifier = Modifier.fillMaxSize())
+        } else when (state.frame.pageState) {
             PageState.LOADING -> LoadStateBox(
                 state = LoadState.Loading,
                 emptyText = "",
@@ -332,6 +336,7 @@ private fun PlayerArea(state: LivePlayUiState, actions: LivePlayActions, modifie
                 modifier = Modifier.fillMaxSize(),
             )
         }
+        if (!state.isInPictureInPictureMode) {
         if (state.player.snapshotVisible) {
             Box(modifier = Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
                 state.player.snapshotBitmap?.let { bitmap ->
@@ -414,6 +419,34 @@ private fun PlayerArea(state: LivePlayUiState, actions: LivePlayActions, modifie
                 )
             }
             PlayerCornerButtons(actions.player, Modifier.align(Alignment.TopEnd))
+        }
+        if (!state.frame.isFullBox || state.overlay.visible) {
+            Column(
+                modifier = Modifier.align(Alignment.CenterEnd).padding(end = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                IconButton(
+                    onClick = if (state.frame.isFullBox) actions.player.onExitFullscreen
+                        else actions.player.onEnterFullscreen,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.ScreenRotation,
+                        contentDescription = "切换全屏/横竖屏",
+                        tint = Color.White,
+                        modifier = Modifier.size(28.dp),
+                    )
+                }
+                IconButton(onClick = actions.player.onEnterPictureInPicture) {
+                    Icon(
+                        imageVector = Icons.Filled.PictureInPictureAlt,
+                        contentDescription = "窗口化播放（画中画）",
+                        tint = Color.White,
+                        modifier = Modifier.size(27.dp),
+                    )
+                }
+            }
+        }
         }
     }
 }
