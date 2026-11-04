@@ -33,7 +33,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import com.github.avbox.osc.bean.LiveChannelGroup
 import com.github.avbox.osc.bean.LiveChannelItem
 
 private val PanelGradient = Brush.horizontalGradient(
@@ -49,7 +48,6 @@ internal fun FullscreenLiveChannelPanel(
     channelList: LiveChannelListUi,
     onToggleGroup: (Int) -> Unit,
     onSelectChannel: (Int, Int) -> Unit,
-    onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val groups = channelList.rows.mapNotNull { row -> if (row.channel == null) row.group else null }
