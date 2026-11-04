@@ -193,10 +193,8 @@ class LivePlayActivity : BaseActivity() {
         epgController.reloadAddress()
         nowday = Date()
         epgController.epgDayPresented = FORMAT_DATE1.format(nowday)
-        // Draw the player page before constructing the playback engine.
-        // The old path initialized the engine synchronously before setContent,
-        // delaying even the first frame of the live activity.
-        applyFullscreen(true)
+        // Start in the reference layout: portrait/embedded preview with channel lists.
+        // Fullscreen is entered only through the explicit player button.
         overlay.cancelOverlayHide()
         vm.setOverlayVisible(false)
         val liveRoot = findViewById<ComposeView>(R.id.compose_view)
@@ -312,12 +310,9 @@ class LivePlayActivity : BaseActivity() {
     private val liveControlListener = object : ComposeLiveController.LiveControlListener {
         override fun onSingleTap(): Boolean {
             if (fullScreen) {
-                // The channel navigator stays open until selected, dismissed,
-                // or the user taps the video again.
+                // In fullscreen, tapping the video toggles the channel navigator.
                 overlay.cancelOverlayHide()
                 vm.toggleOverlay()
-            } else {
-                applyFullscreen(true)
             }
             return true
         }
@@ -374,8 +369,10 @@ class LivePlayActivity : BaseActivity() {
             orientationPolicyValue()
         }
         if (full) {
-            vm.setOverlayVisible(true)
-            overlay.scheduleOverlayHide()
+            // Enter fullscreen into clean playback first. The channel list is
+            // opened only after a deliberate tap, as in the reference app.
+            overlay.cancelOverlayHide()
+            vm.setOverlayVisible(false)
             super.hideSysBar()
         } else {
             vm.setOverlayVisible(false)
@@ -797,6 +794,7 @@ class LivePlayActivity : BaseActivity() {
         ),
         player = LivePlayerActions(
             videoView = { kernelView },
+            onEnterFullscreen = { applyFullscreen(true) },
             onExitFullscreen = { applyFullscreen(false) },
             onHideChannels = {
                 overlay.cancelOverlayHide()
@@ -812,7 +810,7 @@ class LivePlayActivity : BaseActivity() {
             onRowClicked = { onEpgRowClicked(it) },
         ),
         list = LiveChannelListActions(
-            onToggleGroup = { toggleChannelGroup(it) },
+            onToggleGroup = { selectChannelGroup(it, -1) },
             onSelectChannel = { groupIndex, position ->
                 selectChannel(groupIndex, position)
                 if (fullScreen) vm.setOverlayVisible(false)
