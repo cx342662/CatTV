@@ -17,7 +17,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -50,11 +49,13 @@ internal fun FullscreenLiveChannelPanel(
     modifier: Modifier = Modifier,
 ) {
     val groups = channelList.rows.mapNotNull { row -> if (row.channel == null) row.group else null }
-    var selectedGroup by remember { mutableIntStateOf(channelList.playingGroupIndex) }
-    LaunchedEffect(channelList.playingGroupIndex) {
-        if (groups.any { it.groupIndex == channelList.playingGroupIndex }) {
-            selectedGroup = channelList.playingGroupIndex
-        }
+    // Browse selection is independent from the channel currently playing.
+    // tappedGroupIndex is persisted in the ViewModel, so reopening the overlay
+    // must restore the last browsed category instead of snapping to group zero.
+    val selectedGroup = when {
+        groups.any { it.groupIndex == channelList.tappedGroupIndex } -> channelList.tappedGroupIndex
+        groups.any { it.groupIndex == channelList.playingGroupIndex } -> channelList.playingGroupIndex
+        else -> groups.firstOrNull()?.groupIndex ?: 0
     }
     val group = groups.firstOrNull { it.groupIndex == selectedGroup }
     val locked = group != null && channelList.lockedGroups.contains(group.groupIndex)
