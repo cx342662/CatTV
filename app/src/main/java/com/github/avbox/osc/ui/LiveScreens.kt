@@ -104,9 +104,7 @@ internal fun LiveScreen(state: LivePlayUiState, actions: LivePlayActions) {
             .fillMaxSize()
             .background(background),
     ) {
-        if (state.isInPictureInPictureMode) {
-            PlayerArea(state = state, actions = actions, modifier = Modifier.fillMaxSize())
-        } else when (state.frame.pageState) {
+        when (state.frame.pageState) {
             PageState.LOADING -> LoadStateBox(
                 state = LoadState.Loading,
                 emptyText = "",
@@ -202,10 +200,13 @@ private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
         .coerceAtLeast(150.dp)
         .coerceAtMost(maxOf(150.dp, longEdge / 2))
     Column(modifier = Modifier.fillMaxSize()) {
+        // Keep PlayerArea at the same Compose call site during PiP transitions.
+        // Re-parenting AndroidView would destroy SurfaceView/SurfaceTexture and can
+        // leave audio playing with a black video window on some devices.
         PlayerArea(
             state = state,
             actions = actions,
-            modifier = if (state.frame.isFullBox) {
+            modifier = if (state.isInPictureInPictureMode || state.frame.isFullBox) {
                 Modifier.fillMaxSize()
             } else {
                 Modifier
@@ -215,7 +216,7 @@ private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
                     .height(previewHeight)
             },
         )
-        if (!state.frame.isFullBox) {
+        if (!state.isInPictureInPictureMode && !state.frame.isFullBox) {
             ChannelInfoSection(info = state.channelInfo, timeshift = state.timeshift, overlay = state.overlay)
             HomeChannelListSection(
                 channelList = state.channelList,
