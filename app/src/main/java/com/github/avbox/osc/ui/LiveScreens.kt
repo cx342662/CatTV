@@ -213,7 +213,7 @@ private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
             ChannelInfoSection(info = state.channelInfo, timeshift = state.timeshift, overlay = state.overlay)
             HomeChannelListSection(
                 channelList = state.channelList,
-                onSelectGroup = actions.list.onToggleGroup,
+                onSelectGroup = actions.list.onBrowseGroup,
                 onSelectChannel = actions.list.onSelectChannel,
                 modifier = Modifier.weight(1f),
             )
@@ -385,7 +385,7 @@ private fun PlayerArea(state: LivePlayUiState, actions: LivePlayActions, modifie
         if (state.frame.isFullBox && state.overlay.visible) {
             FullscreenLiveChannelPanel(
                 channelList = state.channelList,
-                onToggleGroup = actions.list.onToggleGroup,
+                onBrowseGroup = actions.list.onBrowseGroup,
                 onSelectChannel = actions.list.onSelectChannel,
                 modifier = Modifier
                     .align(Alignment.CenterStart)
