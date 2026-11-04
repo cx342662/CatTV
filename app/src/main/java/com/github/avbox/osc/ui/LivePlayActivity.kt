@@ -275,6 +275,10 @@ class LivePlayActivity : BaseActivity() {
         if (!entered) {
             enteringPictureInPicture = false
             Toast.makeText(this, "无法进入画中画模式", Toast.LENGTH_SHORT).show()
+        } else {
+            // Move the app task behind the system PiP window so the phone home screen
+            // or the app underneath becomes visible immediately.
+            moveTaskToBack(true)
         }
     }
 
