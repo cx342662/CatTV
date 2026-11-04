@@ -459,12 +459,9 @@ class DetailActivity : BaseActivity(), PageHost {
             return
         }
         if (isInPictureInPictureMode || enteringPictureInPicture) return
-        val decor = window.decorView
-        val width = decor.width.coerceAtLeast(1)
-        val height = decor.height.coerceAtLeast(1)
-        val ratio = (width.toFloat() / height.toFloat()).coerceIn(1f / 2.39f, 2.39f)
+        // Standard video PiP uses a conventional 16:9 video window, not the app page ratio.
         val params = PictureInPictureParams.Builder()
-            .setAspectRatio(Rational((ratio * 1000).toInt().coerceAtLeast(1), 1000))
+            .setAspectRatio(Rational(16, 9))
             .build()
         enteringPictureInPicture = true
         if (!enterPictureInPictureMode(params)) {
