@@ -7,6 +7,7 @@ import android.content.res.Configuration
 import android.app.PictureInPictureParams
 import android.os.Build
 import android.util.Rational
+import android.graphics.Rect
 import android.view.KeyEvent
 import android.os.Handler
 import android.os.Looper
@@ -223,6 +224,7 @@ class LivePlayActivity : BaseActivity() {
         applyStatusBarAppearance()
         exitingLivePlay = false
         val takenOverByVod = PlaybackService.peek()?.enterLiveState() ?: false
+        if (isInPictureInPictureMode) return
         rebindLiveControllerIfNeeded()
         if (takenOverByVod) {
             replayCurrentChannelAfterTakeover()
@@ -267,9 +269,14 @@ class LivePlayActivity : BaseActivity() {
         // Preserve the current Activity's full UI shape in PiP (portrait or landscape),
         // rather than forcing a 16:9 crop that would hide the channel list and app chrome.
         // Standard video PiP uses a conventional 16:9 video window, not the app page ratio.
-        val params = PictureInPictureParams.Builder()
+        val sourceRect = Rect()
+        val sourceView = kernelView
+        val hasSourceRect = sourceView?.getGlobalVisibleRect(sourceRect) == true && !sourceRect.isEmpty
+        val builder = PictureInPictureParams.Builder()
             .setAspectRatio(Rational(16, 9))
-            .build()
+        if (hasSourceRect) builder.setSourceRectHint(sourceRect)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) builder.setSeamlessResizeEnabled(true)
+        val params = builder.build()
         enteringPictureInPicture = true
         val entered = enterPictureInPictureMode(params)
         if (!entered) {
