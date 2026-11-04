@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -34,6 +35,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -187,14 +189,132 @@ private fun LivePasswordDialog(
 
 @Composable
 private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
-    // One fullscreen player surface on phone and TV. The old light-colored
-    // channel list below the preview is intentionally removed: all channel
-    // navigation is handled by the FongMi-style overlay.
-    PlayerArea(
-        state = state,
-        actions = actions,
-        modifier = Modifier.fillMaxSize(),
-    )
+    val configuration = LocalConfiguration.current
+    val shortEdge = minOf(configuration.screenWidthDp, configuration.screenHeightDp).dp
+    val longEdge = maxOf(configuration.screenWidthDp, configuration.screenHeightDp).dp
+    val previewHeight = (shortEdge * 9f / 16f)
+        .coerceAtLeast(150.dp)
+        .coerceAtMost(maxOf(150.dp, longEdge / 2))
+    Column(modifier = Modifier.fillMaxSize()) {
+        PlayerArea(
+            state = state,
+            actions = actions,
+            modifier = if (state.frame.isFullBox) {
+                Modifier.fillMaxSize()
+            } else {
+                Modifier
+                    .fillMaxWidth()
+                    .background(Color.Black)
+                    .statusBarsPadding()
+                    .height(previewHeight)
+            },
+        )
+        if (!state.frame.isFullBox) {
+            ChannelInfoSection(info = state.channelInfo, timeshift = state.timeshift, overlay = state.overlay)
+            HomeChannelListSection(
+                channelList = state.channelList,
+                onSelectGroup = actions.list.onToggleGroup,
+                onSelectChannel = actions.list.onSelectChannel,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun HomeChannelListSection(
+    channelList: LiveChannelListUi,
+    onSelectGroup: (Int) -> Unit,
+    onSelectChannel: (Int, Int) -> Unit,
+    modifier: Modifier,
+) {
+    val groups = channelList.rows.mapNotNull { row -> if (row.channel == null) row.group else null }
+    var selectedGroupIndex by remember {
+        mutableIntStateOf(
+            if (channelList.playingChannelIndex >= 0) channelList.playingGroupIndex
+            else channelList.tappedGroupIndex,
+        )
+    }
+    LaunchedEffect(channelList.playingGroupIndex) {
+        if (channelList.playingChannelIndex >= 0) selectedGroupIndex = channelList.playingGroupIndex
+    }
+    val selectedGroup = groups.firstOrNull { it.groupIndex == selectedGroupIndex }
+        ?: groups.firstOrNull { it.groupIndex == channelList.playingGroupIndex }
+        ?: groups.firstOrNull()
+    val locked = selectedGroup != null && channelList.lockedGroups.contains(selectedGroup.groupIndex)
+    val channels = if (locked) emptyList() else selectedGroup?.liveChannels.orEmpty()
+    Row(
+        modifier = modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        LazyColumn(
+            modifier = Modifier.weight(0.38f).fillMaxHeight(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(bottom = 16.dp),
+        ) {
+            itemsIndexed(groups, key = { _, group -> "home_group_${group.groupIndex}" }) { _, group ->
+                val selected = group.groupIndex == selectedGroup?.groupIndex
+                Surface(
+                    modifier = Modifier.fillMaxWidth().clickable {
+                        selectedGroupIndex = group.groupIndex
+                        onSelectGroup(group.groupIndex)
+                    },
+                    shape = RoundedCornerShape(9.dp),
+                    color = if (selected) MaterialTheme.colorScheme.primaryContainer
+                    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+                ) {
+                    Text(
+                        text = group.groupName.orEmpty(),
+                        color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
+                        else MaterialTheme.colorScheme.onSurface,
+                        fontSize = 14.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 14.dp),
+                    )
+                }
+            }
+        }
+        LazyColumn(
+            modifier = Modifier.weight(0.62f).fillMaxHeight(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(bottom = 16.dp),
+        ) {
+            itemsIndexed(channels, key = { index, item -> "home_channel_${selectedGroup?.groupIndex}_${index}_${item.channelIndex}" }) { index, item ->
+                val selected = selectedGroup?.groupIndex == channelList.playingGroupIndex &&
+                    item.channelIndex == channelList.playingChannelIndex
+                Surface(
+                    modifier = Modifier.fillMaxWidth().clickable {
+                        selectedGroup?.let { onSelectChannel(it.groupIndex, index) }
+                    },
+                    shape = RoundedCornerShape(9.dp),
+                    color = if (selected) MaterialTheme.colorScheme.primaryContainer
+                    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 13.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = item.channelNum.toString(),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 13.sp,
+                            modifier = Modifier.width(42.dp),
+                        )
+                        Text(
+                            text = item.channelName.orEmpty(),
+                            color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
+                            else MaterialTheme.colorScheme.onSurface,
+                            fontSize = 14.sp,
+                            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -262,19 +382,16 @@ private fun PlayerArea(state: LivePlayUiState, actions: LivePlayActions, modifie
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
         }
-        if (state.overlay.visible) {
+        if (state.frame.isFullBox && state.overlay.visible) {
             FullscreenLiveChannelPanel(
                 channelList = state.channelList,
-                epg = state.epg,
-                onEpgRowClicked = actions.epg.onRowClicked,
                 onToggleGroup = actions.list.onToggleGroup,
                 onSelectChannel = actions.list.onSelectChannel,
                 onDismiss = actions.player.onHideChannels,
                 modifier = Modifier
                     .align(Alignment.CenterStart)
-                    .padding(top = 52.dp, bottom = 0.dp)
-                    .fillMaxWidth(if (state.epg.epgList.isNotEmpty()) 0.79f else 0.53f)
-                    .widthIn(max = if (state.epg.epgList.isNotEmpty()) 760.dp else 520.dp)
+                    .fillMaxWidth(0.52f)
+                    .widthIn(max = 640.dp)
                     .fillMaxHeight(),
             )
         }
@@ -309,6 +426,17 @@ private fun PlayerCornerButtons(actions: LivePlayerActions, modifier: Modifier) 
                 )
             },
             onClick = actions.onEpgSheetOpen,
+        )
+        PlayerCornerButton(
+            icon = {
+                Icon(
+                    Icons.Filled.Fullscreen,
+                    contentDescription = "进入全屏",
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp),
+                )
+            },
+            onClick = actions.onEnterFullscreen,
         )
         PlayerCornerButton(
             icon = {
