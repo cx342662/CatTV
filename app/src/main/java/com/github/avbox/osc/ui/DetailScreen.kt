@@ -349,6 +349,8 @@ fun DetailScreen(activity: DetailActivity, vm: DetailViewModel) {
             }
 
             val playerContainer = container
+            val playerUiState = playerContainer?.uiState()
+            val showPlayerControls = playerUiState?.controlsVisible == true
             if (playerContainer != null) {
                 Box(
                     modifier = Modifier
@@ -361,10 +363,14 @@ fun DetailScreen(activity: DetailActivity, vm: DetailViewModel) {
                         factory = { playerContainer },
                         modifier = Modifier.fillMaxSize(),
                     )
-                    if (!inPictureInPicture) {
+                    // Match normal VOD controls: keep the PiP entry hidden until
+                    // the user taps the video and the playback controls are visible.
+                    if (!inPictureInPicture && showPlayerControls) {
                         IconButton(
                             onClick = activity::enterVodPictureInPicture,
-                            modifier = Modifier.align(Alignment.CenterEnd).padding(end = 8.dp),
+                            modifier = Modifier
+                                .align(if (fullBox) Alignment.BottomEnd else Alignment.CenterEnd)
+                                .padding(end = 16.dp, bottom = if (fullBox) 20.dp else 0.dp),
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.PictureInPictureAlt,
