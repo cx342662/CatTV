@@ -187,36 +187,14 @@ private fun LivePasswordDialog(
 
 @Composable
 private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
-    val configuration = LocalConfiguration.current
-    val shortEdge = minOf(configuration.screenWidthDp, configuration.screenHeightDp).dp
-    val longEdge = maxOf(configuration.screenWidthDp, configuration.screenHeightDp).dp
-    val previewHeight = (shortEdge * 9f / 16f)
-        .coerceAtLeast(150.dp)
-        .coerceAtMost(maxOf(150.dp, longEdge / 2))
-    Column(modifier = Modifier.fillMaxSize()) {
-        PlayerArea(
-            state = state,
-            actions = actions,
-            modifier = if (state.frame.isFullBox) {
-                Modifier.fillMaxSize()
-            } else {
-                Modifier
-                    .fillMaxWidth()
-                    .background(Color.Black)
-                    .statusBarsPadding()
-                    .height(previewHeight)
-            },
-        )
-        if (!state.frame.isFullBox) {
-            ChannelInfoSection(info = state.channelInfo, timeshift = state.timeshift, overlay = state.overlay)
-            ChannelListSection(
-                channelList = state.channelList,
-                onToggleGroup = actions.list.onToggleGroup,
-                onSelectChannel = actions.list.onSelectChannel,
-                modifier = Modifier.weight(1f),
-            )
-        }
-    }
+    // One fullscreen player surface on phone and TV. The old light-colored
+    // channel list below the preview is intentionally removed: all channel
+    // navigation is handled by the FongMi-style overlay.
+    PlayerArea(
+        state = state,
+        actions = actions,
+        modifier = Modifier.fillMaxSize(),
+    )
 }
 
 @Composable
@@ -284,7 +262,7 @@ private fun PlayerArea(state: LivePlayUiState, actions: LivePlayActions, modifie
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
         }
-        if (state.frame.isFullBox && state.overlay.visible) {
+        if (state.overlay.visible) {
             FullscreenLiveChannelPanel(
                 channelList = state.channelList,
                 onToggleGroup = actions.list.onToggleGroup,
