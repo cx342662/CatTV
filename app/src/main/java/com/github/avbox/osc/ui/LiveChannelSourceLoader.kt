@@ -44,6 +44,13 @@ internal class LiveChannelSourceLoader(
     private var refreshingLiveChannelList = false
     private var loadingLiveConfigOnEnter = false
     private var pendingLiveRefreshChannelName: String? = null
+    // Selected by the user from the home live-channel strip. This is a one-shot
+    // preference; regular launches still resume the user's last live channel.
+    private var initialChannelName: String? = null
+
+    fun selectInitialChannel(name: String?) {
+        initialChannelName = name?.takeIf { it.isNotBlank() }
+    }
 
     private val proxyLoader = LiveProxyLoader(object : LiveProxyLoader.Host {
         override fun isRefreshing(): Boolean = refreshingLiveChannelList
@@ -114,7 +121,10 @@ internal class LiveChannelSourceLoader(
 
     private fun initLiveState() {
         refreshingLiveChannelList = false
-        val lastChannelName = pendingLiveRefreshChannelName ?: KV.get(KVKeys.LIVE_CHANNEL, "")
+        val lastChannelName = pendingLiveRefreshChannelName
+            ?: initialChannelName
+            ?: KV.get(KVKeys.LIVE_CHANNEL, "")
+        initialChannelName = null
         pendingLiveRefreshChannelName = null
         val preferredSourceIndex = vm.currentSourceIndex()
 
