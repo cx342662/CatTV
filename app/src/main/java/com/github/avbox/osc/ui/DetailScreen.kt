@@ -15,8 +15,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PictureInPictureAlt
 import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -353,6 +357,16 @@ fun DetailScreen(activity: DetailActivity, vm: DetailViewModel) {
                         factory = { playerContainer },
                         modifier = Modifier.fillMaxSize(),
                     )
+                    IconButton(
+                        onClick = activity::enterVodPictureInPicture,
+                        modifier = Modifier.align(Alignment.CenterEnd).padding(end = 8.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.PictureInPictureAlt,
+                            contentDescription = "窗口化播放（画中画）",
+                            tint = Color.White,
+                        )
+                    }
                 }
             }
 
