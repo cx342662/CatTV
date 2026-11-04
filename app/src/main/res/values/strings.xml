@@ -25,6 +25,7 @@
     <string name="live_password_title">请输入密码</string>
     <string name="live_password_hint">频道分组密码</string>
     <string name="live_exit_fullscreen">退出全屏</string>
+    <string name="live_enter_fullscreen">进入全屏</string>
     <string name="live_epg">节目单</string>
     <string name="live_epg_of">节目单 · %1$s</string>
     <string name="live_epg_empty">暂无节目单</string>

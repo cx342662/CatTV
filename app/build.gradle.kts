@@ -17,8 +17,8 @@ android {
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
         // Release workflow supplies version values; local debug keeps current defaults.
-        versionCode = (project.findProperty("CATTV_VERSION_CODE") as String?)?.toIntOrNull() ?: 36
-        versionName = (project.findProperty("CATTV_VERSION_NAME") as String?) ?: "1.3.2"
+        versionCode = (project.findProperty("CATTV_VERSION_CODE") as String?)?.toIntOrNull() ?: 37
+        versionName = (project.findProperty("CATTV_VERSION_NAME") as String?) ?: "1.3.3"
         multiDexEnabled = true
         ndk {
             abiFilters += setOf("arm64-v8a")

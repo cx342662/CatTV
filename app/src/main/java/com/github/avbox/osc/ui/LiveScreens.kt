@@ -34,7 +34,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Event
-import androidx.compose.material.icons.filled.Fullscreen
+import androidx.compose.material.icons.filled.ScreenRotation
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -70,6 +70,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.flow.collect
@@ -415,6 +416,16 @@ private fun PlayerArea(state: LivePlayUiState, actions: LivePlayActions, modifie
             }
             PlayerCornerButtons(actions.player, Modifier.align(Alignment.TopEnd))
         }
+        // A dedicated right-edge control makes the portrait/fullscreen switch
+        // discoverable without opening the small corner toolbar.
+        if (!state.frame.isFullBox || state.overlay.visible) {
+            FullscreenTogglePill(
+                isFullscreen = state.frame.isFullBox,
+                onClick = if (state.frame.isFullBox) actions.player.onExitFullscreen
+                    else actions.player.onEnterFullscreen,
+                modifier = Modifier.align(Alignment.CenterEnd),
+            )
+        }
     }
 }
 
@@ -435,17 +446,6 @@ private fun PlayerCornerButtons(actions: LivePlayerActions, modifier: Modifier) 
         PlayerCornerButton(
             icon = {
                 Icon(
-                    Icons.Filled.Fullscreen,
-                    contentDescription = "进入全屏",
-                    tint = Color.White,
-                    modifier = Modifier.size(20.dp),
-                )
-            },
-            onClick = actions.onEnterFullscreen,
-        )
-        PlayerCornerButton(
-            icon = {
-                Icon(
                     Icons.Filled.Settings,
                     contentDescription = stringResource(R.string.live_settings),
                     tint = Color.White,
@@ -454,6 +454,46 @@ private fun PlayerCornerButtons(actions: LivePlayerActions, modifier: Modifier) 
             },
             onClick = actions.onSettingsSheetOpen,
         )
+    }
+}
+
+@Composable
+private fun FullscreenTogglePill(
+    isFullscreen: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val shape = RoundedCornerShape(18.dp)
+    Surface(
+        modifier = modifier
+            .padding(end = 10.dp)
+            .clip(shape)
+            .clickable(onClick = onClick),
+        shape = shape,
+        color = Color(0xE6F28C18),
+        shadowElevation = 8.dp,
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.75f)),
+    ) {
+        Column(
+            modifier = Modifier.width(54.dp).padding(horizontal = 6.dp, vertical = 13.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(7.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Filled.ScreenRotation,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(25.dp),
+            )
+            Text(
+                text = if (isFullscreen) "退出\\n全屏" else "切换\\n全屏",
+                color = Color.White,
+                fontSize = 11.sp,
+                lineHeight = 14.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+            )
+        }
     }
 }
 
