@@ -113,8 +113,11 @@ jobs:
           "$APKSIGNER" verify --verbose --print-certs "$APK" | tee "$RUNNER_TEMP/signature.txt"
           KEY_CERT_SHA="$(keytool -exportcert -keystore "$RUNNER_TEMP/cattv-release.jks" -alias "$CATTV_KEY_ALIAS" -storepass "$CATTV_STORE_PASSWORD" 2>/dev/null | sha256sum | awk '{print $1}')"
           APK_CERT_SHA="$(sed -n 's/.*certificate SHA-256 digest: //p' "$RUNNER_TEMP/signature.txt" | head -n1 | tr -d ':' | tr '[:upper:]' '[:lower:]')"
-          NATIVE_ABIS="$(unzip -Z1 "$APK" | sed -n 's#^lib/\\([^/]*\\)/.*#\\1#p' | sort -u | tr '\\n' ' ')"
-          test "$NATIVE_ABIS" = "arm64-v8a" || { echo "::error::Unexpected native ABIs: $NATIVE_ABIS"; exit 1; }
+          unzip -Z1 "$APK" | grep -q '^lib/arm64-v8a/' || { echo "::error::ARM64 native libraries are missing"; exit 1; }
+          if unzip -Z1 "$APK" | grep -Eq '^lib/(armeabi-v7a|x86|x86_64)/'; then
+            echo "::error::APK contains an unexpected extra ABI"
+            exit 1
+          fi
           test -n "$APK_CERT_SHA"
           test "$KEY_CERT_SHA" = "$APK_CERT_SHA" || { echo "::error::APK certificate mismatch"; exit 1; }
           unzip -l "$APK" | awk 'NR>3 && $4!="" {print $1, $4}' | sort -nr | head -n 20 > "$RUNNER_TEMP/largest-apk-files.txt"
