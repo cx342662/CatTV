@@ -248,14 +248,6 @@ fun DetailScreen(activity: DetailActivity, vm: DetailViewModel) {
 
     val pageBackdrop = rememberLayerBackdrop(onDraw = { drawContent() })
     MaterialTheme(colorScheme = colorScheme) {
-        if (activity.isPictureInPictureUi) {
-            Box(Modifier.fillMaxSize().background(Color.Black)) {
-                val pipPlayer = activity.playContainer
-                if (pipPlayer != null) {
-                    AndroidView(factory = { pipPlayer }, modifier = Modifier.fillMaxSize())
-                }
-            }
-        } else {
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -398,7 +390,6 @@ fun DetailScreen(activity: DetailActivity, vm: DetailViewModel) {
 
         EpisodeSheet(vm, slideFromEnd = fullBox && isLandscapeNow, showQuality = full)
         VodCardMenu(vodMenu) { menuContext.jumpToSearch(it) }
-        }
     }
 }
 
