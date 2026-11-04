@@ -175,6 +175,9 @@ fun HomeGridLayout(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(HomeGridItemSpacing),
             ) {
+                item(key = "live_channels", span = { GridItemSpan(maxLineSpan) }) {
+                    HomeLiveChannels()
+                }
                 if (tabSort != null && tabSort.filters.isNotEmpty()) {
                     item(key = "chips_${tabSort.id}", span = { GridItemSpan(maxLineSpan) }) {
                         Box(
