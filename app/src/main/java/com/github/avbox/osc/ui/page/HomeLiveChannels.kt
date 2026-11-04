@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.github.avbox.osc.R
 import com.github.avbox.osc.api.ApiConfig
+import com.github.avbox.osc.bean.LiveChannelGroup
 import com.github.avbox.osc.bean.LiveChannelItem
 import com.github.avbox.osc.ui.LivePlayActivity
 
@@ -37,17 +38,19 @@ import com.github.avbox.osc.ui.LivePlayActivity
  * Displays at most ten channels already loaded from the user's chosen live config.
  * Never creates a default channel list or fetches a live subscription on its own.
  */
-@Composable
-internal fun HomeLiveChannels(modifier: Modifier = Modifier) {
-    val context = LocalContext.current
-    val channels = ApiConfig.get().channelGroupList
-        .asSequence()
+internal fun livePreviewChannels(groups: List<LiveChannelGroup>): List<LiveChannelItem> =
+    groups.asSequence()
         .filter { it.groupPassword.isNullOrEmpty() }
         .flatMap { it.liveChannels.orEmpty().asSequence() }
         .filter { !it.channelName.isNullOrBlank() && !it.channelUrls.isNullOrEmpty() }
-        .distinctBy { it.channelName }
+        .distinctBy { it.channelName.orEmpty().trim().lowercase() }
         .take(10)
         .toList()
+
+@Composable
+internal fun HomeLiveChannels(modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val channels = livePreviewChannels(ApiConfig.get().channelGroupList)
     if (channels.isEmpty()) return
 
     Column(modifier = modifier.fillMaxWidth()) {
