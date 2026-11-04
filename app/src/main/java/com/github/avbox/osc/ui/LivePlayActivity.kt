@@ -788,7 +788,10 @@ class LivePlayActivity : BaseActivity() {
         player = LivePlayerActions(
             videoView = { kernelView },
             onExitFullscreen = { applyFullscreen(false) },
-            onHideChannels = { vm.setOverlayVisible(false) },
+            onHideChannels = {
+                overlay.cancelOverlayHide()
+                vm.setOverlayVisible(false)
+            },
             onEpgSheetOpen = { vm.showEpgSheet() },
             onSettingsSheetOpen = { openSettingsSheet() },
             onTimeshiftSeek = { onTimeshiftSeek(it) },
