@@ -193,13 +193,14 @@ class LivePlayActivity : BaseActivity() {
         epgController.reloadAddress()
         nowday = Date()
         epgController.epgDayPresented = FORMAT_DATE1.format(nowday)
-        initVideoView()
-        // Enter immersive playback directly; never show the legacy list page.
-        // Keep navigator closed until a deliberate tap / remote OK.
+        // Draw the player page before constructing the playback engine.
+        // The old path initialized the engine synchronously before setContent,
+        // delaying even the first frame of the live activity.
         applyFullscreen(true)
         overlay.cancelOverlayHide()
         vm.setOverlayVisible(false)
-        findViewById<ComposeView>(R.id.compose_view).setContent {
+        val liveRoot = findViewById<ComposeView>(R.id.compose_view)
+        liveRoot.setContent {
             AVBoxTheme(manageStatusBarIcons = false) {
                 SheetHostScaffold {
                     val state by uiState.collectAsStateWithLifecycle()
@@ -207,8 +208,12 @@ class LivePlayActivity : BaseActivity() {
                 }
             }
         }
-        channelSourceLoader.initLiveChannelList()
-        initLiveSettingGroupList()
+        liveRoot.post {
+            if (isFinishing || isDestroyed) return@post
+            initVideoView()
+            channelSourceLoader.initLiveChannelList()
+            initLiveSettingGroupList()
+        }
     }
 
     override fun onResume() {
