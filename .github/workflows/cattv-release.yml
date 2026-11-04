@@ -1,6 +1,11 @@
 name: Publish CatTV Signed Release
 
 on:
+  push:
+    branches:
+      - fix/pip-fongmi-style
+    paths:
+      - ".github/workflows/cattv-release.yml"
   workflow_dispatch:
     inputs:
       versionName:
@@ -50,8 +55,8 @@ jobs:
           python scripts/prepare_cattv_icons.py
       - name: Validate requested version and private signing secrets
         env:
-          VERSION_NAME: ${{ inputs.versionName }}
-          VERSION_CODE: ${{ inputs.versionCode }}
+          VERSION_NAME: ${{ inputs.versionName || '1.3.2' }}
+          VERSION_CODE: ${{ inputs.versionCode || '38' }}
           CATTV_KEYSTORE_BASE64: ${{ secrets.CATTV_KEYSTORE_BASE64 }}
           CATTV_KEY_ALIAS: ${{ secrets.CATTV_KEY_ALIAS }}
           CATTV_STORE_PASSWORD: ${{ secrets.CATTV_STORE_PASSWORD }}
