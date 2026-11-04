@@ -423,6 +423,10 @@ class LivePlayActivity : BaseActivity() {
         val previousLivePlayerType = livePlayerManager.livePlayerType
         if (!changeSource) {
             vm.setPlayingGroupIndex(channelGroupIndex)
+            // Keep the persisted browse category aligned with actual playback.
+            // The fullscreen overlay reads tappedGroupIndex so it can preserve
+            // a user's later category browsing independently of the playing group.
+            vm.setTappedGroupIndex(channelGroupIndex)
             vm.setPlayingChannelIndex(liveChannelIndex)
             vm.setPlayingChannel(channelSourceLoader.getLiveChannels(currentChannelGroupIndex)?.get(currentLiveChannelIndex))
             vm.updateSourceIndex(vm.consumePendingSourceIndex())
