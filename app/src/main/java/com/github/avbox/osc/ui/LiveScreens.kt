@@ -388,7 +388,6 @@ private fun PlayerArea(state: LivePlayUiState, actions: LivePlayActions, modifie
                 channelList = state.channelList,
                 onToggleGroup = actions.list.onToggleGroup,
                 onSelectChannel = actions.list.onSelectChannel,
-                onDismiss = actions.player.onHideChannels,
                 modifier = Modifier
                     .align(Alignment.CenterStart)
                     .fillMaxWidth(0.52f)
