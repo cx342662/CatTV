@@ -130,6 +130,7 @@ fun DetailScreen(activity: DetailActivity, vm: DetailViewModel) {
     var slideWidthPx by remember { mutableFloatStateOf(0f) }
 
     val container = activity.playContainer
+    val inPictureInPicture = activity.isPictureInPictureUi
     val scope = rememberCoroutineScope()
     var backdropPic by remember { mutableStateOf("") }
     var backdropSeed by remember { mutableStateOf<Int?>(null) }
@@ -254,7 +255,7 @@ fun DetailScreen(activity: DetailActivity, vm: DetailViewModel) {
                 .onSizeChanged { slideWidthPx = it.width.toFloat() }
                 .background(MaterialTheme.colorScheme.surface),
         ) {
-            if (flatHero) {
+            if (!inPictureInPicture && flatHero) {
                 Box(modifier = Modifier.fillMaxSize()) {
                     Box(modifier = Modifier.fillMaxSize().layerBackdrop(pageBackdrop)) {
                         val info = vm.vodInfo
@@ -284,7 +285,7 @@ fun DetailScreen(activity: DetailActivity, vm: DetailViewModel) {
                     }
                     FlatScrollScrim(progress = { heroProgress })
                 }
-            } else {
+            } else if (!inPictureInPicture) {
                 PosterBackdrop(
                     pic = backdropSource,
                     onImage = { image ->
@@ -296,6 +297,7 @@ fun DetailScreen(activity: DetailActivity, vm: DetailViewModel) {
                 )
             }
 
+            if (!inPictureInPicture) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -344,6 +346,7 @@ fun DetailScreen(activity: DetailActivity, vm: DetailViewModel) {
                     )
                 }
             }
+            }
 
             val playerContainer = container
             if (playerContainer != null) {
@@ -351,29 +354,31 @@ fun DetailScreen(activity: DetailActivity, vm: DetailViewModel) {
                     modifier = Modifier
                         .fillMaxSize()
                         .offset {
-                            IntOffset(((1f - slideProgress()) * slideWidthPx).toInt(), 0)
+                            IntOffset(if (inPictureInPicture) 0 else ((1f - slideProgress()) * slideWidthPx).toInt(), 0)
                         },
                 ) {
                     AndroidView(
                         factory = { playerContainer },
                         modifier = Modifier.fillMaxSize(),
                     )
-                    IconButton(
-                        onClick = activity::enterVodPictureInPicture,
-                        modifier = Modifier.align(Alignment.CenterEnd).padding(end = 8.dp),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.PictureInPictureAlt,
-                            contentDescription = "窗口化播放（画中画）",
-                            tint = Color.White,
-                        )
+                    if (!inPictureInPicture) {
+                        IconButton(
+                            onClick = activity::enterVodPictureInPicture,
+                            modifier = Modifier.align(Alignment.CenterEnd).padding(end = 8.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.PictureInPictureAlt,
+                                contentDescription = "窗口化播放（画中画）",
+                                tint = Color.White,
+                            )
+                        }
                     }
                 }
             }
 
-            container?.uiState()?.let { PlayerCastOverlay(it) }
+            if (!inPictureInPicture) container?.uiState()?.let { PlayerCastOverlay(it) }
 
-            if (inTransition) {
+            if (!inPictureInPicture && inTransition) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -388,8 +393,10 @@ fun DetailScreen(activity: DetailActivity, vm: DetailViewModel) {
             }
         }
 
-        EpisodeSheet(vm, slideFromEnd = fullBox && isLandscapeNow, showQuality = full)
-        VodCardMenu(vodMenu) { menuContext.jumpToSearch(it) }
+        if (!inPictureInPicture) {
+            EpisodeSheet(vm, slideFromEnd = fullBox && isLandscapeNow, showQuality = full)
+            VodCardMenu(vodMenu) { menuContext.jumpToSearch(it) }
+        }
     }
 }
 
