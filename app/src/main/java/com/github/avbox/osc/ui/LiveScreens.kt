@@ -486,7 +486,15 @@ private fun FullscreenTogglePill(
                 modifier = Modifier.size(25.dp),
             )
             Text(
-                text = if (isFullscreen) "退出\\n全屏" else "切换\\n全屏",
+                text = if (isFullscreen) "退出" else "切换",
+                color = Color.White,
+                fontSize = 11.sp,
+                lineHeight = 14.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+            )
+            Text(
+                text = "全屏",
                 color = Color.White,
                 fontSize = 11.sp,
                 lineHeight = 14.sp,
