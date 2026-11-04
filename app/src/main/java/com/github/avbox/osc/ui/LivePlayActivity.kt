@@ -4,6 +4,7 @@ package com.github.avbox.osc.ui
 
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
+import android.view.KeyEvent
 import android.os.Handler
 import android.os.Looper
 import android.widget.Toast
@@ -267,6 +268,31 @@ class LivePlayActivity : BaseActivity() {
         else kernelView?.release()
     }
 
+    // Keep DPAD navigation within the channel panel when it is visible.
+    // Otherwise use remote Up/Down for channel changes in fullscreen.
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (fullScreen && !vm.state.value.overlay.visible &&
+            vm.state.value.frame.pageState == PageState.READY &&
+            event.action == KeyEvent.ACTION_UP
+        ) {
+            when (event.keyCode) {
+                KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_CHANNEL_UP -> {
+                    playPrevious()
+                    return true
+                }
+                KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_CHANNEL_DOWN -> {
+                    playNext()
+                    return true
+                }
+                KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
+                    vm.setOverlayVisible(true)
+                    overlay.scheduleOverlayHide()
+                    return true
+                }
+            }
+        }
+        return super.dispatchKeyEvent(event)
+    }
     private val liveControlListener = object : ComposeLiveController.LiveControlListener {
         override fun onSingleTap(): Boolean {
             if (fullScreen) {
@@ -764,7 +790,10 @@ class LivePlayActivity : BaseActivity() {
         ),
         list = LiveChannelListActions(
             onToggleGroup = { toggleChannelGroup(it) },
-            onSelectChannel = { groupIndex, position -> selectChannel(groupIndex, position) },
+            onSelectChannel = { groupIndex, position ->
+                selectChannel(groupIndex, position)
+                if (fullScreen) vm.setOverlayVisible(false)
+            },
         ),
         settings = LiveSettingsActions(
             onDismiss = { vm.hideSettingsSheet() },
