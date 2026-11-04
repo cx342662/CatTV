@@ -12,6 +12,7 @@ internal class LivePlayerActions(
     val videoView: () -> PlayerKernelView?,
     val onEnterFullscreen: () -> Unit,
     val onExitFullscreen: () -> Unit,
+    val onEnterPictureInPicture: () -> Unit,
     val onHideChannels: () -> Unit,
     val onEpgSheetOpen: () -> Unit,
     val onSettingsSheetOpen: () -> Unit,
