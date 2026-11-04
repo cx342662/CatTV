@@ -55,6 +55,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -72,6 +73,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.flow.distinctUntilChanged
 import androidx.compose.ui.viewinterop.AndroidView
 import com.github.avbox.osc.R
 import com.github.avbox.osc.bean.LiveChannelGroup
@@ -215,6 +217,7 @@ private fun LiveReadyContent(state: LivePlayUiState, actions: LivePlayActions) {
                 channelList = state.channelList,
                 onSelectGroup = actions.list.onBrowseGroup,
                 onSelectChannel = actions.list.onSelectChannel,
+                onBrowseGroupScrollChanged = actions.list.onBrowseGroupScrollChanged,
                 modifier = Modifier.weight(1f),
             )
         }
@@ -226,28 +229,31 @@ private fun HomeChannelListSection(
     channelList: LiveChannelListUi,
     onSelectGroup: (Int) -> Unit,
     onSelectChannel: (Int, Int) -> Unit,
+    onBrowseGroupScrollChanged: (Int, Int) -> Unit,
     modifier: Modifier,
 ) {
     val groups = channelList.rows.mapNotNull { row -> if (row.channel == null) row.group else null }
-    var selectedGroupIndex by remember {
-        mutableIntStateOf(
-            if (channelList.playingChannelIndex >= 0) channelList.playingGroupIndex
-            else channelList.tappedGroupIndex,
-        )
-    }
-    LaunchedEffect(channelList.playingGroupIndex) {
-        if (channelList.playingChannelIndex >= 0) selectedGroupIndex = channelList.playingGroupIndex
-    }
+    val selectedGroupIndex = channelList.browseGroupIndex.takeIf { index -> groups.any { it.groupIndex == index } }
+        ?: channelList.playingGroupIndex.takeIf { index -> groups.any { it.groupIndex == index } }
+        ?: groups.firstOrNull()?.groupIndex
     val selectedGroup = groups.firstOrNull { it.groupIndex == selectedGroupIndex }
-        ?: groups.firstOrNull { it.groupIndex == channelList.playingGroupIndex }
-        ?: groups.firstOrNull()
     val locked = selectedGroup != null && channelList.lockedGroups.contains(selectedGroup.groupIndex)
     val channels = if (locked) emptyList() else selectedGroup?.liveChannels.orEmpty()
+    val groupListState = rememberLazyListState(
+        initialFirstVisibleItemIndex = channelList.browseGroupFirstVisibleIndex.coerceIn(0, (groups.size - 1).coerceAtLeast(0)),
+        initialFirstVisibleItemScrollOffset = channelList.browseGroupScrollOffset,
+    )
+    LaunchedEffect(groupListState) {
+        snapshotFlow { groupListState.firstVisibleItemIndex to groupListState.firstVisibleItemScrollOffset }
+            .distinctUntilChanged()
+            .collect { (index, offset) -> onBrowseGroupScrollChanged(index, offset) }
+    }
     Row(
         modifier = modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         LazyColumn(
+            state = groupListState,
             modifier = Modifier.weight(0.38f).fillMaxHeight(),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(bottom = 16.dp),
@@ -386,6 +392,7 @@ private fun PlayerArea(state: LivePlayUiState, actions: LivePlayActions, modifie
             FullscreenLiveChannelPanel(
                 channelList = state.channelList,
                 onBrowseGroup = actions.list.onBrowseGroup,
+                onBrowseGroupScrollChanged = actions.list.onBrowseGroupScrollChanged,
                 onSelectChannel = actions.list.onSelectChannel,
                 modifier = Modifier
                     .align(Alignment.CenterStart)

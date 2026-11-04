@@ -57,6 +57,10 @@ internal data class LiveChannelListUi(
     val rows: List<LiveListRow> = emptyList(),
     val tappedGroupIndex: Int = 0,
     val playingGroupIndex: Int = 0,
+    // Browsing state is independent from playback and survives portrait/fullscreen swaps.
+    val browseGroupIndex: Int = -1,
+    val browseGroupFirstVisibleIndex: Int = 0,
+    val browseGroupScrollOffset: Int = 0,
     val playingChannelIndex: Int = -1,
     val playingChannel: LiveChannelItem? = null,
     val playingSourceIndex: Int = -1,
@@ -225,7 +229,7 @@ internal class LivePlayViewModel : ViewModel() {
     }
 
     internal fun setPlayingGroupIndex(index: Int) {
-        updateChannelList { it.copy(playingGroupIndex = index) }
+        updateChannelList { it.copy(playingGroupIndex = index, browseGroupIndex = index, tappedGroupIndex = index) }
     }
 
     internal fun setPlayingChannelIndex(index: Int) {
@@ -237,7 +241,23 @@ internal class LivePlayViewModel : ViewModel() {
     }
 
     internal fun setTappedGroupIndex(index: Int) {
-        updateChannelList { it.copy(tappedGroupIndex = index) }
+        updateChannelList { it.copy(tappedGroupIndex = index, browseGroupIndex = index) }
+    }
+
+    internal fun setBrowseGroupIndex(index: Int) {
+        setTappedGroupIndex(index)
+    }
+
+    internal fun setBrowseGroupListPosition(firstVisibleIndex: Int, scrollOffset: Int) {
+        val safeIndex = firstVisibleIndex.coerceAtLeast(0)
+        val safeOffset = scrollOffset.coerceAtLeast(0)
+        updateChannelList { current ->
+            if (current.browseGroupFirstVisibleIndex == safeIndex && current.browseGroupScrollOffset == safeOffset) {
+                current
+            } else {
+                current.copy(browseGroupFirstVisibleIndex = safeIndex, browseGroupScrollOffset = safeOffset)
+            }
+        }
     }
 
     internal fun expandChannelGroup(index: Int) {
@@ -318,10 +338,21 @@ internal class LivePlayViewModel : ViewModel() {
         channelGroups = groups
         _state.update { current ->
             val locked = LiveChannelRows.lockedGroups(channelGroups, current.channelList.confirmedPasswordGroups)
+            val currentList = current.channelList
+            val validBrowseGroup = channelGroups.any { it.groupIndex == currentList.browseGroupIndex }
+            val initialBrowseGroup = when {
+                validBrowseGroup -> currentList.browseGroupIndex
+                channelGroups.any { it.groupIndex == currentList.playingGroupIndex } -> currentList.playingGroupIndex
+                else -> channelGroups.firstOrNull()?.groupIndex ?: -1
+            }
             current.copy(
-                channelList = current.channelList.copy(
+                channelList = currentList.copy(
                     lockedGroups = locked,
-                    rows = LiveChannelRows.of(channelGroups, current.channelList.expandedGroups, locked),
+                    browseGroupIndex = initialBrowseGroup,
+                    browseGroupFirstVisibleIndex = currentList.browseGroupFirstVisibleIndex.coerceIn(
+                        0, (channelGroups.size - 1).coerceAtLeast(0),
+                    ),
+                    rows = LiveChannelRows.of(channelGroups, currentList.expandedGroups, locked),
                 ),
             )
         }

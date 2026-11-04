@@ -90,6 +90,55 @@ class LivePlayViewModelChannelListTest {
         assertEquals(0, vm.state.value.channelList.playingGroupIndex)
     }
 
+
+    @Test
+    fun browsingCategory_keepsPlaybackAndScrollStateIndependent() {
+        val vm = LivePlayViewModel()
+        vm.onChannelGroupsChanged(
+            listOf(
+                group(0, channelNames = listOf("A")),
+                group(1, channelNames = listOf("B")),
+                group(2, channelNames = listOf("C")),
+                group(3, channelNames = listOf("D")),
+            ),
+        )
+        vm.setPlayingGroupIndex(1)
+        vm.setPlayingChannelIndex(7)
+        vm.setBrowseGroupListPosition(2, 18)
+
+        val rows = vm.state.value.channelList.rows
+        vm.setBrowseGroupIndex(3)
+
+        val list = vm.state.value.channelList
+        assertEquals(3, list.browseGroupIndex)
+        assertEquals(3, list.tappedGroupIndex)
+        assertEquals(1, list.playingGroupIndex)
+        assertEquals(7, list.playingChannelIndex)
+        assertEquals(2, list.browseGroupFirstVisibleIndex)
+        assertEquals(18, list.browseGroupScrollOffset)
+        assertSame(rows, list.rows)
+    }
+
+    @Test
+    fun refreshedGroups_preserveValidBrowseCategoryAndScrollPosition() {
+        val vm = LivePlayViewModel()
+        val groups = listOf(
+            group(0, channelNames = listOf("A")),
+            group(1, channelNames = listOf("B")),
+            group(2, channelNames = listOf("C")),
+        )
+        vm.onChannelGroupsChanged(groups)
+        vm.setBrowseGroupIndex(2)
+        vm.setBrowseGroupListPosition(1, 24)
+
+        vm.onChannelGroupsChanged(groups)
+
+        val list = vm.state.value.channelList
+        assertEquals(2, list.browseGroupIndex)
+        assertEquals(1, list.browseGroupFirstVisibleIndex)
+        assertEquals(24, list.browseGroupScrollOffset)
+    }
+
     @Test
     fun playingChannel_isCarriedByState() {
         val vm = LivePlayViewModel()

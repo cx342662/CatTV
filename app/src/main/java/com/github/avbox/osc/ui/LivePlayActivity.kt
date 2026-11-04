@@ -818,7 +818,8 @@ class LivePlayActivity : BaseActivity() {
             onToggleGroup = { selectChannelGroup(it, -1) },
             // Two-column portrait/fullscreen layouts only browse categories.
             // Do not rebuild LiveChannelRows here; it resets the category list.
-            onBrowseGroup = { vm.setTappedGroupIndex(it) },
+            onBrowseGroup = { vm.setBrowseGroupIndex(it) },
+            onBrowseGroupScrollChanged = { index, offset -> vm.setBrowseGroupListPosition(index, offset) },
             onSelectChannel = { groupIndex, position ->
                 selectChannel(groupIndex, position)
                 if (fullScreen) vm.setOverlayVisible(false)

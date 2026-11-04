@@ -20,6 +20,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
@@ -45,17 +47,26 @@ private val DimText = Color(0xFFD0D5DE)
 internal fun FullscreenLiveChannelPanel(
     channelList: LiveChannelListUi,
     onBrowseGroup: (Int) -> Unit,
+    onBrowseGroupScrollChanged: (Int, Int) -> Unit,
     onSelectChannel: (Int, Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val groups = channelList.rows.mapNotNull { row -> if (row.channel == null) row.group else null }
-    // Browse selection is independent from the channel currently playing.
-    // tappedGroupIndex is persisted in the ViewModel, so reopening the overlay
-    // must restore the last browsed category instead of snapping to group zero.
+    // The ViewModel owns category selection and scroll position so the same
+    // browse state survives the portrait/fullscreen composable swap.
     val selectedGroup = when {
-        groups.any { it.groupIndex == channelList.tappedGroupIndex } -> channelList.tappedGroupIndex
+        groups.any { it.groupIndex == channelList.browseGroupIndex } -> channelList.browseGroupIndex
         groups.any { it.groupIndex == channelList.playingGroupIndex } -> channelList.playingGroupIndex
         else -> groups.firstOrNull()?.groupIndex ?: 0
+    }
+    val groupListState = rememberLazyListState(
+        initialFirstVisibleItemIndex = channelList.browseGroupFirstVisibleIndex.coerceIn(0, (groups.size - 1).coerceAtLeast(0)),
+        initialFirstVisibleItemScrollOffset = channelList.browseGroupScrollOffset,
+    )
+    LaunchedEffect(groupListState) {
+        snapshotFlow { groupListState.firstVisibleItemIndex to groupListState.firstVisibleItemScrollOffset }
+            .distinctUntilChanged()
+            .collect { (index, offset) -> onBrowseGroupScrollChanged(index, offset) }
     }
     val group = groups.firstOrNull { it.groupIndex == selectedGroup }
     val locked = group != null && channelList.lockedGroups.contains(group.groupIndex)
@@ -77,6 +88,7 @@ internal fun FullscreenLiveChannelPanel(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         LazyColumn(
+            state = groupListState,
             modifier = Modifier.width(150.dp).fillMaxHeight(),
             verticalArrangement = Arrangement.spacedBy(7.dp),
         ) {
