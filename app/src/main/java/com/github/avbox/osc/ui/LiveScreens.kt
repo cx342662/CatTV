@@ -283,26 +283,19 @@ private fun PlayerArea(state: LivePlayUiState, actions: LivePlayActions, modifie
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
         }
-        // In fullscreen, reuse the existing grouped channel list as a touch-friendly
-        // side panel. Its visibility follows the same tap/remote overlay state
-        // managed by LivePlayActivity, so no second channel data source is needed.
         if (state.frame.isFullBox && state.overlay.visible) {
-            Surface(
+            FullscreenLiveChannelPanel(
+                channelList = state.channelList,
+                onToggleGroup = actions.list.onToggleGroup,
+                onSelectChannel = actions.list.onSelectChannel,
+                onDismiss = actions.player.onHideChannels,
                 modifier = Modifier
                     .align(Alignment.CenterStart)
-                    .padding(start = 12.dp, top = 56.dp, bottom = 12.dp)
-                    .fillMaxWidth(0.75f)
-                    .fillMaxHeight(0.86f),
-                shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.96f),
-            ) {
-                ChannelListSection(
-                    channelList = state.channelList,
-                    onToggleGroup = actions.list.onToggleGroup,
-                    onSelectChannel = actions.list.onSelectChannel,
-                    modifier = Modifier.fillMaxSize(),
-                )
-            }
+                    .padding(top = 56.dp, bottom = 12.dp)
+                    .fillMaxWidth(0.58f)
+                    .widthIn(max = 540.dp)
+                    .fillMaxHeight(0.84f),
+            )
         }
         if (!state.frame.isFullBox) {
             PlayerCornerButtons(actions.player, Modifier.align(Alignment.TopEnd))
