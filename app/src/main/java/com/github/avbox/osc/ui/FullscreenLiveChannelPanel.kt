@@ -87,10 +87,12 @@ internal fun FullscreenLiveChannelPanel(
                         .fillMaxWidth()
                         .onFocusChanged { focused = it.isFocused }
                         .clickable {
+                            // Persist the selected category in the ViewModel as well as
+                            // local UI state. Previously only locked groups invoked this
+                            // callback, so normal category taps were lost when the
+                            // overlay recomposed/reopened and the list fell back to group 0.
                             selectedGroup = item.groupIndex
-                            if (channelList.lockedGroups.contains(item.groupIndex)) {
-                                onToggleGroup(item.groupIndex)
-                            }
+                            onToggleGroup(item.groupIndex)
                         }
                         .focusable(),
                     shape = RoundedCornerShape(7.dp),
