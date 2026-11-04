@@ -302,7 +302,10 @@ class LivePlayActivity : BaseActivity() {
     private val liveControlListener = object : ComposeLiveController.LiveControlListener {
         override fun onSingleTap(): Boolean {
             if (fullScreen) {
-                if (vm.toggleOverlay()) overlay.scheduleOverlayHide()
+                // The channel navigator stays open until selected, dismissed,
+                // or the user taps the video again.
+                overlay.cancelOverlayHide()
+                vm.toggleOverlay()
             } else {
                 applyFullscreen(true)
             }
