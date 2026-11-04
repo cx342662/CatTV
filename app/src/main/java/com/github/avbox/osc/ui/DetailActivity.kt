@@ -6,6 +6,7 @@ import android.content.pm.ActivityInfo
 import android.app.PictureInPictureParams
 import android.os.Build
 import android.util.Rational
+import android.graphics.Rect
 import android.content.res.Configuration
 import android.net.Uri
 import android.os.Looper
@@ -420,7 +421,7 @@ class DetailActivity : BaseActivity(), PageHost {
     override fun onResume() {
         super.onResume()
         applyStatusBarAppearance()
-        playContainer?.hostResume()
+        if (!isInPictureInPictureMode) playContainer?.hostResume()
         syncEpisodeAfterMusicPage()
         val container = playContainer ?: return
         vm.applyPlaybackEntry(
@@ -460,9 +461,14 @@ class DetailActivity : BaseActivity(), PageHost {
         }
         if (isInPictureInPictureMode || enteringPictureInPicture) return
         // Standard video PiP uses a conventional 16:9 video window, not the app page ratio.
-        val params = PictureInPictureParams.Builder()
+        val sourceRect = Rect()
+        val sourceView = playContainer
+        val hasSourceRect = sourceView?.getGlobalVisibleRect(sourceRect) == true && !sourceRect.isEmpty
+        val builder = PictureInPictureParams.Builder()
             .setAspectRatio(Rational(16, 9))
-            .build()
+        if (hasSourceRect) builder.setSourceRectHint(sourceRect)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) builder.setSeamlessResizeEnabled(true)
+        val params = builder.build()
         enteringPictureInPicture = true
         if (!enterPictureInPictureMode(params)) {
             enteringPictureInPicture = false
