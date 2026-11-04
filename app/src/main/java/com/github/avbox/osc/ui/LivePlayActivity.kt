@@ -291,8 +291,8 @@ class LivePlayActivity : BaseActivity() {
                     return true
                 }
                 KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
+                    overlay.cancelOverlayHide()
                     vm.setOverlayVisible(true)
-                    overlay.scheduleOverlayHide()
                     return true
                 }
             }
