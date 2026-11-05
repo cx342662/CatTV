@@ -43,6 +43,8 @@ import androidx.compose.ui.unit.dp
 import com.github.avbox.osc.R
 import com.github.avbox.osc.bean.Movie
 import com.github.avbox.osc.bean.TMDB_SOURCE_KEY
+import com.github.avbox.osc.api.TmdbPoster
+import com.github.avbox.osc.util.TmdbImages
 import com.github.avbox.osc.util.AppLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -109,10 +111,27 @@ fun HeroSpotlight(
         ?.let { tmdbUrlOf(it, heroSize) }
         ?: settledPic
 
-    LaunchedEffect(settledPage, settledUrl) {
+    LaunchedEffect(settledPage, settledVideo.name, settledVideo.year, settledVideo.en) {
         val hit = HomeBackdrop.has(settledPic)
         AppLog.i("echo-home-backdrop settle page=$settledPage hit=$hit pic=${settledPic.orEmpty().takeLast(24)}")
-        onPosterPic(settledUrl.orEmpty())
+        // Prefer a real TMDB landscape backdrop; fall back to the poster when unavailable.
+        val cachedBackdrops = TmdbPoster.cachedBackdrops(
+            settledVideo.name,
+            settledVideo.year,
+            settledVideo.en,
+        )
+        val backdropPath = cachedBackdrops?.firstOrNull()
+            ?: if (cachedBackdrops == null) {
+                TmdbPoster.resolveBackdrops(
+                    settledVideo.name,
+                    settledVideo.year,
+                    settledVideo.en,
+                ).firstOrNull()
+            } else {
+                null
+            }
+        val backdropUrl = backdropPath?.takeIf { it.isNotBlank() }?.let(TmdbImages::backdropUrl)
+        onPosterPic(backdropUrl ?: settledUrl.orEmpty())
         if (hit) {
             onBackdropSeed(HomeBackdrop.seedOf(settledPic))
         } else {
