@@ -1,5 +1,7 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
+val isCatTvTvBuild = providers.gradleProperty("CATTV_TV_BUILD").map(String::toBoolean).getOrElse(false)
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -13,15 +15,17 @@ android {
     ndkVersion = libs.versions.ndk.get()
 
     defaultConfig {
-        applicationId = "com.github.avbox.osc"
+        applicationId = if (isCatTvTvBuild) "com.github.avbox.osc.tv" else "com.github.avbox.osc"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
         // Release workflow supplies version values; local debug keeps current defaults.
-        versionCode = (project.findProperty("CATTV_VERSION_CODE") as String?)?.toIntOrNull() ?: 37
-        versionName = (project.findProperty("CATTV_VERSION_NAME") as String?) ?: "1.3.3"
+        versionCode = (project.findProperty("CATTV_VERSION_CODE") as String?)?.toIntOrNull() ?: if (isCatTvTvBuild) 39 else 37
+        versionName = (project.findProperty("CATTV_VERSION_NAME") as String?) ?: if (isCatTvTvBuild) "1.3.2-TV Preview 1" else "1.3.3"
+        buildConfigField("Boolean", "TV_MODE", isCatTvTvBuild.toString())
+        manifestPlaceholders["supportsPip"] = (!isCatTvTvBuild).toString()
         multiDexEnabled = true
         ndk {
-            abiFilters += setOf("arm64-v8a")
+            abiFilters += if (isCatTvTvBuild) setOf("armeabi-v7a") else setOf("arm64-v8a")
         }
     }
 
