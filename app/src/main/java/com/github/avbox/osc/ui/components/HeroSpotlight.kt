@@ -246,6 +246,24 @@ private fun HeroSpotlightCaption(video: Movie.Video) {
             .fillMaxWidth()
             .padding(start = 24.dp, end = 24.dp),
     )
+    val metadata = listOfNotNull(
+        video.year.takeIf { it > 0 }?.toString(),
+        video.area?.takeIf { it.isNotBlank() },
+        video.type?.takeIf { it.isNotBlank() },
+    ).distinct().joinToString(" · ")
+    if (metadata.isNotBlank()) {
+        Text(
+            text = metadata,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 4.dp, start = 24.dp, end = 24.dp),
+        )
+    }
     val rating = ratingBadgeText(video.note)
     if (!rating.isNullOrBlank()) {
         Text(
@@ -258,6 +276,19 @@ private fun HeroSpotlightCaption(video: Movie.Video) {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 4.dp, start = 24.dp, end = 24.dp),
+        )
+    }
+    video.des?.takeIf { it.isNotBlank() }?.let { description ->
+        Text(
+            text = description,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 6.dp, start = 36.dp, end = 36.dp),
         )
     }
 }
