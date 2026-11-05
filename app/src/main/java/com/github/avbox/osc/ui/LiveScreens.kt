@@ -77,6 +77,7 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.distinctUntilChanged
 import androidx.compose.ui.viewinterop.AndroidView
+import com.github.avbox.osc.BuildConfig
 import com.github.avbox.osc.R
 import com.github.avbox.osc.bean.LiveChannelGroup
 import com.github.avbox.osc.player.core.PlayState
@@ -438,13 +439,15 @@ private fun PlayerArea(state: LivePlayUiState, actions: LivePlayActions, modifie
                         modifier = Modifier.size(28.dp),
                     )
                 }
-                IconButton(onClick = actions.player.onEnterPictureInPicture) {
-                    Icon(
-                        imageVector = Icons.Filled.PictureInPictureAlt,
-                        contentDescription = "窗口化播放（画中画）",
-                        tint = Color.White,
-                        modifier = Modifier.size(27.dp),
-                    )
+                if (!BuildConfig.TV_MODE) {
+                    IconButton(onClick = actions.player.onEnterPictureInPicture) {
+                        Icon(
+                            imageVector = Icons.Filled.PictureInPictureAlt,
+                            contentDescription = "窗口化播放（画中画）",
+                            tint = Color.White,
+                            modifier = Modifier.size(27.dp),
+                        )
+                    }
                 }
             }
         }
