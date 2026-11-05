@@ -1,0 +1,94 @@
+name: CatTV TV ARM32 Preview
+
+on:
+  push:
+    branches:
+      - tv-arm32-preview-1
+    paths:
+      - ".github/workflows/tv-arm32-preview.yml"
+      - "app/**"
+      - "scripts/**"
+      - "quickjs/**"
+      - "pyramid/**"
+      - "gradle/**"
+      - "*.gradle.kts"
+      - "gradle.properties"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-tv-arm32:
+    name: Build CatTV TV Preview (armeabi-v7a)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout TV preview branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install Android SDK and ARM32 NDK
+        run: |
+          set -euo pipefail
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | sort -V | tail -n1)"
+          echo "$(dirname "$SDKMANAGER")" >> "$GITHUB_PATH"
+          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" --install "platform-tools" "platforms;android-37.0" "build-tools;37.0.0" "ndk;27.2.12479018"
+          if [ -d "$ANDROID_HOME/platforms/android-37.0" ] && [ ! -e "$ANDROID_HOME/platforms/android-37" ]; then
+            ln -s android-37.0 "$ANDROID_HOME/platforms/android-37"
+          fi
+
+      - name: Prepare CatTV branding assets
+        run: |
+          python -m pip install --disable-pip-version-check pillow
+          python scripts/prepare_cattv_icons.py
+
+      - name: Build ARM32 TV preview APK
+        run: |
+          set -euo pipefail
+          chmod +x ./gradlew
+          ./gradlew :app:assembleDebug --no-daemon --stacktrace \
+            -PCATTV_TV_BUILD=true \
+            -PCATTV_VERSION_NAME=1.3.2-TV-Preview1 \
+            -PCATTV_VERSION_CODE=39
+
+      - name: Verify package, version and ABI
+        run: |
+          set -euo pipefail
+          APK="app/build/outputs/apk/debug/AVBox_debug.apk"
+          test -s "$APK"
+          AAPT="$(find "$ANDROID_HOME/build-tools" -name aapt -type f | sort -V | tail -n1)"
+          "$AAPT" dump badging "$APK" | tee "$RUNNER_TEMP/badging.txt"
+          grep -q "package: name='com.github.avbox.osc.tv'" "$RUNNER_TEMP/badging.txt"
+          grep -q "versionName='1.3.2-TV-Preview1'" "$RUNNER_TEMP/badging.txt"
+          grep -q "versionCode='39'" "$RUNNER_TEMP/badging.txt"
+          unzip -Z1 "$APK" | grep -q '^lib/armeabi-v7a/'
+          if unzip -Z1 "$APK" | grep -Eq '^lib/(arm64-v8a|x86|x86_64)/'; then
+            echo "::error::Unexpected non-ARM32 ABI found"
+            exit 1
+          fi
+          sha256sum "$APK" | tee "CatTV-TV-ARM32-Preview1.apk.sha256"
+          cp "$APK" "CatTV-TV-ARM32-Preview1.apk"
+
+      - name: Upload installable preview APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: CatTV-TV-ARM32-Preview1
+          path: |
+            CatTV-TV-ARM32-Preview1.apk
+            CatTV-TV-ARM32-Preview1.apk.sha256
+          if-no-files-found: error
+          retention-days: 14
