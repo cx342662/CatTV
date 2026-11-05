@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
+import com.github.avbox.osc.BuildConfig
 import com.github.avbox.osc.R
 import com.github.avbox.osc.player.state.PlayerUiState
 import com.github.avbox.osc.ui.player.CastSheet
@@ -365,7 +366,7 @@ fun DetailScreen(activity: DetailActivity, vm: DetailViewModel) {
                     )
                     // Match normal VOD controls: keep the PiP entry hidden until
                     // the user taps the video and the playback controls are visible.
-                    if (!inPictureInPicture && showPlayerControls) {
+                    if (!BuildConfig.TV_MODE && !inPictureInPicture && showPlayerControls) {
                         IconButton(
                             onClick = activity::enterVodPictureInPicture,
                             modifier = Modifier
