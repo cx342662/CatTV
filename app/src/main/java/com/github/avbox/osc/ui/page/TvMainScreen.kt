@@ -97,7 +97,7 @@ fun TvMainScreen(vm: HomeViewModel) {
                             contentPadding = PaddingValues(horizontal = 42.dp),
                             horizontalArrangement = Arrangement.spacedBy(16.dp),
                         ) {
-                            items(partition.videos, key = { it.id }) { video ->
+                            items(partition.videos, key = { it.id.orEmpty() }) { video ->
                                 VodCard(
                                     video = video,
                                     onClick = { handleCardClick(vm, video, context) },
