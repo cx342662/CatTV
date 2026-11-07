@@ -72,6 +72,16 @@ jobs:
           test -s "$APK"
           AAPT="$(find "$ANDROID_HOME/build-tools" -name aapt -type f | sort -V | tail -n1)"
           "$AAPT" dump badging "$APK" | tee "$RUNNER_TEMP/badging.txt"
+          "$AAPT" dump xmltree "$APK" AndroidManifest.xml | tee "$RUNNER_TEMP/manifest-tree.txt"
+          # Android SCREEN_ORIENTATION_LANDSCAPE enum is 0x0.
+          grep -Eq 'screenOrientation[^\\n]*0x0' "$RUNNER_TEMP/manifest-tree.txt" || {
+            echo "::error::TV APK launcher Activity is not forced to landscape"
+            exit 1
+          }
+          grep -q 'android.software.leanback' "$RUNNER_TEMP/manifest-tree.txt" || {
+            echo "::error::TV APK is missing the Leanback feature"
+            exit 1
+          }
           grep -q "package: name='com.github.avbox.osc.tv'" "$RUNNER_TEMP/badging.txt"
           grep -q "versionName='1.3.2-TV-Preview1'" "$RUNNER_TEMP/badging.txt"
           grep -q "versionCode='39'" "$RUNNER_TEMP/badging.txt"
