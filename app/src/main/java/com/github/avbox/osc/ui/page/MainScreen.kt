@@ -65,6 +65,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.rememberLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.github.avbox.osc.R
+import com.github.avbox.osc.BuildConfig
 import com.github.avbox.osc.server.ControlManager
 import com.github.avbox.osc.ui.LivePlayActivity
 import com.github.avbox.osc.ui.components.AVBoxAlertDialog
@@ -134,6 +135,11 @@ private fun MainContent() {
     val scope = rememberCoroutineScope()
     val pagerState = rememberPagerState(pageCount = { AppTab.entries.size })
     val homeViewModel: HomeViewModel = viewModel()
+    // The dedicated TV build must never enter the phone tab scaffold.
+    if (BuildConfig.TV_MODE) {
+        TvMainScreen(homeViewModel)
+        return
+    }
 
     LaunchedEffect(Unit) {
         if (homeViewModel.defaultLiveLaunched) return@LaunchedEffect
