@@ -68,6 +68,8 @@ jobs:
       - name: Verify package, version and ABI
         run: |
           set -euo pipefail
+          grep -q 'BuildConfig.TV_MODE' app/src/main/java/com/github/avbox/osc/ui/MainActivity.kt
+          grep -q 'SCREEN_ORIENTATION_LANDSCAPE' app/src/main/java/com/github/avbox/osc/ui/MainActivity.kt
           APK="app/build/outputs/apk/debug/AVBox_debug.apk"
           test -s "$APK"
           AAPT="$(find "$ANDROID_HOME/build-tools" -name aapt -type f | sort -V | tail -n1)"
