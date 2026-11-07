@@ -151,7 +151,13 @@ dependencies {
         exclude(group = "xmlpull", module = "xmlpull")
         exclude(group = "xpp3", module = "xpp3_min")
     }
-    implementation(libs.mmkv)
+    // MMKV 2.x intentionally drops 32-bit support. Keep phone builds on 2.x;
+    // the dedicated TV armeabi-v7a build must use the 1.3.x LTS line.
+    if (isCatTvTvBuild) {
+        implementation("com.tencent:mmkv:1.3.14")
+    } else {
+        implementation(libs.mmkv)
+    }
     implementation(libs.danmaku.flame.master)
 
     implementation(libs.media3.exoplayer)
