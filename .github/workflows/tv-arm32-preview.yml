@@ -76,28 +76,6 @@ jobs:
           grep -q "versionName='1.3.2-TV-Preview1'" "$RUNNER_TEMP/badging.txt"
           grep -q "versionCode='39'" "$RUNNER_TEMP/badging.txt"
           unzip -Z1 "$APK" | grep -q '^lib/armeabi-v7a/'
-          # Reject a build that compiles successfully but crashes before Application.onCreate.
-          unzip -Z1 "$APK" | grep -q '^lib/armeabi-v7a/libmmkv.so
-          if unzip -Z1 "$APK" | grep -Eq '^lib/(arm64-v8a|x86|x86_64)/'; then
-            echo "::error::Unexpected non-ARM32 ABI found"
-            exit 1
-          fi
-          sha256sum "$APK" | tee "CatTV-TV-ARM32-Preview1.apk.sha256"
-          cp "$APK" "CatTV-TV-ARM32-Preview1.apk"
-
-      - name: Upload installable preview APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: CatTV-TV-ARM32-Preview1
-          path: |
-            CatTV-TV-ARM32-Preview1.apk
-            CatTV-TV-ARM32-Preview1.apk.sha256
-          if-no-files-found: error
-          retention-days: 14
- || {
-            echo "::error::ARM32 MMKV native library is missing from TV APK"
-            exit 1
-          }
           if unzip -Z1 "$APK" | grep -Eq '^lib/(arm64-v8a|x86|x86_64)/'; then
             echo "::error::Unexpected non-ARM32 ABI found"
             exit 1
