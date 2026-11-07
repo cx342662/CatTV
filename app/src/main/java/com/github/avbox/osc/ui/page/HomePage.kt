@@ -646,7 +646,7 @@ fun HomePullRefreshIndicator(
     }
 }
 
-private fun handleCardClick(vm: HomeViewModel, video: Movie.Video, context: android.content.Context) {
+internal fun handleCardClick(vm: HomeViewModel, video: Movie.Video, context: android.content.Context) {
     context.dispatchVodCardClick(video, onAction = { vm.handleAction(it) })
 }
 
