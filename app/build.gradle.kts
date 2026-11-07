@@ -23,6 +23,8 @@ android {
         versionName = (project.findProperty("CATTV_VERSION_NAME") as String?) ?: if (isCatTvTvBuild) "1.3.2-TV Preview 1" else "1.3.3"
         buildConfigField("Boolean", "TV_MODE", isCatTvTvBuild.toString())
         manifestPlaceholders["supportsPip"] = (!isCatTvTvBuild).toString()
+        manifestPlaceholders["tvOnly"] = isCatTvTvBuild.toString()
+        manifestPlaceholders["screenOrientation"] = if (isCatTvTvBuild) "landscape" else "unspecified"
         multiDexEnabled = true
         ndk {
             abiFilters += if (isCatTvTvBuild) setOf("armeabi-v7a") else setOf("arm64-v8a")
