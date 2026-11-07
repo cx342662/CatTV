@@ -2,6 +2,8 @@ package com.github.avbox.osc.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -40,7 +44,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.github.avbox.osc.R
+import com.github.avbox.osc.BuildConfig
 import com.github.avbox.osc.bean.Movie
 import com.github.avbox.osc.bean.TMDB_SOURCE_KEY
 import com.github.avbox.osc.api.TmdbPoster
@@ -207,7 +213,18 @@ fun HeroSpotlight(
                         }
                     },
                 )
-                if (!fadeToBackdrop) {
+                if (BuildConfig.TV_MODE) {
+                    // TvMovies-style readable left panel, preserving TMDB image resolution above.
+                    Box(
+                        modifier = Modifier.fillMaxSize().background(
+                            Brush.horizontalGradient(
+                                0.0f to Color.Black.copy(alpha = 0.88f),
+                                0.48f to Color.Black.copy(alpha = 0.55f),
+                                1.0f to Color.Transparent,
+                            ),
+                        ),
+                    )
+                } else if (!fadeToBackdrop) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -224,20 +241,125 @@ fun HeroSpotlight(
                 }
             }
         }
-        Column(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .padding(bottom = 12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            HeroSpotlightCaption(video = current)
-            if (count > 1) {
-                HeroSpotlightDots(
-                    count = count,
-                    selected = pagerState.currentPage % count,
-                )
+        if (BuildConfig.TV_MODE) {
+            // This branch is compiled into the dedicated 32-bit TV APK only.
+            // The focus rail drives the same pager that already resolves TMDB backdrops.
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .fillMaxWidth()
+                    .padding(start = 48.dp, end = 32.dp, bottom = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                HeroSpotlightTvCaption(current)
+                if (count > 1) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        videos.forEachIndexed { index, video ->
+                            val selected = index == pagerState.currentPage % count
+                            Box(
+                                modifier = Modifier
+                                    .width(134.dp)
+                                    .height(40.dp)
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(
+                                        if (selected) Color.White.copy(alpha = 0.23f)
+                                        else Color.Black.copy(alpha = 0.42f),
+                                    )
+                                    .border(
+                                        width = if (selected) 2.dp else 1.dp,
+                                        color = if (selected) Color.White else Color.White.copy(alpha = 0.24f),
+                                        shape = RoundedCornerShape(6.dp),
+                                    )
+                                    .onFocusChanged { focus ->
+                                        if (focus.isFocused && !selected) {
+                                            scope.launch {
+                                                val base = pagerState.currentPage
+                                                val next = base + (index - base % count + count) % count
+                                                pagerState.animateScrollToPage(next)
+                                            }
+                                        }
+                                    }
+                                    .clickable {
+                                        scope.launch {
+                                            val base = pagerState.currentPage
+                                            val next = base + (index - base % count + count) % count
+                                            pagerState.animateScrollToPage(next)
+                                        }
+                                    }
+                                    .focusable()
+                                    .padding(horizontal = 8.dp),
+                                contentAlignment = Alignment.CenterStart,
+                            ) {
+                                Text(
+                                    text = video.name.orEmpty(),
+                                    color = Color.White,
+                                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    style = MaterialTheme.typography.labelMedium,
+                                )
+                            }
+                        }
+                    }
+                }
             }
+        } else {
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                HeroSpotlightCaption(video = current)
+                if (count > 1) {
+                    HeroSpotlightDots(
+                        count = count,
+                        selected = pagerState.currentPage % count,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HeroSpotlightTvCaption(video: Movie.Video) {
+    Column(
+        modifier = Modifier.width(470.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            text = video.name.orEmpty(),
+            color = Color.White,
+            fontSize = 32.sp,
+            lineHeight = 38.sp,
+            fontWeight = FontWeight.Bold,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+        val metadata = listOfNotNull(
+            video.year.takeIf { it > 0 }?.toString(),
+            video.area?.takeIf { it.isNotBlank() },
+            video.type?.takeIf { it.isNotBlank() },
+            ratingBadgeText(video.note)?.takeIf { it.isNotBlank() }?.let { "★ $it" },
+        ).distinct().joinToString("   ·   ")
+        if (metadata.isNotBlank()) {
+            Text(
+                text = metadata,
+                color = Color.White.copy(alpha = 0.85f),
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 2,
+            )
+        }
+        video.des?.takeIf { it.isNotBlank() }?.let { description ->
+            Text(
+                text = description,
+                color = Color.White.copy(alpha = 0.78f),
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }
