@@ -1,11 +1,13 @@
 package com.github.avbox.osc.ui
 
 import android.content.res.Configuration
+import android.content.pm.ActivityInfo
 import android.os.Build
 import com.github.avbox.osc.ui.theme.enableTransparentEdgeToEdge
 import androidx.compose.ui.platform.ComposeView
 import androidx.core.view.WindowCompat
 import com.github.avbox.osc.R
+import com.github.avbox.osc.BuildConfig
 import com.github.avbox.osc.ui.base.BaseActivity
 import com.github.avbox.osc.player.PlaybackService
 import com.github.avbox.osc.ui.page.MainScreen
@@ -16,6 +18,16 @@ import com.github.avbox.osc.util.PermissionHelper
 private const val PREWARM_ON_RESUME_DELAY_MS = 2000L
 
 class MainActivity : BaseActivity() {
+
+    // BaseActivity normally forces portrait on narrow Android windows. That policy
+    // overrides the manifest placeholder, so the dedicated TV build must opt out.
+    override fun orientationPolicyValue(): Int {
+        return if (BuildConfig.TV_MODE) {
+            ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        } else {
+            super.orientationPolicyValue()
+        }
+    }
 
     override fun shouldRefreshAutoSize(): Boolean = true
 
