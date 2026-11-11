@@ -22,6 +22,7 @@ import android.text.style.ReplacementSpan;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -29,7 +30,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.ExecutorService;
@@ -44,7 +44,10 @@ public final class Ratings {
     private static final Handler UI = new Handler(Looper.getMainLooper());
     private static final ExecutorService IO = Executors.newSingleThreadExecutor();
     private static final Map<TextView,Runnable> pending = new WeakHashMap<>();
-    private static final Map<String,JSONArray> cache = new LinkedHashMap<>();
+    private static final Object CACHE_LOCK = new Object();
+    private static final int CACHE_LIMIT = 160;
+    private static final long CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000L;
+    private static long cacheGeneration;
     private static long retryAfter;
 
     private static SharedPreferences preferences(Context context) {
@@ -55,10 +58,15 @@ public final class Ratings {
         return preferences(context).getString("key", "");
     }
 
-    private static void resetCache() {
-        synchronized (cache) {
-            cache.clear();
+    private static SharedPreferences ratingCache(Context context) {
+        return context.getSharedPreferences("cattv_rating_cache", Context.MODE_PRIVATE);
+    }
+
+    private static void resetCache(Context context) {
+        synchronized (CACHE_LOCK) {
+            cacheGeneration++;
             retryAfter = 0;
+            ratingCache(context).edit().clear().apply();
         }
     }
 
@@ -70,8 +78,10 @@ public final class Ratings {
         if (entered.isEmpty() || entered.length() > 256 || !entered.matches("[!-~]+")) {
             return "REJECTED";
         }
-        if (!preferences(context).edit().putString("key", entered).commit()) return "REJECTED";
-        resetCache();
+        if (!entered.equals(key(context))) {
+            if (!preferences(context).edit().putString("key", entered).commit()) return "REJECTED";
+            resetCache(context);
+        }
         return "SAVED";
     }
 
@@ -138,8 +148,10 @@ public final class Ratings {
                 .setMessage("登录 mdblist.com，在 Preferences 申请 API Key。Key 保存在本机，仅用于向 MDBList 查询评分。留空关闭额外评分。")
                 .setView(field).setPositiveButton("保存", (d,w) -> {
                     String entered = field.getText().toString().trim();
-                    prefs.edit().putString("key", entered).apply();
-                    resetCache();
+                    if (!entered.equals(key(activity))) {
+                        prefs.edit().putString("key", entered).apply();
+                        resetCache(activity);
+                    }
                     if (!entered.isEmpty()) IO.execute(() -> {
                         int status = checkKey(entered);
                         UI.post(() -> {
@@ -157,6 +169,26 @@ public final class Ratings {
         ViewGroup.MarginLayoutParams layout = new ViewGroup.MarginLayoutParams(-1, -2);
         layout.topMargin = Math.round(12 * density);
         list.addView(entry, list.indexOfChild(row) + 1, layout);
+
+        Button clear = new Button(activity);
+        clear.setAllCaps(false);
+        clear.setText("清理评分缓存");
+        clear.setTextColor(Color.WHITE);
+        clear.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
+        clear.setPaddingRelative(padding, 0, padding, 0);
+        clear.setBackground(background.getConstantState().newDrawable().mutate());
+        clear.setOnClickListener(v -> new AlertDialog.Builder(activity)
+            .setTitle("清理评分缓存")
+            .setMessage("清理后，打开影片时会重新获取评分。")
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton("清理", (dialog, which) -> {
+                resetCache(activity);
+                android.widget.Toast.makeText(activity, "评分缓存已清理",
+                    android.widget.Toast.LENGTH_SHORT).show();
+            }).show());
+        ViewGroup.MarginLayoutParams clearLayout = new ViewGroup.MarginLayoutParams(-1, -2);
+        clearLayout.topMargin = Math.round(8 * density);
+        list.addView(clear, list.indexOfChild(entry) + 1, clearLayout);
     }
 
     private static GradientDrawable settingsBackground(int color, int border, float density) {
@@ -174,26 +206,85 @@ public final class Ratings {
         if (token.isEmpty() || id == null || !id.matches("[1-9][0-9]{0,9}")) return;
         String kind = "tv".equals(media) ? "show" : "movie".equals(media) ? "movie" : "";
         if (kind.isEmpty()) return;
+        Context context = view.getContext().getApplicationContext();
+        String path = kind + "/" + id;
         CharSequence base = view.getText();
-        Runnable job = () -> IO.execute(() -> {
-            JSONArray ratings = fetch(kind + "/" + id, token);
-            if (ratings == null) return;
-            UI.post(() -> {
-                if (!view.isAttachedToWindow() || view.getText() != base ||
-                    !token.equals(key(view.getContext()))) return;
-                SpannableStringBuilder line = new SpannableStringBuilder(base);
-                add(line, ratings, "imdb", "IMDb", 0xffffde55, 0xffffbe26, false);
-                if (!base.toString().contains("Trakt")) {
-                    add(line, ratings, "trakt", "✓", 0xffee3459, 0xff9c3fb8, false);
-                }
-                add(line, ratings, "tomatoes", "🍅", 0, 0, true);
-                add(line, ratings, "popcorn", "🍿", 0, 0, true);
-                add(line, ratings, "metacritic", "MC", 0xff83db40, 0xff47a91f, false);
-                if (line.length() != base.length()) view.setText(line);
+        long generation;
+        JSONArray saved;
+        synchronized (CACHE_LOCK) {
+            generation = cacheGeneration;
+            saved = readCached(context, path);
+        }
+        if (saved != null) {
+            render(view, base, saved);
+            return;
+        }
+        Runnable job = () -> {
+            pending.remove(view);
+            IO.execute(() -> {
+                JSONArray ratings = fetch(context, path, token, generation);
+                if (ratings == null) return;
+                UI.post(() -> {
+                    synchronized (CACHE_LOCK) {
+                        if (generation != cacheGeneration) return;
+                    }
+                    if (!view.isAttachedToWindow() || view.getText() != base ||
+                        !token.equals(key(context))) return;
+                    render(view, base, ratings);
+                });
             });
-        });
-        pending.put(view,job);
-        UI.postDelayed(job,400);
+        };
+        pending.put(view, job);
+        UI.postDelayed(job, 400);
+    }
+
+    private static void render(TextView view, CharSequence base, JSONArray ratings) {
+        SpannableStringBuilder line = new SpannableStringBuilder(base);
+        add(line, ratings, "imdb", "IMDb", 0xffffde55, 0xffffbe26, false);
+        if (!base.toString().contains("Trakt")) {
+            add(line, ratings, "trakt", "✓", 0xffee3459, 0xff9c3fb8, false);
+        }
+        add(line, ratings, "tomatoes", "🍅", 0, 0, true);
+        add(line, ratings, "popcorn", "🍿", 0, 0, true);
+        add(line, ratings, "metacritic", "MC", 0xff83db40, 0xff47a91f, false);
+        if (line.length() != base.length()) view.setText(line);
+    }
+
+    private static JSONArray readCached(Context context, String path) {
+        String entry = ratingCache(context).getString(path, "");
+        if (entry.isEmpty()) return null;
+        try {
+            JSONArray envelope = new JSONArray(entry);
+            long age = System.currentTimeMillis() - envelope.getLong(0);
+            return age >= 0 && age < CACHE_TTL_MS ? envelope.optJSONArray(1) : null;
+        } catch (org.json.JSONException ignored) {
+            return null;
+        }
+    }
+
+    private static void writeCached(Context context, String path, JSONArray rows) {
+        SharedPreferences prefs = ratingCache(context);
+        Map<String, ?> entries = prefs.getAll();
+        SharedPreferences.Editor edit = prefs.edit();
+        if (!entries.containsKey(path) && entries.size() >= CACHE_LIMIT) {
+            String oldest = null;
+            long oldestTime = Long.MAX_VALUE;
+            for (Map.Entry<String, ?> entry : entries.entrySet()) {
+                long time = 0;
+                try {
+                    time = new JSONArray((String) entry.getValue()).getLong(0);
+                } catch (org.json.JSONException | ClassCastException ignored) {
+                    // Remove unreadable cache records first.
+                }
+                if (time < oldestTime) {
+                    oldest = entry.getKey();
+                    oldestTime = time;
+                }
+            }
+            if (oldest != null) edit.remove(oldest);
+        }
+        JSONArray envelope = new JSONArray().put(System.currentTimeMillis()).put(rows);
+        edit.putString(path, envelope.toString()).apply();
     }
 
     private static void add(SpannableStringBuilder line, JSONArray items, String source,
@@ -293,9 +384,11 @@ public final class Ratings {
         return connection;
     }
 
-    private static JSONArray fetch(String path,String token) {
-        synchronized(cache) {
-            if(cache.containsKey(path)) return cache.get(path);
+    private static JSONArray fetch(Context context, String path, String token, long generation) {
+        synchronized (CACHE_LOCK) {
+            if (generation != cacheGeneration || !token.equals(key(context))) return null;
+            JSONArray saved = readCached(context, path);
+            if (saved != null) return saved;
             if (android.os.SystemClock.elapsedRealtime() < retryAfter) return null;
         }
         HttpsURLConnection c=null;
@@ -303,7 +396,11 @@ public final class Ratings {
             c=connect(path,token);
             int status=c.getResponseCode();
             if(status==401||status==403||status==429) {
-                synchronized(cache) { retryAfter=android.os.SystemClock.elapsedRealtime()+120000; }
+                synchronized (CACHE_LOCK) {
+                    if (generation == cacheGeneration) {
+                        retryAfter = android.os.SystemClock.elapsedRealtime() + 120000;
+                    }
+                }
                 return null;
             }
             if(status!=200) return null;
@@ -318,7 +415,12 @@ public final class Ratings {
             if(item==null) return null;
             JSONArray rows=item.optJSONArray("ratings");
             if(rows==null) rows=new JSONArray();
-            synchronized(cache) { if(cache.size()>=160) cache.remove(cache.keySet().iterator().next()); cache.put(path,rows); }
+            synchronized (CACHE_LOCK) {
+                if (generation != cacheGeneration || !token.equals(key(context))) return null;
+                if (rows.length() > 0 && rows.toString().length() <= 8192) {
+                    writeCached(context, path, rows);
+                }
+            }
             return rows;
         } catch(Exception ignored) { return null; }
         finally { if(c!=null) c.disconnect(); }
