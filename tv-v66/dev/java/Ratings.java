@@ -70,9 +70,22 @@ public final class Ratings {
             new AlertDialog.Builder(activity).setTitle("MDBList API Key")
                 .setMessage("登录 mdblist.com，在 Preferences 申请 API Key。Key 保存在本机，仅用于向 MDBList 查询评分。留空关闭额外评分。")
                 .setView(field).setPositiveButton("保存", (d,w) -> {
+                    String entered = field.getText().toString().trim();
                     activity.getSharedPreferences(PREF, Context.MODE_PRIVATE)
-                        .edit().putString("key", field.getText().toString().trim()).apply();
+                        .edit().putString("key", entered).apply();
                     synchronized (cache) { cache.clear(); retryAfter = 0; }
+                    if (!entered.isEmpty()) IO.execute(() -> {
+                        int status = checkKey(entered);
+                        UI.post(() -> {
+                            if (activity.isFinishing() || activity.isDestroyed() || !entered.equals(key(activity))) return;
+                            String message = status == 200 ? "MDBList 连接成功。返回影片详情查看评分。"
+                                : status == 401 || status == 403 ? "MDBList 拒绝了 Key，请检查是否复制完整。"
+                                : status == 429 ? "MDBList 查询次数已达上限，请稍后再试。"
+                                : "暂时无法验证 MDBList，请检查网络。";
+                            new AlertDialog.Builder(activity).setTitle("MDBList").setMessage(message)
+                                .setPositiveButton(android.R.string.ok,null).show();
+                        });
+                    });
                 }).setNegativeButton(android.R.string.cancel,null).show();
         });
         list.addView(button,list.indexOfChild(row)+1,new ViewGroup.LayoutParams(-1,-2));
@@ -124,6 +137,23 @@ public final class Ratings {
         }
     }
 
+    private static int checkKey(String token) {
+        HttpsURLConnection connection = null;
+        try {
+            connection = connect("movie/550",token);
+            return connection.getResponseCode();
+        } catch (Exception ignored) { return -1; }
+        finally { if (connection != null) connection.disconnect(); }
+    }
+
+    private static HttpsURLConnection connect(String path,String token) throws Exception {
+        HttpsURLConnection connection=(HttpsURLConnection)new URL("https://api.mdblist.com/tmdb/"+path+"?apikey="+URLEncoder.encode(token,"UTF-8")).openConnection();
+        connection.setInstanceFollowRedirects(false);
+        connection.setConnectTimeout(5000);
+        connection.setReadTimeout(5000);
+        return connection;
+    }
+
     private static JSONArray fetch(String path,String token) {
         synchronized(cache) {
             if(cache.containsKey(path)) return cache.get(path);
@@ -131,9 +161,7 @@ public final class Ratings {
         }
         HttpsURLConnection c=null;
         try {
-            c=(HttpsURLConnection)new URL("https://api.mdblist.com/tmdb/"+path+"?apikey="+URLEncoder.encode(token,"UTF-8")).openConnection();
-            c.setInstanceFollowRedirects(false);
-            c.setConnectTimeout(5000); c.setReadTimeout(5000);
+            c=connect(path,token);
             int status=c.getResponseCode();
             if(status==401||status==403||status==429) {
                 synchronized(cache) { retryAfter=android.os.SystemClock.elapsedRealtime()+120000; }

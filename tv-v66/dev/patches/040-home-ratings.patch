@@ -1,0 +1,21 @@
+--- a/smali/y51.smali
++++ b/smali/y51.smali
+@@ -345,6 +345,7 @@
+ 
+     .line 149
+     invoke-virtual {v0, v3}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
++    invoke-static {v0, p1}, Lcattv/RatingBridge;->bind(Landroid/widget/TextView;Lcom/fongmi/android/tv/bean/Vod;)V
+ 
+     .line 150
+     .line 151
+--- a/res/layout/activity_home_v2.xml
++++ b/res/layout/activity_home_v2.xml
+@@ -13,7 +13,7 @@
+             <androidx.appcompat.widget.LinearLayoutCompat android:orientation="vertical" android:id="@id/heroInfo" android:clipChildren="false" android:clipToPadding="false" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="22.0dp" android:paddingStart="24.0dp" android:paddingEnd="24.0dp">
+                 <com.google.android.material.textview.MaterialTextView android:textSize="32.0sp" android:textStyle="bold" android:textColor="@color/white" android:gravity="bottom" android:id="@id/heroNameText" android:visibility="invisible" android:layout_width="wrap_content" android:layout_height="36.0dp" android:shadowColor="#cc000000" android:shadowDx="2.0" android:shadowDy="2.0" android:shadowRadius="12.0" />
+                 <ImageView android:id="@id/heroLogoImg" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="72.0dp" android:scaleType="fitStart" android:adjustViewBounds="true" android:maxWidth="720.0dp" />
+-                <com.google.android.material.textview.MaterialTextView android:textSize="14.0sp" android:textColor="#ccffffff" android:gravity="bottom" android:id="@id/heroMetaText" android:visibility="invisible" android:layout_width="wrap_content" android:layout_height="20.0dp" android:layout_marginTop="2.0dp" android:shadowColor="#aa000000" android:shadowDx="1.5" android:shadowDy="1.5" android:shadowRadius="8.0" />
++                <com.google.android.material.textview.MaterialTextView android:textSize="14.0sp" android:textColor="#ccffffff" android:gravity="bottom" android:id="@id/heroMetaText" android:visibility="invisible" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minHeight="20.0dp" android:maxLines="2" android:layout_marginTop="2.0dp" android:shadowColor="#aa000000" android:shadowDx="1.5" android:shadowDy="1.5" android:shadowRadius="8.0" />
+                 <androidx.appcompat.widget.LinearLayoutCompat android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4.0dp" android:weightSum="2.0">
+                     <com.google.android.material.textview.MaterialTextView android:textSize="12.0sp" android:textColor="#bbffffff" android:ellipsize="end" android:id="@id/heroDescText" android:visibility="invisible" android:layout_width="0.0dp" android:layout_height="40.0dp" android:maxLines="2" android:shadowColor="#aa000000" android:shadowDx="1.2" android:shadowDy="1.2" android:shadowRadius="6.0" android:layout_weight="1.0" android:lineSpacingExtra="3.0dp" />
+                 </androidx.appcompat.widget.LinearLayoutCompat>
