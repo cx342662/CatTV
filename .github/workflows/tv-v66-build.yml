@@ -15,10 +15,13 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - uses: android-actions/setup-android@v3
       - name: Get pinned build tools and public v66 APK
         run: |
-          sdkmanager 'build-tools;37.0.0'
+          sdk_root="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          echo "ANDROID_HOME=$sdk_root" >> "$GITHUB_ENV"
+          manager="$(find "$sdk_root/cmdline-tools" -type f -name sdkmanager | sort -V | tail -n 1)"
+          test -x "$manager"
+          "$manager" --sdk_root="$sdk_root" 'build-tools;37.0.0'
           curl -fL --retry 3 -o apktool.jar https://github.com/iBotPeaches/Apktool/releases/download/v3.0.3/apktool_3.0.3.jar
           echo 'dbf930b076c6b9be08d57c449cacefc3bdd6b71ebd59b3066fc0e1f5b14f9423  apktool.jar' | sha256sum -c
           curl -fL --retry 3 -o base.apk https://github.com/cx342662/CatTV/releases/download/tv-arm32-v66/CatTV-TV-ARM32-v66.apk
