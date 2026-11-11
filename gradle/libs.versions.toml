@@ -1,4 +1,5 @@
 [versions]
+leanback = "1.2.0"
 agp = "9.4.1"
 chaquopy = "17.1.0"
 compileSdk = "37"
@@ -53,6 +54,7 @@ shapes = "1.2.1"
 capsule = "2.1.3"
 
 [libraries]
+androidx-leanback = { module = "androidx.leanback:leanback", version.ref = "leanback" }
 nanohttpd = { group = "org.nanohttpd", name = "nanohttpd", version.ref = "nanohttpd" }
 cling-core = { group = "org.fourthline.cling", name = "cling-core", version.ref = "cling" }
 cling-support = { group = "org.fourthline.cling", name = "cling-support", version.ref = "cling" }

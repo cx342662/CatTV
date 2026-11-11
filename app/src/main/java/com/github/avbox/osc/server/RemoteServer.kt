@@ -154,6 +154,7 @@ class RemoteServer(port: Int, context: Context) : NanoHTTPD(port) {
     }
 
     override fun serve(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
+        if (session.uri.startsWith(SourcePairing.PREFIX)) return SourcePairing.serve(session)
         if (!session.uri.isEmpty()) {
             var fileName = session.uri.trim { it <= ' ' }
             if (fileName.indexOf('?') >= 0) {

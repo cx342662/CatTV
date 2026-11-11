@@ -2,7 +2,6 @@ package com.github.avbox.osc.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -26,6 +25,10 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.res.stringResource
+import com.github.avbox.osc.R
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -40,7 +43,7 @@ private val PanelGradient = Brush.horizontalGradient(
     colors = listOf(Color(0xD9000000), Color(0xA6000000), Color(0x4D000000)),
 )
 private val SelectedBackground = Color(0xFFCCD0E6)
-private val FocusedBackground = Color(0x553F5068)
+private val FocusedBackground = Color.White
 private val MainText = Color(0xFFF4F6FA)
 private val DimText = Color(0xFFD0D5DE)
 
@@ -51,6 +54,8 @@ internal fun FullscreenLiveChannelPanel(
     onBrowseGroupScrollChanged: (Int, Int) -> Unit,
     onSelectChannel: (Int, Int) -> Unit,
     modifier: Modifier = Modifier,
+    epg: LiveEpgUi? = null,
+    onEpgClick: (Int) -> Boolean = { false },
 ) {
     val groups = channelList.rows.mapNotNull { row -> if (row.channel == null) row.group else null }
     // The ViewModel owns category selection and scroll position so the same
@@ -64,6 +69,14 @@ internal fun FullscreenLiveChannelPanel(
         initialFirstVisibleItemIndex = channelList.browseGroupFirstVisibleIndex.coerceIn(0, (groups.size - 1).coerceAtLeast(0)),
         initialFirstVisibleItemScrollOffset = channelList.browseGroupScrollOffset,
     )
+    val entryFocus = remember { FocusRequester() }
+    val entryIndex = remember { groupListState.firstVisibleItemIndex }
+    LaunchedEffect(groups.isNotEmpty(), epg != null) {
+        if (groups.isNotEmpty() && epg != null) {
+            androidx.compose.runtime.withFrameNanos { }
+            entryFocus.requestFocus()
+        }
+    }
     LaunchedEffect(groupListState) {
         snapshotFlow { groupListState.firstVisibleItemIndex to groupListState.firstVisibleItemScrollOffset }
             .distinctUntilChanged()
@@ -93,26 +106,26 @@ internal fun FullscreenLiveChannelPanel(
             modifier = Modifier.width(150.dp).fillMaxHeight(),
             verticalArrangement = Arrangement.spacedBy(7.dp),
         ) {
-            itemsIndexed(groups, key = { _, item -> "overlay_group_${item.groupIndex}" }) { _, item ->
+            itemsIndexed(groups, key = { _, item -> "overlay_group_${item.groupIndex}" }) { index, item ->
                 val selected = item.groupIndex == selectedGroup
                 var focused by remember { mutableStateOf(false) }
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .then(if (epg != null && index == entryIndex) Modifier.focusRequester(entryFocus) else Modifier)
                         .onFocusChanged { focused = it.isFocused }
                         .clickable {
                             // Browsing a category must not expand/collapse the legacy
                             // channel rows. That structural rebuild was resetting the
                             // left category LazyColumn to its first item.
                             onBrowseGroup(item.groupIndex)
-                        }
-                        .focusable(),
+                        },
                     shape = RoundedCornerShape(7.dp),
-                    color = if (selected) SelectedBackground else if (focused) FocusedBackground else Color(0x33202020),
+                    color = if (focused) FocusedBackground else if (selected) SelectedBackground else Color(0x33202020),
                 ) {
                     Text(
                         text = item.groupName.orEmpty(),
-                        color = if (selected) Color(0xFF171A22) else MainText,
+                        color = if (selected || focused) Color(0xFF171A22) else MainText,
                         fontSize = 15.sp,
                         fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
                         maxLines = 1,
@@ -136,6 +149,48 @@ internal fun FullscreenLiveChannelPanel(
                 )
             }
         }
+        if (epg != null) {
+            val now = remember(epg.epgList) { java.util.Date() }
+            val currentIndex = epg.epgList.indexOfFirst {
+                val start = it.startdateTime
+                val end = it.enddateTime
+                start != null && end != null && !now.before(start) && now.before(end)
+            }
+            val programmeList = rememberLazyListState()
+            LaunchedEffect(epg.channelName, currentIndex) {
+                programmeList.scrollToItem(currentIndex.coerceAtLeast(0))
+            }
+            LazyColumn(
+                state = programmeList,
+                modifier = Modifier.weight(1.25f).fillMaxHeight(),
+                verticalArrangement = Arrangement.spacedBy(7.dp),
+            ) {
+                if (epg.epgList.isEmpty()) item {
+                    Text(stringResource(R.string.live_epg_empty), color = DimText,
+                        modifier = Modifier.padding(12.dp))
+                }
+                itemsIndexed(epg.epgList) { index, item ->
+                    val started = item.startdateTime?.let { !now.before(it) } == true
+                    val playable = index == currentIndex || (started && epg.canCatchup)
+                    var focused by remember { mutableStateOf(false) }
+                    Surface(
+                        modifier = Modifier.fillMaxWidth()
+                            .onFocusChanged { focused = it.isFocused }
+                            .clickable(enabled = playable) { onEpgClick(index) },
+                        shape = RoundedCornerShape(7.dp),
+                        color = if (focused) FocusedBackground else if (index == currentIndex) SelectedBackground else Color(0x33202020),
+                    ) {
+                        Text(
+                            text = "${item.start.orEmpty()}  ${item.title.orEmpty()}",
+                            color = if (focused || index == currentIndex) Color(0xFF171A22) else MainText,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 13.dp),
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -150,10 +205,9 @@ private fun ChannelPanelRow(
         modifier = Modifier
             .fillMaxWidth()
             .onFocusChanged { focused = it.isFocused }
-            .clickable(onClick = onClick)
-            .focusable(),
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(7.dp),
-        color = if (selected) SelectedBackground else if (focused) FocusedBackground else Color(0x33202020),
+        color = if (focused) FocusedBackground else if (selected) SelectedBackground else Color(0x33202020),
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 13.dp),
@@ -161,13 +215,13 @@ private fun ChannelPanelRow(
         ) {
             Text(
                 text = item.channelNum.toString(),
-                color = if (selected) Color(0xFF171A22) else DimText,
+                color = if (selected || focused) Color(0xFF171A22) else DimText,
                 fontSize = 14.sp,
                 modifier = Modifier.width(48.dp),
             )
             Text(
                 text = item.channelName.orEmpty(),
-                color = if (selected) Color(0xFF171A22) else MainText,
+                color = if (selected || focused) Color(0xFF171A22) else MainText,
                 fontSize = 16.sp,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
                 maxLines = 1,

@@ -106,7 +106,7 @@ object TmdbPoster {
         for (candidate in nameCandidates(name, altName)) {
             val hits = cachedHits(candidate) ?: continue
             known = true
-            val best = bestHit(hits, candidate, year) ?: cachedAliasHit(candidate) ?: continue
+            val best = cachedAliasHit(candidate) ?: bestHit(hits, candidate, year) ?: continue
             return best.posterPath
         }
         return if (known) "" else null
@@ -118,7 +118,7 @@ object TmdbPoster {
         for (candidate in nameCandidates(name, altName)) {
             val hits = cachedHits(candidate) ?: continue
             known = true
-            val best = bestHit(hits, candidate, year) ?: cachedAliasHit(candidate) ?: continue
+            val best = cachedAliasHit(candidate) ?: bestHit(hits, candidate, year) ?: continue
             return cachedImagesById(best.mediaType, best.id)
         }
         return if (known) emptyList() else null
@@ -130,7 +130,7 @@ object TmdbPoster {
         for (candidate in nameCandidates(name, altName)) {
             val hits = cachedHits(candidate) ?: continue
             known = true
-            val best = bestHit(hits, candidate, year) ?: cachedAliasHit(candidate) ?: continue
+            val best = cachedAliasHit(candidate) ?: bestHit(hits, candidate, year) ?: continue
             return cachedStillsById(best.mediaType, best.id)
         }
         return if (known) emptyList() else null
@@ -142,7 +142,7 @@ object TmdbPoster {
         for (candidate in nameCandidates(name, altName)) {
             val hits = cachedHits(candidate) ?: continue
             known = true
-            val best = bestHit(hits, candidate, year) ?: cachedAliasHit(candidate) ?: continue
+            val best = cachedAliasHit(candidate) ?: bestHit(hits, candidate, year) ?: continue
             val logos = cachedLogosById(best.mediaType, best.id) ?: return null
             return logos.firstOrNull().orEmpty()
         }
@@ -192,7 +192,7 @@ object TmdbPoster {
         if (!isActive()) return null
         for (candidate in nameCandidates(name, altName)) {
             val hits = cachedHits(candidate) ?: continue
-            val best = bestHit(hits, candidate, year) ?: cachedAliasHit(candidate) ?: continue
+            val best = cachedAliasHit(candidate) ?: bestHit(hits, candidate, year) ?: continue
             val raw = readCached(detailKey(best.mediaType, best.id)) ?: return null
             return decodeDetailValue(raw)
         }
@@ -352,8 +352,8 @@ object TmdbPoster {
         name: String?,
         year: Int,
     ): TmdbSearchHit? {
-        bestHit(hits, name, year)?.let { return it }
         cachedAliasHit(name)?.let { return it }
+        bestHit(hits, name, year)?.let { return it }
         return findHitByAlias(hits, name)
     }
 
@@ -382,6 +382,14 @@ object TmdbPoster {
             }
         }
         return null
+    }
+
+    suspend fun manualCandidates(query: String): List<TmdbSearchHit> =
+        if (isActive()) clientFactory().search(readApiKey(), readApiBase(), query.trim()) else emptyList()
+
+    fun selectManualMatch(name: String, hit: TmdbSearchHit) {
+        writeAliasHit(name, hit)
+        TmdbImages.notifyConfigChanged()
     }
 
     private fun writeAliasHit(name: String?, hit: TmdbSearchHit) {
@@ -730,7 +738,7 @@ object TmdbPoster {
     private fun onBackoff(): Boolean = System.currentTimeMillis() < backoffUntil
 
     private fun readApiKey(): String = try {
-        KV.get(KVKeys.TMDB_API_KEY, "").trim()
+        TmdbImages.apiKey()
     } catch (e: Exception) {
         AppLog.e("TmdbPoster", e)
         ""

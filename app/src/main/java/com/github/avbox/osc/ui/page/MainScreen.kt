@@ -135,11 +135,6 @@ private fun MainContent() {
     val scope = rememberCoroutineScope()
     val pagerState = rememberPagerState(pageCount = { AppTab.entries.size })
     val homeViewModel: HomeViewModel = viewModel()
-    // The dedicated TV build must never enter the phone tab scaffold.
-    if (BuildConfig.TV_MODE) {
-        TvMainScreen(homeViewModel)
-        return
-    }
 
     LaunchedEffect(Unit) {
         if (homeViewModel.defaultLiveLaunched) return@LaunchedEffect

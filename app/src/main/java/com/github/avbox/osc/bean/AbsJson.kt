@@ -219,6 +219,7 @@ class AbsJson : Serializable {
             }
             video.state = vod_state
             video.note = vod_remarks
+            video.doubanScore = vod_douban_score?.trim()?.toDoubleOrNull()?.takeIf { it > 0 && it <= 10 }
             video.actor = vod_actor
             video.director = vod_director
             val urlBean = Movie.Video.UrlBean()

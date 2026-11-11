@@ -3,6 +3,7 @@ package com.github.avbox.osc.ui.page
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.avbox.osc.R
+import com.github.avbox.osc.BuildConfig
 import com.github.avbox.osc.api.AppBootstrap
 import com.github.avbox.osc.api.ApiConfig
 import com.github.avbox.osc.api.SortAdjuster
@@ -215,6 +216,9 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
         loadHome()
     }
 
+    private fun horizontalHome(): Boolean = BuildConfig.TV_MODE ||
+        HomeSettings.layout == HomeSettings.HomeLayout.Horizontal
+
     fun switchSource(bean: SourceBean) {
         AppLog.i("echo--sort-switch: key=${bean.key}")
         ApiConfig.get().setSourceBean(bean)
@@ -255,8 +259,17 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
         loaders.clear()
         staleLoaders.forEach { it.release() }
         loadGeneration++
+        if (loadingSourceKey == null) {
+            watchdogJob?.cancel()
+            _rec.value = Rec(PartitionState.Empty, emptyList())
+            _sorts.value = emptyList()
+            _allSorts.value = emptyList()
+            sortsLoaded.value = true
+            _pageLoading.value = false
+            return
+        }
         armWatchdog()
-        sortViewModel.getSort(loadingSourceKey, HomeSettings.layout == HomeSettings.HomeLayout.Horizontal)
+        sortViewModel.getSort(loadingSourceKey, horizontalHome())
     }
 
     private fun onHomeLoadTimeout() {
@@ -296,7 +309,7 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
         sortsLoaded.value = false
         _pageLoading.value = true
         armWatchdog()
-        sortViewModel.getSort(key, HomeSettings.layout == HomeSettings.HomeLayout.Horizontal)
+        sortViewModel.getSort(key, horizontalHome())
     }
 
     fun ensureLoaded(sortId: String) {
@@ -349,7 +362,7 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
             if (!sortRetried) {
                 sortRetried = true
                 AppLog.i("echo--sort-retry: src=$key")
-                sortViewModel.getSort(key, HomeSettings.layout == HomeSettings.HomeLayout.Horizontal)
+                sortViewModel.getSort(key, horizontalHome())
                 return
             }
             AppLog.i("echo--sort-failed: src=$key")
@@ -387,7 +400,7 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
                 scope.launch {
                     delay(2000)
                     if (loadingSourceKey == key && loadGeneration == gen) {
-                        sortViewModel.getSort(key, HomeSettings.layout == HomeSettings.HomeLayout.Horizontal)
+                        sortViewModel.getSort(key, horizontalHome())
                     }
                 }
                 return
@@ -402,7 +415,7 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
             return
         }
         _sorts.value = visible
-        val vertical = HomeSettings.layout == HomeSettings.HomeLayout.Vertical
+        val vertical = !horizontalHome()
         val active = _activeSortId.value?.takeIf { id -> visible.any { it.id == id } } ?: visible.firstOrNull()?.id
         _activeSortId.value = active
         val newPartitions = visible.map { sort ->

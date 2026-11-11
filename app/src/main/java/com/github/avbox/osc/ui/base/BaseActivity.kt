@@ -24,6 +24,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 
 import com.github.avbox.osc.R
+import com.github.avbox.osc.BuildConfig
 import com.github.avbox.osc.ui.WindowSize
 import com.github.avbox.osc.ui.settings.UiSettingsState
 import com.github.avbox.osc.util.ActivityStack
@@ -198,6 +199,7 @@ abstract class BaseActivity : AppCompatActivity(), CustomAdapt {
     }
 
     open fun orientationPolicyValue(): Int {
+        if (BuildConfig.TV_MODE) return ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
         try {
             val configuration = super.getResources().configuration
             return if (WindowSize.shouldLockPortrait(configuration.smallestScreenWidthDp))

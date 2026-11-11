@@ -400,16 +400,18 @@ private fun PlayerArea(state: LivePlayUiState, actions: LivePlayActions, modifie
                 onBrowseGroup = actions.list.onBrowseGroup,
                 onBrowseGroupScrollChanged = actions.list.onBrowseGroupScrollChanged,
                 onSelectChannel = actions.list.onSelectChannel,
+                epg = if (BuildConfig.TV_MODE) state.epg else null,
+                onEpgClick = actions.epg.onRowClicked,
                 modifier = Modifier
                     .align(Alignment.CenterStart)
-                    .fillMaxWidth(0.52f)
-                    .widthIn(max = 640.dp)
+                    .fillMaxWidth(if (BuildConfig.TV_MODE) 0.75f else 0.52f)
+                    .widthIn(max = if (BuildConfig.TV_MODE) 1000.dp else 640.dp)
                     .fillMaxHeight(),
             )
         }
         if (!state.frame.isFullBox) {
             PlayerCornerButtons(actions.player, Modifier.align(Alignment.TopEnd))
-        } else if (state.overlay.visible) {
+        } else if (state.overlay.visible && !BuildConfig.TV_MODE) {
             IconButton(
                 onClick = actions.player.onExitFullscreen,
                 modifier = Modifier.align(Alignment.TopStart),

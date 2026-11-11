@@ -15,6 +15,8 @@
 
 ## 1. 项目背景与目标
 
+用户于 2026-11-10 要求在 `tv-arm32-preview-1` 分支制作独立原生 TV 版。该变体的入口、焦点、海报轨道、分类与接口管理以 `tv-preview.md` 为准；手机版规范不适用于这一展示层。现有配置、源运行时、存储与播放服务继续共用。
+
 - 源项目:AVBox(TVBox OSC fork)。纯 Java,AGP 9.3.2,compileSdk 37,minSdk 24,targetSdk 37,模块:app / player(dkplayer+media3)/ quickjs / pyramid。
 - **定位**:只面向手机用户 → TV/遥控器适配代码全部删除(删除对账见 `history/steps.md`)。
 - **UI 决策**:Jetpack Compose + Material 3 全量重写展示层;数据层与播放内核不动。

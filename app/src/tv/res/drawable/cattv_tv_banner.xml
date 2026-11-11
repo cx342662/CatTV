@@ -1,0 +1,10 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <size android:width="320dp" android:height="180dp" />
+            <solid android:color="#090D16" />
+        </shape>
+    </item>
+    <item android:width="140dp" android:height="140dp" android:gravity="center"
+        android:drawable="@drawable/cattv_logo_clear" />
+</layer-list>

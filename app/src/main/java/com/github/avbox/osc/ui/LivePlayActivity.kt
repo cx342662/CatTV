@@ -54,6 +54,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class LivePlayActivity : BaseActivity() {
+    private val tvMode = com.github.avbox.osc.BuildConfig.TV_MODE
 
     companion object {
         private const val TAG = "LivePlayActivity"
@@ -186,7 +187,7 @@ class LivePlayActivity : BaseActivity() {
                         overlay.cancelOverlayHide()
                         vm.setOverlayVisible(false)
                     }
-                    fullScreen -> applyFullscreen(false)
+                    fullScreen && !tvMode -> applyFullscreen(false)
                     vm.state.value.timeshift.isBackState -> catchupController.backToLiveFromEpg()
                     else -> {
                         exitingLivePlay = true
@@ -202,6 +203,7 @@ class LivePlayActivity : BaseActivity() {
         // Fullscreen is entered only through the explicit player button.
         overlay.cancelOverlayHide()
         vm.setOverlayVisible(false)
+        if (tvMode) applyFullscreen(true)
         val liveRoot = findViewById<ComposeView>(R.id.compose_view)
         liveRoot.setContent {
             AVBoxTheme(manageStatusBarIcons = false) {
@@ -338,11 +340,23 @@ class LivePlayActivity : BaseActivity() {
     // Keep DPAD navigation within the channel panel when it is visible.
     // Otherwise use remote Up/Down for channel changes in fullscreen.
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (tvMode && event.action == KeyEvent.ACTION_UP && event.keyCode == KeyEvent.KEYCODE_MENU &&
+            vm.state.value.frame.pageState == PageState.READY
+        ) {
+            overlay.cancelOverlayHide()
+            vm.setOverlayVisible(false)
+            openSettingsSheet()
+            return true
+        }
         if (fullScreen && !vm.state.value.overlay.visible &&
             vm.state.value.frame.pageState == PageState.READY &&
             event.action == KeyEvent.ACTION_UP
         ) {
             when (event.keyCode) {
+                KeyEvent.KEYCODE_DPAD_RIGHT -> if (tvMode && !vm.state.value.timeshift.isBackState) {
+                    playNextSource()
+                    return true
+                }
                 KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_CHANNEL_UP -> {
                     playPrevious()
                     return true
@@ -413,11 +427,11 @@ class LivePlayActivity : BaseActivity() {
     }
 
     fun applyFullscreen(full: Boolean) {
-        if (fullScreen == full) return
+        if (fullScreen == full || (tvMode && !full)) return
         vm.setRotating(full != (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE))
         vm.setFullscreen(full)
         requestedOrientation = if (full) {
-            ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            if (tvMode) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
         } else {
             orientationPolicyValue()
         }

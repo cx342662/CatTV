@@ -1,0 +1,7 @@
+<resources>
+    <string name="tv_pair_title">扫码添加接口</string>
+    <string name="tv_pair_help">手机和电视连同一网络，扫码填写点播或直播接口。</string>
+    <string name="tv_pair_confirm">保存手机发送的接口？</string>
+    <string name="tv_pair_unavailable">无法获取电视的局域网地址，请检查网络连接。</string>
+</resources>
+

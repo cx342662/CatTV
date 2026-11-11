@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - tv-arm32-preview-1
+      - tv-source-preview
     paths:
       - ".github/workflows/tv-arm32-preview.yml"
       - "app/**"
@@ -60,21 +61,23 @@ jobs:
         run: |
           set -euo pipefail
           chmod +x ./gradlew
-          ./gradlew :app:assembleDebug --no-daemon --stacktrace \
+          ./gradlew :app:assembleDebug :app:testDebugUnitTest --no-daemon --stacktrace \
             -PCATTV_TV_BUILD=true \
-            -PCATTV_VERSION_NAME=1.3.2-TV-Preview1 \
-            -PCATTV_VERSION_CODE=39
+            -PCATTV_VERSION_NAME=1.3.2-TV-SourcePreview \
+            -PCATTV_VERSION_CODE=67
 
       - name: Verify package, version and ABI
         run: |
           set -euo pipefail
-          grep -q 'BuildConfig.TV_MODE' app/src/main/java/com/github/avbox/osc/ui/MainActivity.kt
-          grep -q 'SCREEN_ORIENTATION_LANDSCAPE' app/src/main/java/com/github/avbox/osc/ui/MainActivity.kt
+          grep -q 'BuildConfig.TV_MODE' app/src/main/java/com/github/avbox/osc/ui/base/BaseActivity.kt
+          grep -q 'SCREEN_ORIENTATION_LANDSCAPE' app/src/main/java/com/github/avbox/osc/ui/base/BaseActivity.kt
+          grep -q 'RowsSupportFragment' app/src/tv/java/com/github/avbox/osc/ui/tv/TvHomeActivity.kt
           APK="app/build/outputs/apk/debug/AVBox_debug.apk"
           test -s "$APK"
           AAPT="$(find "$ANDROID_HOME/build-tools" -name aapt -type f | sort -V | tail -n1)"
           "$AAPT" dump badging "$APK" | tee "$RUNNER_TEMP/badging.txt"
           "$AAPT" dump xmltree "$APK" AndroidManifest.xml | tee "$RUNNER_TEMP/manifest-tree.txt"
+          grep -q 'com.github.avbox.osc.ui.tv.TvHomeActivity' "$RUNNER_TEMP/badging.txt"
           # Android SCREEN_ORIENTATION_LANDSCAPE enum is 0x0.
           grep -Eq 'screenOrientation[^\\n]*0x0' "$RUNNER_TEMP/manifest-tree.txt" || {
             echo "::error::TV APK launcher Activity is not forced to landscape"
@@ -85,22 +88,22 @@ jobs:
             exit 1
           }
           grep -q "package: name='com.github.avbox.osc.tv'" "$RUNNER_TEMP/badging.txt"
-          grep -q "versionName='1.3.2-TV-Preview1'" "$RUNNER_TEMP/badging.txt"
-          grep -q "versionCode='39'" "$RUNNER_TEMP/badging.txt"
+          grep -q "versionName='1.3.2-TV-SourcePreview'" "$RUNNER_TEMP/badging.txt"
+          grep -q "versionCode='67'" "$RUNNER_TEMP/badging.txt"
           unzip -Z1 "$APK" | grep -q '^lib/armeabi-v7a/'
           if unzip -Z1 "$APK" | grep -Eq '^lib/(arm64-v8a|x86|x86_64)/'; then
             echo "::error::Unexpected non-ARM32 ABI found"
             exit 1
           fi
-          sha256sum "$APK" | tee "CatTV-TV-ARM32-Preview1.apk.sha256"
-          cp "$APK" "CatTV-TV-ARM32-Preview1.apk"
+          sha256sum "$APK" | tee "CatTV-TV-ARM32-v67-ci.apk.sha256"
+          cp "$APK" "CatTV-TV-ARM32-v67-ci.apk"
 
       - name: Upload installable preview APK
         uses: actions/upload-artifact@v4
         with:
-          name: CatTV-TV-ARM32-Preview1
+          name: CatTV-TV-ARM32-v67-ci
           path: |
-            CatTV-TV-ARM32-Preview1.apk
-            CatTV-TV-ARM32-Preview1.apk.sha256
+            CatTV-TV-ARM32-v67-ci.apk
+            CatTV-TV-ARM32-v67-ci.apk.sha256
           if-no-files-found: error
           retention-days: 14

@@ -19,12 +19,18 @@ android {
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
         // Release workflow supplies version values; local debug keeps current defaults.
-        versionCode = (project.findProperty("CATTV_VERSION_CODE") as String?)?.toIntOrNull() ?: if (isCatTvTvBuild) 39 else 37
-        versionName = (project.findProperty("CATTV_VERSION_NAME") as String?) ?: if (isCatTvTvBuild) "1.3.2-TV Preview 1" else "1.3.3"
+        versionCode = (project.findProperty("CATTV_VERSION_CODE") as String?)?.toIntOrNull() ?: if (isCatTvTvBuild) 67 else 37
+        versionName = (project.findProperty("CATTV_VERSION_NAME") as String?) ?: if (isCatTvTvBuild) "1.3.2-TV-SourcePreview" else "1.3.3"
         buildConfigField("Boolean", "TV_MODE", isCatTvTvBuild.toString())
+        val tmdbKey = if (isCatTvTvBuild) providers.environmentVariable("CATTV_BUILTIN_TMDB_KEY").orElse("").get().trim() else ""
+        require(tmdbKey.isEmpty() || tmdbKey.matches(Regex("[a-fA-F0-9]{32}"))) { "Invalid TMDB v3 key format" }
+        buildConfigField("String", "TV_TMDB_KEY", "\"$tmdbKey\"")
         manifestPlaceholders["supportsPip"] = (!isCatTvTvBuild).toString()
         manifestPlaceholders["tvOnly"] = isCatTvTvBuild.toString()
         manifestPlaceholders["screenOrientation"] = if (isCatTvTvBuild) "landscape" else "unspecified"
+        manifestPlaceholders["launcherActivity"] = if (isCatTvTvBuild) ".ui.tv.TvHomeActivity" else ".ui.MainActivity"
+        manifestPlaceholders["launcherTheme"] = if (isCatTvTvBuild) "@style/TvTheme" else "@style/AppTheme.Splash"
+        manifestPlaceholders["appBanner"] = if (isCatTvTvBuild) "@drawable/cattv_tv_banner" else "@mipmap/ic_launcher"
         multiDexEnabled = true
         ndk {
             abiFilters += if (isCatTvTvBuild) setOf("armeabi-v7a") else setOf("arm64-v8a")
@@ -45,8 +51,11 @@ android {
     }
 
     sourceSets {
+        if (isCatTvTvBuild) getByName("test").java.directories += "src/tvTest/java"
         getByName("main") {
             java.directories += "src/python/java"
+            if (isCatTvTvBuild) java.directories += "src/tv/java"
+            if (isCatTvTvBuild) res.directories += "src/tv/res"
         }
     }
 
@@ -129,6 +138,7 @@ androidComponents {
 }
 
 dependencies {
+    if (isCatTvTvBuild) implementation(libs.androidx.leanback)
     api(fileTree("libs") { include("*.jar", "*.aar") })
 
     implementation(libs.nanohttpd)
@@ -215,3 +225,5 @@ dependencies {
 configurations.configureEach {
     exclude(group = "io.antmedia", module = "rtmp-client")
 }
+
+

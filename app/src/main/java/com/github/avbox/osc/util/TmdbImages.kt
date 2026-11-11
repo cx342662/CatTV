@@ -21,8 +21,13 @@ object TmdbImages {
         configEpochFlow.value = configEpochFlow.value + 1
     }
 
+    fun apiKey(): String = KV.get(KVKeys.TMDB_API_KEY, "").trim()
+        .ifEmpty { com.github.avbox.osc.BuildConfig.TV_TMDB_KEY }
+
+    fun enabled(): Boolean = KV.get(KVKeys.TMDB_ENABLE, com.github.avbox.osc.BuildConfig.TV_TMDB_KEY.isNotEmpty())
+
     fun isActive(): Boolean = try {
-        KV.get(KVKeys.TMDB_ENABLE, false) && KV.get(KVKeys.TMDB_API_KEY, "").isNotBlank()
+        enabled() && apiKey().isNotBlank()
     } catch (e: Exception) {
         AppLog.e("TmdbImages", e)
         false
@@ -68,7 +73,13 @@ object TmdbImages {
         logoUrl(readImageBase(), logoPath)
 
     private fun readImageBase(): String = try {
-        KV.get(KVKeys.TMDB_IMAGE_BASE, "")
+        KV.get(KVKeys.TMDB_IMAGE_BASE, "").let { configured ->
+            if (!com.github.avbox.osc.BuildConfig.TV_MODE || configured.isBlank()) configured else {
+                val base = configured.trim().trimEnd('/')
+                val marker = base.indexOf("/t/p")
+                if (marker >= 0) base.substring(0, marker) + "/t/p" else base + "/t/p"
+            }
+        }
     } catch (e: Exception) {
         AppLog.e("TmdbImages", e)
         ""

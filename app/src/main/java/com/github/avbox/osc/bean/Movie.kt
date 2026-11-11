@@ -76,6 +76,10 @@ class Movie : Serializable {
         var note: String? = null
 
         @JvmField
+        @XStreamAlias("doubanScore")
+        var doubanScore: Double? = null
+
+        @JvmField
         @XStreamAlias("actor")
         var actor: String? = null
 

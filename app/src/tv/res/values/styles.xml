@@ -1,0 +1,24 @@
+<resources>
+    <style name="TvTheme" parent="AppTheme.NoActionBar">
+        <item name="android:windowBackground">#090D16</item>
+        <item name="android:colorBackground">#090D16</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:textColorPrimary">#FFFFFF</item>
+        <item name="colorAccent">#B8D8FF</item>
+        <item name="browsePaddingStart">@dimen/lb_browse_padding_start</item>
+        <item name="browsePaddingEnd">@dimen/lb_browse_padding_end</item>
+        <item name="browsePaddingTop">@dimen/lb_browse_padding_top</item>
+        <item name="browsePaddingBottom">@dimen/lb_browse_padding_bottom</item>
+        <item name="browseRowsMarginStart">@dimen/lb_browse_rows_margin_start</item>
+        <item name="browseRowsMarginTop">@dimen/lb_browse_rows_margin_top</item>
+        <item name="defaultBrandColor">#2D4562</item>
+        <item name="defaultBrandColorDark">#090D16</item>
+        <item name="rowsVerticalGridStyle">@style/Widget.Leanback.Rows.VerticalGridView</item>
+        <item name="rowHorizontalGridStyle">@style/Widget.Leanback.Row.HorizontalGridView</item>
+        <item name="rowHeaderStyle">@style/Widget.Leanback.Row.Header</item>
+        <item name="rowHeaderDescriptionStyle">@style/Widget.Leanback.Row.Header.Description</item>
+        <item name="rowHeaderDockStyle">@style/Widget.Leanback.Row.HeaderDock</item>
+        <item name="browseRowsFadingEdgeLength">@dimen/lb_browse_rows_fading_edge</item>
+    </style>
+</resources>

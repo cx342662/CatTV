@@ -10,7 +10,8 @@ android {
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
         ndk {
-            abiFilters += setOf("arm64-v8a")
+            abiFilters += if (providers.gradleProperty("CATTV_TV_BUILD").orNull == "true")
+                setOf("armeabi-v7a") else setOf("arm64-v8a")
         }
     }
 

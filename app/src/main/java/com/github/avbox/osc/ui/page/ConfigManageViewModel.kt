@@ -129,9 +129,9 @@ class ConfigManageViewModel(
     val toastEvent = _toastEvent.asStateFlow()
     private val tmdbState = MutableStateFlow(
         ConfigTmdbState(
-            enabled = KV.get(KVKeys.TMDB_ENABLE, false),
+            enabled = com.github.avbox.osc.util.TmdbImages.enabled(),
             posterStyle = TmdbPosterStyle.of(KV.get(KVKeys.TMDB_POSTER_STYLE, 0)),
-            apiKey = KV.get(KVKeys.TMDB_API_KEY, ""),
+            apiKey = com.github.avbox.osc.util.TmdbImages.apiKey(),
             apiBase = KV.get(KVKeys.TMDB_API_BASE, ""),
             imageBase = KV.get(KVKeys.TMDB_IMAGE_BASE, ""),
         ),
