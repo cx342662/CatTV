@@ -4,15 +4,18 @@ package cattv.ratings;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.LinearGradient;
+import android.graphics.Paint;
+import android.graphics.Shader;
 import android.graphics.Typeface;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.InputType;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
-import android.text.style.BackgroundColorSpan;
-import android.text.style.ForegroundColorSpan;
-import android.text.style.StyleSpan;
+import android.text.style.ReplacementSpan;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -106,11 +109,13 @@ public final class Ratings {
                 if (!view.isAttachedToWindow() || view.getText() != base ||
                     !token.equals(key(view.getContext()))) return;
                 SpannableStringBuilder line = new SpannableStringBuilder(base);
-                add(line,ratings,"imdb","IMDb",0xfff5cf3f,false);
-                add(line,ratings,"tomatoes","烂番茄",0xffd84848,true);
-                add(line,ratings,"popcorn","爆米花",0xffb53f78,true);
-                add(line,ratings,"metacritic","MC",0xff60b93d,false);
-                if (!base.toString().contains("Trakt")) add(line,ratings,"trakt","Trakt",0xffbb3472,true);
+                add(line, ratings, "imdb", "IMDb", 0xffffde55, 0xffffbe26, false);
+                if (!base.toString().contains("Trakt")) {
+                    add(line, ratings, "trakt", "✓", 0xffee3459, 0xff9c3fb8, false);
+                }
+                add(line, ratings, "tomatoes", "🍅", 0, 0, true);
+                add(line, ratings, "popcorn", "🍿", 0, 0, true);
+                add(line, ratings, "metacritic", "MC", 0xff83db40, 0xff47a91f, false);
                 if (line.length() != base.length()) view.setText(line);
             });
         });
@@ -118,22 +123,83 @@ public final class Ratings {
         UI.postDelayed(job,400);
     }
 
-    private static void add(SpannableStringBuilder line,JSONArray items,String source,String label,int color,boolean percent) {
-        for (int i=0;i<items.length();i++) {
-            JSONObject item=items.optJSONObject(i);
-            if (item==null || !source.equalsIgnoreCase(item.optString("source"))) continue;
-            double value=item.optDouble("value",-1);
-            if (!(value>0 && value<=("imdb".equals(source)?10:100))) continue;
-            String number=java.math.BigDecimal.valueOf(value).stripTrailingZeros().toPlainString();
-            line.append("   ");
-            int start=line.length();
-            line.append(" ").append(label).append(" ");
-            line.setSpan(new BackgroundColorSpan(color),start,line.length(),Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            line.setSpan(new ForegroundColorSpan("imdb".equals(source)?0xff151515:0xffffffff),start,line.length(),Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            line.setSpan(new StyleSpan(Typeface.BOLD),start,line.length(),Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            line.append(" ").append(number);
-            if(percent) line.append("%");
+    private static void add(SpannableStringBuilder line, JSONArray items, String source,
+                            String label, int light, int dark, boolean percent) {
+        for (int i = 0; i < items.length(); i++) {
+            JSONObject item = items.optJSONObject(i);
+            if (item == null || !source.equalsIgnoreCase(item.optString("source"))) continue;
+            double value = item.optDouble("value", -1);
+            if (!(value > 0 && value <= ("imdb".equals(source) ? 10 : 100))) continue;
+            if ("trakt".equals(source)) value /= 10;
+            String number = java.math.BigDecimal.valueOf(value).stripTrailingZeros().toPlainString();
+            if (percent) number += "%";
+            line.append("  ");
+            int start = line.length();
+            line.append(label).append(" ").append(number);
+            line.setSpan(new ScoreBadge(label, number, light, dark), start, line.length(),
+                         Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             return;
+        }
+    }
+
+    private static final class ScoreBadge extends ReplacementSpan {
+        private final String label;
+        private final String score;
+        private final int light;
+        private final int dark;
+
+        ScoreBadge(String label, String score, int light, int dark) {
+            this.label = label;
+            this.score = score;
+            this.light = light;
+            this.dark = dark;
+        }
+
+        private Paint bold(Paint original, float scale) {
+            Paint paint = new Paint(original);
+            paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+            paint.setTextSize(original.getTextSize() * scale);
+            paint.setAntiAlias(true);
+            return paint;
+        }
+
+        private float badgeWidth(Paint paint) {
+            float size = paint.getTextSize();
+            if ("✓".equals(label)) return size * 1.12f;
+            return bold(paint, light == 0 ? 1.03f : .76f).measureText(label)
+                + (light == 0 ? 0 : size * .52f);
+        }
+
+        @Override
+        public int getSize(Paint paint, CharSequence text, int start, int end,
+                           Paint.FontMetricsInt metrics) {
+            return (int) Math.ceil(badgeWidth(paint) + paint.getTextSize() * .28f
+                + bold(paint, 1.06f).measureText(score));
+        }
+
+        @Override
+        public void draw(Canvas canvas, CharSequence text, int start, int end, float x,
+                         int top, int y, int bottom, Paint original) {
+            float size = original.getTextSize();
+            float width = badgeWidth(original);
+            float middle = y + (original.ascent() + original.descent()) / 2f;
+            Paint mark = bold(original, light == 0 ? 1.03f : .76f);
+            if (light != 0) {
+                float halfHeight = size * .56f;
+                float radius = "✓".equals(label) ? halfHeight : size * .23f;
+                mark.clearShadowLayer();
+                mark.setShader(new LinearGradient(x, middle - halfHeight, x + width,
+                    middle + halfHeight, light, dark, Shader.TileMode.CLAMP));
+                canvas.drawRoundRect(x, middle - halfHeight, x + width, middle + halfHeight,
+                                     radius, radius, mark);
+                mark.setShader(null);
+            }
+            mark.setColor("IMDb".equals(label) ? 0xff19130a : Color.WHITE);
+            canvas.drawText(label, x + (width - mark.measureText(label)) / 2f,
+                            middle - (mark.ascent() + mark.descent()) / 2f, mark);
+            Paint number = bold(original, 1.06f);
+            number.setColor(Color.WHITE);
+            canvas.drawText(score, x + width + size * .28f, y, number);
         }
     }
 
