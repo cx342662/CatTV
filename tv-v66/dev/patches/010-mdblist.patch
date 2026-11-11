@@ -1,0 +1,48 @@
+--- a/smali/com/fongmi/android/tv/ui/activity/HomeActivityV2.smali
++++ b/smali/com/fongmi/android/tv/ui/activity/HomeActivityV2.smali
+@@ -3424,6 +3424,8 @@
+ 
+     .line 66
+     invoke-virtual {v5, v6}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
++    invoke-static {v5, v4}, Lcattv/RatingBridge;->bind(Landroid/widget/TextView;Lcom/fongmi/android/tv/bean/Vod;)V
++
+ 
+     .line 67
+     .line 68
+--- a/smali/com/fongmi/android/tv/ui/activity/SettingActivity.smali
++++ b/smali/com/fongmi/android/tv/ui/activity/SettingActivity.smali
+@@ -1852,7 +1852,8 @@
+ 
+     .line 66
+     .line 67
+-    const-string v0, "5.5.6-20261030-armeabi_v7a"
++    invoke-static {p0}, Lcattv/ratings/Ratings;->version(Landroid/app/Activity;)Ljava/lang/String;
++    move-result-object v0
+ 
+     .line 68
+     .line 69
+@@ -1911,6 +1912,7 @@
+     invoke-virtual {p1, v0}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
+ 
+     invoke-static {p0}, Lcattv/StyleButtons;->bind(Lcom/fongmi/android/tv/ui/activity/SettingActivity;)V
++    invoke-static {p0}, Lcattv/ratings/Ratings;->setup(Landroid/app/Activity;)V
+ 
+     .line 95
+     .line 96
+--- /dev/null
++++ b/smali_classes4/cattv/RatingBridge.smali
+@@ -0,0 +1,14 @@
++.class public final Lcattv/RatingBridge;
++.super Ljava/lang/Object;
++
++.method public static bind(Landroid/widget/TextView;Lcom/fongmi/android/tv/bean/Vod;)V
++    .locals 3
++    invoke-virtual {p1}, Lcom/fongmi/android/tv/bean/Vod;->getName()Ljava/lang/String;
++    move-result-object v0
++    invoke-static {v0}, Luh3;->p(Ljava/lang/String;)Ljava/lang/String;
++    move-result-object v1
++    invoke-static {v0}, Luh3;->s(Ljava/lang/String;)Ljava/lang/String;
++    move-result-object v2
++    invoke-static {p0, v1, v2}, Lcattv/ratings/Ratings;->bind(Landroid/widget/TextView;Ljava/lang/String;Ljava/lang/String;)V
++    return-void
++.end method
