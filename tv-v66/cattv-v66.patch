@@ -1,0 +1,303 @@
+--- a/AndroidManifest.xml
++++ b/AndroidManifest.xml
+@@ -1,3 +1,3 @@
+ <?xml version="1.0" encoding="utf-8"?>
+-<manifest xmlns:android="http://schemas.android.com/apk/res/android" android:compileSdkVersion="37" android:compileSdkVersionCodename="17" package="com.fongmi.android.tv" platformBuildVersionCode="37" platformBuildVersionName="17">
++<manifest xmlns:android="http://schemas.android.com/apk/res/android" android:compileSdkVersion="37" android:compileSdkVersionCodename="17" package="com.github.avbox.osc.tv" platformBuildVersionCode="37" platformBuildVersionName="17">
+     <uses-feature android:name="android.hardware.touchscreen" android:required="false"/>
+@@ -40,5 +40,5 @@
+     <uses-permission android:name="android.permission.WAKE_LOCK"/>
+-    <permission android:name="com.fongmi.android.tv.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" android:protectionLevel="signature"/>
+-    <uses-permission android:name="com.fongmi.android.tv.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"/>
+-    <application android:allowBackup="false" android:appCategory="video" android:appComponentFactory="androidx.core.app.CoreComponentFactory" android:banner="@mipmap/ic_banner" android:enableOnBackInvokedCallback="false" android:extractNativeLibs="false" android:hardwareAccelerated="true" android:icon="@mipmap/ic_launcher" android:label="@string/app_name" android:largeHeap="true" android:name="com.fongmi.android.tv.App" android:pageSizeCompat="enabled" android:requestLegacyExternalStorage="true" android:resizeableActivity="true" android:roundIcon="@mipmap/ic_launcher_round" android:supportsRtl="true" android:theme="@style/Theme.App" android:usesCleartextTraffic="true">
++    <permission android:name="com.github.avbox.osc.tv.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" android:protectionLevel="signature"/>
++    <uses-permission android:name="com.github.avbox.osc.tv.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"/>
++    <application android:allowBackup="false" android:appCategory="video" android:appComponentFactory="androidx.core.app.CoreComponentFactory" android:banner="@drawable/cattv_tv_banner" android:enableOnBackInvokedCallback="false" android:extractNativeLibs="false" android:hardwareAccelerated="true" android:icon="@mipmap/cattv_identity_launcher" android:label="CatTV" android:largeHeap="true" android:name="com.fongmi.android.tv.App" android:pageSizeCompat="enabled" android:requestLegacyExternalStorage="true" android:resizeableActivity="true" android:roundIcon="@mipmap/cattv_identity_launcher_round" android:supportsRtl="true" android:theme="@style/Theme.App" android:usesCleartextTraffic="true">
+         <meta-data android:name="design_width_in_dp" android:value="960"/>
+@@ -132,6 +132,6 @@
+         </receiver>
+-        <provider android:authorities="com.fongmi.android.tv.provider" android:exported="false" android:grantUriPermissions="true" android:name="androidx.core.content.FileProvider">
++        <provider android:authorities="com.github.avbox.osc.tv.provider" android:exported="false" android:grantUriPermissions="true" android:name="androidx.core.content.FileProvider">
+             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths"/>
+         </provider>
+-        <provider android:authorities="com.fongmi.android.tv.androidx-startup" android:exported="false" android:name="androidx.startup.InitializationProvider">
++        <provider android:authorities="com.github.avbox.osc.tv.androidx-startup" android:exported="false" android:name="androidx.startup.InitializationProvider">
+             <meta-data android:name="com.fongmi.android.tv.Startup" android:value="androidx.startup"/>
+@@ -145,8 +145,8 @@
+             <intent-filter>
+-                <action android:name="com.fongmi.android.tv.stop"/>
+-                <action android:name="com.fongmi.android.tv.prev"/>
+-                <action android:name="com.fongmi.android.tv.next"/>
+-                <action android:name="com.fongmi.android.tv.play"/>
+-                <action android:name="com.fongmi.android.tv.pause"/>
+-                <action android:name="com.fongmi.android.tv.audio"/>
++                <action android:name="com.github.avbox.osc.tv.stop"/>
++                <action android:name="com.github.avbox.osc.tv.prev"/>
++                <action android:name="com.github.avbox.osc.tv.next"/>
++                <action android:name="com.github.avbox.osc.tv.play"/>
++                <action android:name="com.github.avbox.osc.tv.pause"/>
++                <action android:name="com.github.avbox.osc.tv.audio"/>
+             </intent-filter>
+@@ -164,3 +164,3 @@
+         <activity android:name="cat.ereza.customactivityoncrash.activity.DefaultErrorActivity" android:process=":error_activity"/>
+-        <provider android:authorities="com.fongmi.android.tv.customactivityoncrashinitprovider" android:exported="false" android:initOrder="101" android:name="cat.ereza.customactivityoncrash.provider.CaocInitProvider"/>
++        <provider android:authorities="com.github.avbox.osc.tv.customactivityoncrashinitprovider" android:exported="false" android:initOrder="101" android:name="cat.ereza.customactivityoncrash.provider.CaocInitProvider"/>
+         <activity android:excludeFromRecents="true" android:exported="true" android:name="androidx.media3.session.BluetoothValidationActivity" android:noHistory="true" android:permission="android.permission.BLUETOOTH_PRIVILEGED" android:theme="@android:style/Theme.NoDisplay">
+@@ -192,3 +192,3 @@
+         </receiver>
+-        <provider android:authorities="com.fongmi.android.tv.autosize-init-provider" android:exported="false" android:multiprocess="true" android:name="me.jessyan.autosize.InitProvider"/>
++        <provider android:authorities="com.github.avbox.osc.tv.autosize-init-provider" android:exported="false" android:multiprocess="true" android:name="me.jessyan.autosize.InitProvider"/>
+     </application>
+--- a/apktool.yml
++++ b/apktool.yml
+@@ -9,4 +9,4 @@
+ versionInfo:
+-  versionCode: 556
+-  versionName: 5.5.6-20261030
++  versionCode: 66
++  versionName: 1.3.2-TV-RemoteUpdate
+ resourcesInfo:
+--- a/res/layout/activity_home_v2.xml
++++ b/res/layout/activity_home_v2.xml
+@@ -33,5 +33,5 @@
+     <androidx.appcompat.widget.LinearLayoutCompat android:gravity="center_vertical" android:layout_gravity="top" android:orientation="horizontal" android:id="@id/navBar" android:clipChildren="false" android:clipToPadding="false" android:layout_width="match_parent" android:layout_height="64.0dp" android:paddingStart="24.0dp" android:paddingEnd="24.0dp">
+-        <FrameLayout android:layout_gravity="center_vertical" android:id="@id/homeBtn" android:background="@drawable/selector_home_logo" android:focusable="true" android:focusableInTouchMode="true" android:nextFocusRight="@id/navRecycler" android:nextFocusDown="@id/typeRecycler" android:clickable="true" android:layout_width="28.0dp" android:layout_height="28.0dp" android:stateListAnimator="@null" android:defaultFocusHighlightEnabled="false">
++        <FrameLayout android:layout_gravity="center_vertical" android:id="@id/homeBtn" android:background="@drawable/selector_home_logo" android:focusable="true" android:focusableInTouchMode="true" android:nextFocusRight="@+id/cattvSiteNav" android:nextFocusDown="@id/typeRecycler" android:clickable="true" android:layout_width="28.0dp" android:layout_height="28.0dp" android:stateListAnimator="@null" android:defaultFocusHighlightEnabled="false">
+             <FrameLayout android:layout_gravity="center" android:id="@id/homeBtnClip" android:background="@drawable/shape_oval_clip" android:layout_width="24.0dp" android:layout_height="24.0dp" android:clipToOutline="true">
+-                <androidx.appcompat.widget.AppCompatImageView android:layout_gravity="center" android:id="@id/homeBtnHome" android:layout_width="16.0dp" android:layout_height="16.0dp" android:layout_marginBottom="1.0dp" android:src="@drawable/ic_home_logo" android:contentDescription="@string/home_vod" />
++                <androidx.appcompat.widget.AppCompatImageView android:layout_gravity="center" android:id="@id/homeBtnHome" android:layout_width="24.0dp" android:layout_height="24.0dp" android:scaleType="fitCenter" android:src="@drawable/cattv_logo_clear" android:contentDescription="@string/home_vod" />
+                 <androidx.appcompat.widget.AppCompatImageView android:layout_gravity="center" android:id="@id/homeBtnHistory" android:layout_width="16.0dp" android:layout_height="16.0dp" android:layout_marginBottom="1.0dp" android:src="@drawable/ic_history_ring" android:contentDescription="@string/home_history" android:translationY="28.0dp" />
+@@ -39,3 +39,11 @@
+         </FrameLayout>
+-        <androidx.leanback.widget.HorizontalGridView android:id="@id/navRecycler" android:background="@android:color/transparent" android:nextFocusLeft="@id/homeBtn" android:nextFocusDown="@id/typeRecycler" android:clipChildren="false" android:clipToPadding="false" android:layout_width="0.0dp" android:layout_height="64.0dp" android:layout_weight="1.0" android:layout_marginStart="20.0dp" app:focusOutEnd="false" app:focusOutFront="false" />
++        <TextView android:id="@id/cattvSiteNav" android:tag="cattv_site_nav"
++            android:layout_width="wrap_content" android:layout_height="34dp" android:layout_marginStart="14dp"
++            android:minWidth="54dp" android:paddingStart="10dp" android:paddingEnd="10dp"
++            android:gravity="center" android:text="@string/cattv_nav_site" android:textSize="15sp"
++            android:textStyle="bold" android:textColor="@color/white" android:singleLine="true"
++            android:focusable="true" android:focusableInTouchMode="true" android:clickable="true"
++            android:background="@drawable/selector_item_round" android:nextFocusLeft="@id/homeBtn"
++            android:nextFocusRight="@id/navRecycler" android:nextFocusDown="@id/typeRecycler" />
++        <androidx.leanback.widget.HorizontalGridView android:id="@id/navRecycler" android:background="@android:color/transparent" android:nextFocusLeft="@id/cattvSiteNav" android:nextFocusDown="@id/typeRecycler" android:clipChildren="false" android:clipToPadding="false" android:layout_width="0.0dp" android:layout_height="64.0dp" android:layout_weight="1.0" android:layout_marginStart="20.0dp" app:focusOutEnd="false" app:focusOutFront="false" />
+     </androidx.appcompat.widget.LinearLayoutCompat>
+--- a/res/layout/activity_setting.xml
++++ b/res/layout/activity_setting.xml
+@@ -34,5 +34,18 @@
+         </androidx.appcompat.widget.LinearLayoutCompat>
+-        <androidx.appcompat.widget.LinearLayoutCompat android:orientation="horizontal" android:id="@id/uiStyle" android:background="@drawable/selector_setting" android:focusable="true" android:focusableInTouchMode="true" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16.0dp">
+-            <com.google.android.material.textview.MaterialTextView android:textSize="18.0sp" android:textColor="@color/selector_setting_text" android:duplicateParentState="true" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/setting_ui_style" android:layout_marginEnd="16.0dp" />
+-            <com.google.android.material.textview.MaterialTextView android:textSize="18.0sp" android:textColor="@color/selector_setting_text" android:gravity="end" android:id="@id/uiStyleText" android:duplicateParentState="true" android:layout_width="match_parent" android:layout_height="wrap_content" />
++        <androidx.appcompat.widget.LinearLayoutCompat android:id="@id/uiStyle" android:orientation="horizontal"
++            android:gravity="center_vertical" android:layout_width="match_parent" android:layout_height="wrap_content"
++            android:layout_marginTop="16dp">
++            <com.google.android.material.textview.MaterialTextView android:textSize="18sp" android:textColor="@color/white"
++                android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
++                android:text="@string/cattv_mode_title" />
++            <com.google.android.material.textview.MaterialTextView android:id="@id/uiStyleText"
++                android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
++            <TextView android:layout_width="92dp" android:layout_height="42dp" android:layout_marginEnd="12dp"
++                android:gravity="center" android:textSize="17sp" android:textColor="@color/white"
++                android:background="@drawable/selector_item_round" android:focusable="true"
++                android:text="@string/cattv_mode_standard" />
++            <TextView android:layout_width="92dp" android:layout_height="42dp" android:gravity="center"
++                android:textSize="17sp" android:textColor="@color/white"
++                android:background="@drawable/selector_item_round" android:focusable="true"
++                android:text="@string/cattv_ui_legacy" />
+         </androidx.appcompat.widget.LinearLayoutCompat>
+--- a/res/values/styles.xml
++++ b/res/values/styles.xml
+@@ -3484,3 +3484,3 @@
+         <item name="postSplashScreenTheme">@style/Theme.App</item>
+-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
++        <item name="windowSplashScreenAnimatedIcon">@drawable/cattv_splash_safe</item>
+         <item name="windowSplashScreenBackground">#141218</item>
+--- a/res/values-v31/styles.xml
++++ b/res/values-v31/styles.xml
+@@ -135,2 +135,3 @@
+     </style>
++    <style name="Theme.Splash" parent="@style/Theme.SplashScreen"><item name="postSplashScreenTheme">@style/Theme.App</item><item name="windowSplashScreenAnimatedIcon">@drawable/cattv_splash_safe</item><item name="windowSplashScreenBackground">#141218</item><item name="android:windowSplashScreenAnimatedIcon">@drawable/cattv_splash_safe</item><item name="android:windowSplashScreenBackground">#141218</item></style>
+ </resources>
+--- a/smali/j3.smali
++++ b/smali/j3.smali
+@@ -32,3 +32,3 @@
+     .line 3
+-    const-string v1, "com.fongmi.android.tv"
++    const-string v1, "com.github.avbox.osc.tv"
+ 
+--- a/smali/com/fongmi/android/tv/service/PlaybackService.smali
++++ b/smali/com/fongmi/android/tv/service/PlaybackService.smali
+@@ -45,3 +45,3 @@
+     .line 1
+-    const-string v0, "com.fongmi.android.tv"
++    const-string v0, "com.github.avbox.osc.tv"
+ 
+--- a/smali/com/fongmi/android/tv/ui/activity/HomeActivity.smali
++++ b/smali/com/fongmi/android/tv/ui/activity/HomeActivity.smali
+@@ -4616,2 +4616,8 @@
+ 
++    invoke-static {}, Lh01;->I()Z
++    move-result v0
++    if-nez v0, :cattv_update_skip
++    invoke-static {p0}, Lcattv/update/TvUpdate;->check(Landroid/app/Activity;)V
++    :cattv_update_skip
++
+     .line 2
+--- a/smali/com/fongmi/android/tv/ui/activity/HomeActivityV2.smali
++++ b/smali/com/fongmi/android/tv/ui/activity/HomeActivityV2.smali
+@@ -7067,2 +7067,4 @@
+     invoke-virtual {v0, v3}, Landroid/view/View;->setOnClickListener(Landroid/view/View$OnClickListener;)V
++    invoke-direct {p0, v0, v3}, Lcom/fongmi/android/tv/ui/activity/HomeActivityV2;->cattvBindSiteNav(Landroid/view/View;Landroid/view/View$OnClickListener;)V
++
+ 
+@@ -16005,2 +16007,4 @@
+ 
++    invoke-static {p0}, Lcattv/update/TvUpdate;->check(Landroid/app/Activity;)V
++
+     .line 2
+@@ -17647 +17651,17 @@
+ .end method
++
++.method private cattvBindSiteNav(Landroid/view/View;Landroid/view/View$OnClickListener;)V
++    .locals 2
++    invoke-virtual {p1}, Landroid/view/View;->getParent()Landroid/view/ViewParent;
++    move-result-object v0
++    instance-of v1, v0, Landroid/view/View;
++    if-eqz v1, :done
++    check-cast v0, Landroid/view/View;
++    const-string v1, "cattv_site_nav"
++    invoke-virtual {v0, v1}, Landroid/view/View;->findViewWithTag(Ljava/lang/Object;)Landroid/view/View;
++    move-result-object v0
++    if-eqz v0, :done
++    invoke-virtual {v0, p2}, Landroid/view/View;->setOnClickListener(Landroid/view/View$OnClickListener;)V
++    :done
++    return-void
++.end method
+--- a/smali/com/fongmi/android/tv/ui/activity/SettingActivity.smali
++++ b/smali/com/fongmi/android/tv/ui/activity/SettingActivity.smali
+@@ -1911,2 +1911,3 @@
+     invoke-virtual {p1, v0}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
++    invoke-static {p0}, Lcattv/StyleButtons;->bind(Lcom/fongmi/android/tv/ui/activity/SettingActivity;)V
+ 
+--- /dev/null
++++ b/smali_classes3/cattv/StyleButtons.smali
+@@ -0,0 +1,63 @@
++.class public final Lcattv/StyleButtons;
++.super Ljava/lang/Object;
++.implements Landroid/view/View$OnClickListener;
++
++.field private final activity:Lcom/fongmi/android/tv/ui/activity/SettingActivity;
++.field private final modern:Z
++
++.method private constructor <init>(Lcom/fongmi/android/tv/ui/activity/SettingActivity;Z)V
++    .locals 0
++    invoke-direct {p0}, Ljava/lang/Object;-><init>()V
++    iput-object p1, p0, Lcattv/StyleButtons;->activity:Lcom/fongmi/android/tv/ui/activity/SettingActivity;
++    iput-boolean p2, p0, Lcattv/StyleButtons;->modern:Z
++    return-void
++.end method
++
++.method public static bind(Lcom/fongmi/android/tv/ui/activity/SettingActivity;)V
++    .locals 5
++    const v0, 0x7f0b0487
++    invoke-virtual {p0, v0}, Landroid/app/Activity;->findViewById(I)Landroid/view/View;
++    move-result-object v0
++    if-eqz v0, :done
++    check-cast v0, Landroid/view/ViewGroup;
++    const/4 v1, 0x0
++    invoke-virtual {v0, v1}, Landroid/view/View;->setClickable(Z)V
++    invoke-virtual {v0, v1}, Landroid/view/View;->setFocusable(Z)V
++    invoke-static {}, Lh01;->I()Z
++    move-result v2
++    const/4 v3, 0x2
++    invoke-virtual {v0, v3}, Landroid/view/ViewGroup;->getChildAt(I)Landroid/view/View;
++    move-result-object v3
++    invoke-virtual {v3, v2}, Landroid/view/View;->setSelected(Z)V
++    new-instance v4, Lcattv/StyleButtons;
++    const/4 v1, 0x1
++    invoke-direct {v4, p0, v1}, Lcattv/StyleButtons;-><init>(Lcom/fongmi/android/tv/ui/activity/SettingActivity;Z)V
++    invoke-virtual {v3, v4}, Landroid/view/View;->setOnClickListener(Landroid/view/View$OnClickListener;)V
++    const/4 v3, 0x3
++    invoke-virtual {v0, v3}, Landroid/view/ViewGroup;->getChildAt(I)Landroid/view/View;
++    move-result-object v3
++    xor-int/2addr v2, v1
++    invoke-virtual {v3, v2}, Landroid/view/View;->setSelected(Z)V
++    new-instance v4, Lcattv/StyleButtons;
++    const/4 v1, 0x0
++    invoke-direct {v4, p0, v1}, Lcattv/StyleButtons;-><init>(Lcom/fongmi/android/tv/ui/activity/SettingActivity;Z)V
++    invoke-virtual {v3, v4}, Landroid/view/View;->setOnClickListener(Landroid/view/View$OnClickListener;)V
++    :done
++    return-void
++.end method
++
++.method public onClick(Landroid/view/View;)V
++    .locals 4
++    invoke-static {}, Lh01;->I()Z
++    move-result v0
++    iget-boolean v1, p0, Lcattv/StyleButtons;->modern:Z
++    if-eq v0, v1, :done
++    iget-object v0, p0, Lcattv/StyleButtons;->activity:Lcom/fongmi/android/tv/ui/activity/SettingActivity;
++    new-instance v1, Lsy2;
++    const/16 v2, 0xd
++    invoke-direct {v1, v0, v2}, Lsy2;-><init>(Lcom/fongmi/android/tv/ui/activity/SettingActivity;I)V
++    invoke-virtual {v1, p1}, Lsy2;->onClick(Landroid/view/View;)V
++    invoke-static {v0}, Lcattv/StyleButtons;->bind(Lcom/fongmi/android/tv/ui/activity/SettingActivity;)V
++    :done
++    return-void
++.end method
+--- /dev/null
++++ b/res/drawable/cattv_splash_safe.xml
+@@ -0,0 +1,2 @@
++<inset xmlns:android="http://schemas.android.com/apk/res/android"
++    android:drawable="@drawable/cattv_logo_clear" android:inset="20%" />
+--- /dev/null
++++ b/res/drawable/cattv_launcher_foreground_safe.xml
+@@ -0,0 +1,2 @@
++<inset xmlns:android="http://schemas.android.com/apk/res/android"
++    android:drawable="@drawable/cattv_logo_clear" android:inset="18%" />
+--- /dev/null
++++ b/res/values/cattv_identity_background.xml
+@@ -0,0 +1,4 @@
++<?xml version="1.0" encoding="utf-8"?>
++<resources>
++    <color name="cattv_identity_background">#FFFFFF</color>
++</resources>
+--- /dev/null
++++ b/res/mipmap-anydpi-v26/cattv_identity_launcher.xml
+@@ -0,0 +1,5 @@
++<?xml version="1.0" encoding="utf-8"?>
++<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
++    <background android:drawable="@color/cattv_identity_background"/>
++    <foreground android:drawable="@drawable/cattv_launcher_foreground_safe"/>
++</adaptive-icon>
+--- /dev/null
++++ b/res/mipmap-anydpi-v26/cattv_identity_launcher_round.xml
+@@ -0,0 +1,5 @@
++<?xml version="1.0" encoding="utf-8"?>
++<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
++    <background android:drawable="@color/cattv_identity_background"/>
++    <foreground android:drawable="@drawable/cattv_launcher_foreground_safe"/>
++</adaptive-icon>
+--- /dev/null
++++ b/res/values/cattv_style_strings.xml
+@@ -0,0 +1 @@
++<resources><string name="cattv_ui_legacy">Senior mode</string><string name="cattv_mode_standard">Standard mode</string><string name="cattv_mode_title">Home mode</string></resources>
+--- /dev/null
++++ b/res/values/cattv_nav_strings.xml
+@@ -0,0 +1 @@
++<resources><string name="cattv_nav_site">Sites</string></resources>
+--- /dev/null
++++ b/res/values-zh-rCN/cattv_style_strings.xml
+@@ -0,0 +1 @@
++<resources><string name="cattv_ui_legacy">长辈模式</string><string name="cattv_mode_standard">标准模式</string><string name="cattv_mode_title">首页模式</string></resources>
+--- /dev/null
++++ b/res/values-zh-rCN/cattv_nav_strings.xml
+@@ -0,0 +1 @@
++<resources><string name="cattv_nav_site">站点</string></resources>
+--- /dev/null
++++ b/res/values-zh-rTW/cattv_style_strings.xml
+@@ -0,0 +1 @@
++<resources><string name="cattv_ui_legacy">長輩模式</string><string name="cattv_mode_standard">標準模式</string><string name="cattv_mode_title">首頁模式</string></resources>
+--- /dev/null
++++ b/res/values-zh-rTW/cattv_nav_strings.xml
+@@ -0,0 +1 @@
++<resources><string name="cattv_nav_site">站點</string></resources>
