@@ -5,14 +5,13 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Shader;
 import android.graphics.Typeface;
-import android.graphics.drawable.GradientDrawable;
-import android.graphics.drawable.StateListDrawable;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.InputType;
@@ -22,7 +21,7 @@ import android.text.style.ReplacementSpan;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -94,116 +93,202 @@ public final class Ratings {
         }
     }
 
-    public static void setup(Activity activity) {
-        View row = activity.findViewById(0x7f0b0487);
-        if (row == null || !(row.getParent() instanceof ViewGroup)) return;
-        ViewGroup list = (ViewGroup) row.getParent();
-        if (list.findViewWithTag(TAG) != null) return;
-        LinearLayout entry = new LinearLayout(activity);
-        entry.setTag(TAG);
-        entry.setFocusable(true);
-        entry.setGravity(Gravity.CENTER_VERTICAL);
-        float density = activity.getResources().getDisplayMetrics().density;
-        int padding = Math.round(16 * density);
-        entry.setPaddingRelative(padding, 0, padding, 0);
-        entry.setMinimumHeight(Math.round(48 * density));
-
-        StateListDrawable background = new StateListDrawable();
-        background.addState(new int[] {android.R.attr.state_focused},
-            settingsBackground(0xff30445d, 0xff9fd4ff, density));
-        background.addState(new int[0], settingsBackground(0xff242e3d, 0xff242e3d, density));
-        entry.setBackground(background);
-
-        TextView label = new TextView(activity);
-        label.setText("MDBList API Key");
-        label.setTextColor(Color.WHITE);
-        label.setTextSize(16);
-        entry.addView(label, new LinearLayout.LayoutParams(0, -2, 1));
-
-        TextView statusLabel = new TextView(activity);
-        statusLabel.setTextColor(0xffc6dbef);
-        statusLabel.setTextSize(14);
-        entry.addView(statusLabel);
-        SharedPreferences prefs = preferences(activity);
-        Runnable updateStatus = () -> statusLabel.setText(key(activity).isEmpty()
-            ? "未配置  ›" : "已配置  ›");
-        SharedPreferences.OnSharedPreferenceChangeListener listener = (changed, name) -> {
-            if ("key".equals(name)) updateStatus.run();
-        };
-        entry.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
-            @Override public void onViewAttachedToWindow(View view) {
-                prefs.registerOnSharedPreferenceChangeListener(listener);
-                updateStatus.run();
-            }
-            @Override public void onViewDetachedFromWindow(View view) {
-                prefs.unregisterOnSharedPreferenceChangeListener(listener);
-            }
-        });
-        entry.setOnClickListener(v -> {
-            EditText field = new EditText(activity);
-            field.setSingleLine();
-            field.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
-            field.setText(key(activity));
-            new AlertDialog.Builder(activity).setTitle("MDBList API Key")
-                .setMessage("登录 mdblist.com，在 Preferences 申请 API Key。Key 保存在本机，仅用于向 MDBList 查询评分。留空关闭额外评分。")
-                .setView(field).setPositiveButton("保存", (d,w) -> {
-                    String entered = field.getText().toString().trim();
-                    if (!entered.equals(key(activity))) {
-                        prefs.edit().putString("key", entered).apply();
-                        resetCache(activity);
-                    }
-                    if (!entered.isEmpty()) IO.execute(() -> {
-                        int status = checkKey(entered);
-                        UI.post(() -> {
-                            if (activity.isFinishing() || activity.isDestroyed() || !entered.equals(key(activity))) return;
-                            String message = status == 200 ? "MDBList 连接成功。返回影片详情查看评分。"
-                                : status == 401 || status == 403 ? "MDBList 拒绝了 Key，请检查是否复制完整。"
-                                : status == 429 ? "MDBList 查询次数已达上限，请稍后再试。"
-                                : "暂时无法验证 MDBList，请检查网络。";
-                            new AlertDialog.Builder(activity).setTitle("MDBList").setMessage(message)
-                                .setPositiveButton(android.R.string.ok,null).show();
-                        });
-                    });
-                }).setNegativeButton(android.R.string.cancel,null).show();
-        });
-        ViewGroup.MarginLayoutParams layout = new ViewGroup.MarginLayoutParams(-1, -2);
-        layout.topMargin = Math.round(12 * density);
-        list.addView(entry, list.indexOfChild(row) + 1, layout);
-
-        Button clear = new Button(activity);
-        clear.setAllCaps(false);
-        clear.setText("清理评分缓存");
-        clear.setTextColor(Color.WHITE);
-        clear.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
-        clear.setPaddingRelative(padding, 0, padding, 0);
-        clear.setBackground(background.getConstantState().newDrawable().mutate());
-        clear.setOnClickListener(v -> new AlertDialog.Builder(activity)
-            .setTitle("清理评分缓存")
-            .setMessage("清理后，打开影片时会重新获取评分。")
-            .setNegativeButton(android.R.string.cancel, null)
-            .setPositiveButton("清理", (dialog, which) -> {
-                resetCache(activity);
-                android.widget.Toast.makeText(activity, "评分缓存已清理",
-                    android.widget.Toast.LENGTH_SHORT).show();
-            }).show());
-        ViewGroup.MarginLayoutParams clearLayout = new ViewGroup.MarginLayoutParams(-1, -2);
-        clearLayout.topMargin = Math.round(8 * density);
-        list.addView(clear, list.indexOfChild(entry) + 1, clearLayout);
+    private static boolean enabled(Context context) {
+        return preferences(context).getBoolean("enabled", true);
     }
 
-    private static GradientDrawable settingsBackground(int color, int border, float density) {
-        GradientDrawable drawable = new GradientDrawable();
-        drawable.setColor(color);
-        drawable.setCornerRadius(8 * density);
-        drawable.setStroke(Math.round(2 * density), border);
-        return drawable;
+    private static int dp(Context context, int value) {
+        return Math.round(context.getResources().getDisplayMetrics().density * value);
+    }
+
+    private static LinearLayout settingsRow(Activity activity, String title, TextView value) {
+        LinearLayout row = new LinearLayout(activity);
+        row.setBackgroundResource(0x7f080276); // selector_setting
+        row.setFocusable(true);
+        row.setFocusableInTouchMode(true);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setMinimumHeight(dp(activity, 44));
+        TextView label = new TextView(activity);
+        label.setText(title);
+        styleSettingText(activity, label);
+        row.addView(label, new LinearLayout.LayoutParams(0, -2, 1));
+        styleSettingText(activity, value);
+        row.addView(value);
+        return row;
+    }
+
+    private static void styleSettingText(Activity activity, TextView text) {
+        text.setDuplicateParentStateEnabled(true);
+        text.setTextColor(activity.getColorStateList(0x7f0604f1)); // selector_setting_text
+        text.setTextSize(18);
+    }
+
+    private static String keyStatus(Activity activity) {
+        if (!enabled(activity)) return "已关闭";
+        return key(activity).isEmpty() ? "未配置" : "已配置";
+    }
+
+    public static void setup(Activity activity) {
+        View anchor = activity.findViewById(0x7f0b0487);
+        if (anchor == null || !(anchor.getParent() instanceof ViewGroup)) return;
+        ViewGroup list = (ViewGroup) anchor.getParent();
+        if (list.findViewWithTag(TAG) != null) return;
+        TextView status = new TextView(activity);
+        status.setText(keyStatus(activity) + "  ›");
+        LinearLayout entry = settingsRow(activity, "MDBList 设置", status);
+        entry.setTag(TAG);
+        entry.setOnClickListener(v -> showSettings(activity,
+            () -> status.setText(keyStatus(activity) + "  ›")));
+        ViewGroup.MarginLayoutParams layout = new ViewGroup.MarginLayoutParams(-1, -2);
+        layout.topMargin = dp(activity, 16);
+        list.addView(entry, list.indexOfChild(anchor) + 1, layout);
+    }
+
+    private static void showSettings(Activity activity, Runnable onClose) {
+        LinearLayout content = new LinearLayout(activity);
+        content.setOrientation(LinearLayout.VERTICAL);
+        int padding = dp(activity, 20);
+        content.setPadding(padding, padding, padding, 0);
+        TextView keyState = new TextView(activity);
+        TextView enabledState = new TextView(activity);
+        TextView count = new TextView(activity);
+        Runnable refresh = () -> {
+            keyState.setText((key(activity).isEmpty() ? "未配置" : "已配置") + "  ›");
+            enabledState.setText(enabled(activity) ? "开" : "关");
+            count.setText(ratingCache(activity).getAll().size() + " 条");
+        };
+        LinearLayout config = addSetting(activity, content, "MDBList 评分", keyState);
+        config.setOnClickListener(v -> showKeyDialog(activity, refresh));
+        addSetting(activity, content, "显示额外评分", enabledState).setOnClickListener(v -> {
+            preferences(activity).edit().putBoolean("enabled", !enabled(activity)).apply();
+            refresh.run();
+        });
+        addSetting(activity, content, "测试连接", new TextView(activity))
+            .setOnClickListener(v -> showConnectionStatus(activity));
+        addSetting(activity, content, "清理评分缓存", count).setOnClickListener(v ->
+            new AlertDialog.Builder(activity).setTitle("清理评分缓存")
+                .setMessage("清理后，打开影片时会重新获取评分。")
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton("清理", (dialog, which) -> {
+                    resetCache(activity);
+                    refresh.run();
+                }).show());
+        AlertDialog dialog = new AlertDialog.Builder(activity).setTitle("MDBList 设置")
+            .setView(content).setPositiveButton("返回", null).create();
+        dialog.setOnDismissListener(d -> onClose.run());
+        refresh.run();
+        dialog.show();
+        config.requestFocus();
+    }
+
+    private static LinearLayout addSetting(Activity activity, LinearLayout content,
+                                           String title, TextView value) {
+        LinearLayout row = settingsRow(activity, title, value);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2);
+        params.bottomMargin = dp(activity, 8);
+        content.addView(row, params);
+        return row;
+    }
+
+    private static void showKeyDialog(Activity activity, Runnable onClose) {
+        LinearLayout content = new LinearLayout(activity);
+        int padding = dp(activity, 20);
+        content.setPadding(padding, padding, padding, 0);
+        LinearLayout scan = new LinearLayout(activity);
+        scan.setOrientation(LinearLayout.VERTICAL);
+        scan.setGravity(Gravity.CENTER_HORIZONTAL);
+        int qrSize = dp(activity, 148);
+        LinearLayout.LayoutParams scanParams = new LinearLayout.LayoutParams(dp(activity, 174), -2);
+        scanParams.setMarginEnd(padding);
+        content.addView(scan, scanParams);
+        TextView address = new TextView(activity);
+        address.setGravity(Gravity.CENTER);
+        try {
+            Object server = Class.forName("hm").getField("j").get(null);
+            if (server != null) server.getClass().getMethod("a").invoke(server);
+            String host = (String) Class.forName("dr3").getMethod("d").invoke(null);
+            int port = (Integer) Class.forName("com.github.catvod.Proxy")
+                .getMethod("getPort").invoke(null);
+            if (host == null || host.isEmpty() || host.equals("0.0.0.0") || port <= 0) {
+                throw new IllegalStateException();
+            }
+            String url = "http://" + host + ":" + port + "/?tab=4#mdblist-form";
+            Bitmap bitmap = (Bitmap) Class.forName("jr3")
+                .getMethod("p", int.class, int.class, String.class).invoke(null, qrSize, 1, url);
+            if (bitmap == null) throw new IllegalStateException();
+            ImageView qr = new ImageView(activity);
+            qr.setContentDescription("手机扫码填写 MDBList API Key");
+            qr.setImageBitmap(bitmap);
+            scan.addView(qr, new LinearLayout.LayoutParams(qrSize, qrSize));
+            address.setText("手机扫码填写\n" + url.substring(0, url.indexOf("/?")));
+        } catch (ReflectiveOperationException | IllegalStateException error) {
+            address.setText("二维码暂不可用，请检查电视网络。");
+        }
+        scan.addView(address);
+        LinearLayout fields = new LinearLayout(activity);
+        fields.setOrientation(LinearLayout.VERTICAL);
+        content.addView(fields, new LinearLayout.LayoutParams(0, -2, 1));
+        TextView label = new TextView(activity);
+        label.setText("MDBList API Key");
+        label.setTextSize(16);
+        fields.addView(label);
+        EditText field = new EditText(activity);
+        field.setSingleLine();
+        field.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        field.setText(key(activity));
+        fields.addView(field, new LinearLayout.LayoutParams(-1, -2));
+        TextView help = new TextView(activity);
+        help.setText("可在电视输入，或用同一网络下的手机扫码填写。留空保存可移除 Key。");
+        fields.addView(help);
+        AlertDialog dialog = new AlertDialog.Builder(activity).setTitle("MDBList 评分")
+            .setView(content).setPositiveButton("保存", (d, w) -> {
+                String entered = field.getText().toString().trim();
+                if (!entered.equals(key(activity))) {
+                    preferences(activity).edit().putString("key", entered).apply();
+                    resetCache(activity);
+                }
+            }).setNegativeButton("返回", null).create();
+        SharedPreferences prefs = preferences(activity);
+        SharedPreferences.OnSharedPreferenceChangeListener listener = (changed, name) -> {
+            if ("key".equals(name)) field.setText(key(activity));
+        };
+        dialog.setOnDismissListener(d -> {
+            prefs.unregisterOnSharedPreferenceChangeListener(listener);
+            onClose.run();
+        });
+        prefs.registerOnSharedPreferenceChangeListener(listener);
+        dialog.show();
+        dialog.getWindow().setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+        dialog.getButton(AlertDialog.BUTTON_NEGATIVE).requestFocus();
+    }
+
+    private static void showConnectionStatus(Activity activity) {
+        String token = key(activity);
+        if (token.isEmpty()) {
+            android.widget.Toast.makeText(activity, "请先填写 MDBList API Key",
+                android.widget.Toast.LENGTH_SHORT).show();
+            return;
+        }
+        AlertDialog dialog = new AlertDialog.Builder(activity).setTitle("MDBList 连接测试")
+            .setMessage("正在连接…").setPositiveButton(android.R.string.ok, null).show();
+        IO.execute(() -> {
+            int status = checkKey(token);
+            UI.post(() -> {
+                if (!dialog.isShowing()) return;
+                String message = status == 200 ? "连接成功"
+                    : status == 401 || status == 403 ? "Key 被拒绝，请检查是否复制完整"
+                    : status == 429 ? "查询次数已达上限，请稍后再试"
+                    : "连接失败，请检查网络";
+                dialog.setMessage(message);
+            });
+        });
     }
 
     public static void bind(TextView view, String id, String media) {
         Runnable previous = pending.remove(view);
         if (previous != null) UI.removeCallbacks(previous);
         String token = key(view.getContext());
-        if (token.isEmpty() || id == null || !id.matches("[1-9][0-9]{0,9}")) return;
+        if (!enabled(view.getContext()) || token.isEmpty() || id == null || !id.matches("[1-9][0-9]{0,9}")) return;
         String kind = "tv".equals(media) ? "show" : "movie".equals(media) ? "movie" : "";
         if (kind.isEmpty()) return;
         Context context = view.getContext().getApplicationContext();
@@ -229,7 +314,7 @@ public final class Ratings {
                         if (generation != cacheGeneration) return;
                     }
                     if (!view.isAttachedToWindow() || view.getText() != base ||
-                        !token.equals(key(context))) return;
+                        !enabled(context) || !token.equals(key(context))) return;
                     render(view, base, ratings);
                 });
             });

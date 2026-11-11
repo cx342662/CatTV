@@ -1,0 +1,12 @@
+--- a/assets/js/script.js
++++ b/assets/js/script.js
+@@ -327,6 +327,9 @@
+ const tab = [1, 2, 4, 5, 6].includes(requestedTab) ? requestedTab : 4;
+ history.replaceState(null, '');
+ showPanel(tab);
++if (tab === 4 && window.location.hash === '#mdblist-form') {
++    requestAnimationFrame(() => document.getElementById('mdblist-form').scrollIntoView());
++}
+ 
+ window.addEventListener('popstate', function () {
+     if (dialogClosing) { dialogClosing = false; return; }
