@@ -1,0 +1,4 @@
+diff --git a/smali/com/fongmi/android/tv/ui/activity/HomeActivityV2.smali b/smali_classes4/com/fongmi/android/tv/ui/activity/HomeActivityV2.smali
+similarity index 100%
+rename from smali/com/fongmi/android/tv/ui/activity/HomeActivityV2.smali
+rename to smali_classes4/com/fongmi/android/tv/ui/activity/HomeActivityV2.smali
