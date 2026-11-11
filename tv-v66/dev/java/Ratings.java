@@ -4,21 +4,25 @@ package cattv.ratings;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Shader;
 import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.StateListDrawable;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.InputType;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.style.ReplacementSpan;
+import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.EditText;
 import android.widget.TextView;
 import java.io.ByteArrayOutputStream;
@@ -43,8 +47,32 @@ public final class Ratings {
     private static final Map<String,JSONArray> cache = new LinkedHashMap<>();
     private static long retryAfter;
 
+    private static SharedPreferences preferences(Context context) {
+        return context.getSharedPreferences(PREF, Context.MODE_PRIVATE);
+    }
+
     private static String key(Context context) {
-        return context.getSharedPreferences(PREF, Context.MODE_PRIVATE).getString("key", "");
+        return preferences(context).getString("key", "");
+    }
+
+    private static void resetCache() {
+        synchronized (cache) {
+            cache.clear();
+            retryAfter = 0;
+        }
+    }
+
+    public static String saveRemote(Context context, Map<?, ?> fields, Map<?, ?> headers) {
+        if (!"mdblist".equals(headers.get("x-cattv-settings"))) return "REJECTED";
+        Object raw = fields.get("key");
+        if (!(raw instanceof String)) return "REJECTED";
+        String entered = ((String) raw).trim();
+        if (entered.isEmpty() || entered.length() > 256 || !entered.matches("[!-~]+")) {
+            return "REJECTED";
+        }
+        if (!preferences(context).edit().putString("key", entered).commit()) return "REJECTED";
+        resetCache();
+        return "SAVED";
     }
 
     public static String version(Activity activity) {
@@ -61,11 +89,47 @@ public final class Ratings {
         if (row == null || !(row.getParent() instanceof ViewGroup)) return;
         ViewGroup list = (ViewGroup) row.getParent();
         if (list.findViewWithTag(TAG) != null) return;
-        Button button = new Button(activity);
-        button.setTag(TAG);
-        button.setAllCaps(false);
-        button.setText("MDBList API Key");
-        button.setOnClickListener(v -> {
+        LinearLayout entry = new LinearLayout(activity);
+        entry.setTag(TAG);
+        entry.setFocusable(true);
+        entry.setGravity(Gravity.CENTER_VERTICAL);
+        float density = activity.getResources().getDisplayMetrics().density;
+        int padding = Math.round(16 * density);
+        entry.setPaddingRelative(padding, 0, padding, 0);
+        entry.setMinimumHeight(Math.round(48 * density));
+
+        StateListDrawable background = new StateListDrawable();
+        background.addState(new int[] {android.R.attr.state_focused},
+            settingsBackground(0xff30445d, 0xff9fd4ff, density));
+        background.addState(new int[0], settingsBackground(0xff242e3d, 0xff242e3d, density));
+        entry.setBackground(background);
+
+        TextView label = new TextView(activity);
+        label.setText("MDBList API Key");
+        label.setTextColor(Color.WHITE);
+        label.setTextSize(16);
+        entry.addView(label, new LinearLayout.LayoutParams(0, -2, 1));
+
+        TextView statusLabel = new TextView(activity);
+        statusLabel.setTextColor(0xffc6dbef);
+        statusLabel.setTextSize(14);
+        entry.addView(statusLabel);
+        SharedPreferences prefs = preferences(activity);
+        Runnable updateStatus = () -> statusLabel.setText(key(activity).isEmpty()
+            ? "未配置  ›" : "已配置  ›");
+        SharedPreferences.OnSharedPreferenceChangeListener listener = (changed, name) -> {
+            if ("key".equals(name)) updateStatus.run();
+        };
+        entry.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
+            @Override public void onViewAttachedToWindow(View view) {
+                prefs.registerOnSharedPreferenceChangeListener(listener);
+                updateStatus.run();
+            }
+            @Override public void onViewDetachedFromWindow(View view) {
+                prefs.unregisterOnSharedPreferenceChangeListener(listener);
+            }
+        });
+        entry.setOnClickListener(v -> {
             EditText field = new EditText(activity);
             field.setSingleLine();
             field.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
@@ -74,9 +138,8 @@ public final class Ratings {
                 .setMessage("登录 mdblist.com，在 Preferences 申请 API Key。Key 保存在本机，仅用于向 MDBList 查询评分。留空关闭额外评分。")
                 .setView(field).setPositiveButton("保存", (d,w) -> {
                     String entered = field.getText().toString().trim();
-                    activity.getSharedPreferences(PREF, Context.MODE_PRIVATE)
-                        .edit().putString("key", entered).apply();
-                    synchronized (cache) { cache.clear(); retryAfter = 0; }
+                    prefs.edit().putString("key", entered).apply();
+                    resetCache();
                     if (!entered.isEmpty()) IO.execute(() -> {
                         int status = checkKey(entered);
                         UI.post(() -> {
@@ -91,7 +154,17 @@ public final class Ratings {
                     });
                 }).setNegativeButton(android.R.string.cancel,null).show();
         });
-        list.addView(button,list.indexOfChild(row)+1,new ViewGroup.LayoutParams(-1,-2));
+        ViewGroup.MarginLayoutParams layout = new ViewGroup.MarginLayoutParams(-1, -2);
+        layout.topMargin = Math.round(12 * density);
+        list.addView(entry, list.indexOfChild(row) + 1, layout);
+    }
+
+    private static GradientDrawable settingsBackground(int color, int border, float density) {
+        GradientDrawable drawable = new GradientDrawable();
+        drawable.setColor(color);
+        drawable.setCornerRadius(8 * density);
+        drawable.setStroke(Math.round(2 * density), border);
+        return drawable;
     }
 
     public static void bind(TextView view, String id, String media) {

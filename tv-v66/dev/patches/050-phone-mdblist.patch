@@ -1,0 +1,93 @@
+--- a/assets/index.html
++++ b/assets/index.html
+@@ -69,6 +69,15 @@
+                         </div>
+                     </div>
+                     <button onclick="setting()" class="md-btn md-btn-filled md-btn-full">确定</button>
++                    <form id="mdblist-form" onsubmit="saveMdblist(event)" style="margin-top:24px">
++                        <label for="mdblist-key">MDBList API Key</label>
++                        <div class="md-field" style="margin:8px 0">
++                            <input id="mdblist-key" class="md-input" type="password" autocomplete="off"
++                                   autocapitalize="none" spellcheck="false" maxlength="256" required>
++                        </div>
++                        <button class="md-btn md-btn-tonal md-btn-full" type="submit">保存到电视</button>
++                        <p id="mdblist-status" role="status" aria-live="polite"></p>
++                    </form>
+                 </div>
+             </div>
+             <!-- 本地 -->
+--- a/assets/js/script.js
++++ b/assets/js/script.js
+@@ -17,6 +17,37 @@
+ 
+ function push() {
+     doAction('push', { url: $('#push_url').val() });
++}
++
++async function saveMdblist(event) {
++    event.preventDefault();
++    const field = document.getElementById('mdblist-key');
++    const status = document.getElementById('mdblist-status');
++    const button = event.currentTarget.querySelector('button');
++    const key = field.value.trim();
++    if (!key) {
++        status.textContent = '请输入 MDBList API Key';
++        return;
++    }
++    button.disabled = true;
++    status.textContent = '正在保存…';
++    try {
++        const response = await fetch('/action', {
++            method: 'POST',
++            headers: { 'X-CatTV-Settings': 'mdblist' },
++            body: new URLSearchParams({ do: 'mdblist', key })
++        });
++        if (!response.ok || (await response.text()).trim() !== 'SAVED') {
++            status.textContent = '电视未能保存，请检查 Key 后重试';
++            return;
++        }
++        field.value = '';
++        status.textContent = '已保存到电视，重新聚焦海报或打开影片详情查看评分';
++    } catch {
++        status.textContent = '无法连接电视，请检查手机与电视是否在同一网络';
++    } finally {
++        button.disabled = false;
++    }
+ }
+ 
+ function setting() {
+--- a/smali/b3.smali
++++ b/smali/b3.smali
+@@ -212,6 +212,32 @@
+ 
+     .line 26
+     :cond_0
++    const-string v2, "mdblist"
++    invoke-virtual {v2, v0}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
++    move-result v2
++    if-eqz v2, :cattv_original_action
++
++    invoke-interface/range {p1 .. p1}, Lfi/iki/elonen/NanoHTTPD$IHTTPSession;->getMethod()Lfi/iki/elonen/NanoHTTPD$Method;
++    move-result-object v0
++    sget-object v2, Lfi/iki/elonen/NanoHTTPD$Method;->POST:Lfi/iki/elonen/NanoHTTPD$Method;
++    if-ne v0, v2, :cattv_bad_method
++
++    invoke-interface/range {p1 .. p1}, Lfi/iki/elonen/NanoHTTPD$IHTTPSession;->getHeaders()Ljava/util/Map;
++    move-result-object v0
++    sget-object v2, Lcom/fongmi/android/tv/App;->l:Lcom/fongmi/android/tv/App;
++    invoke-static {v2, v1, v0}, Lcattv/ratings/Ratings;->saveRemote(Landroid/content/Context;Ljava/util/Map;Ljava/util/Map;)Ljava/lang/String;
++    move-result-object v0
++    goto :cattv_mdb_response
++
++    :cattv_bad_method
++    const-string v0, "REJECTED"
++
++    :cattv_mdb_response
++    invoke-static {v0}, Li52;->b(Ljava/lang/String;)Lfi/iki/elonen/NanoHTTPD$Response;
++    move-result-object v0
++    return-object v0
++
++    :cattv_original_action
+     const-string v2, "getTmdb"
+ 
+     .line 27
