@@ -87,7 +87,10 @@ public final class Ratings {
     public static String version(Activity activity) {
         try {
             android.content.pm.PackageInfo info=activity.getPackageManager().getPackageInfo(activity.getPackageName(),0);
-            return "CatTV v"+info.versionCode+" · ARM32";
+            String prefix = "1.3.2-TV-v";
+            String display = info.versionName != null && info.versionName.startsWith(prefix)
+                ? info.versionName.substring(prefix.length()) : Integer.toString(info.versionCode);
+            return "CatTV v" + display + " · ARM32";
         } catch (android.content.pm.PackageManager.NameNotFoundException ignored) {
             return "CatTV TV · ARM32";
         }

@@ -16,10 +16,14 @@ p.add_argument("--aapt", required=True, type=Path)
 p.add_argument("--android-jar", type=Path)
 p.add_argument("--d8", type=Path)
 p.add_argument("--version", type=int, required=True)
+p.add_argument("--display-version", type=int, help="Public version shown in Android and CatTV")
 p.add_argument("--patch-dir", type=Path, default=Path(__file__).with_name("patches"))
 a = p.parse_args()
 if not 68 <= a.version < 100000000:
     p.error("Version must be between 68 and 99999999")
+display_version = a.display_version if a.display_version is not None else a.version
+if not 68 <= display_version < 100000000:
+    p.error("Display version must be between 68 and 99999999")
 base, out = a.base.resolve(), a.out.resolve()
 if hashlib.sha256(base.read_bytes()).hexdigest() != BASE_SHA:
     p.error("The base APK must be the published CatTV TV v66")
@@ -36,7 +40,7 @@ data = yml.read_text(encoding="utf-8")
 data, n = re.subn(r"(?m)^  versionCode:.*$", f"  versionCode: {a.version}", data)
 if n != 1:
     raise ValueError("Unexpected versionCode in decoded APK")
-data, n = re.subn(r"(?m)^  versionName:.*$", f"  versionName: 1.3.2-TV-v{a.version}", data)
+data, n = re.subn(r"(?m)^  versionName:.*$", f"  versionName: 1.3.2-TV-v{display_version}", data)
 if n != 1:
     raise ValueError("Unexpected versionName in decoded APK")
 yml.write_text(data, encoding="utf-8")
@@ -58,6 +62,7 @@ if sources:
 badging = subprocess.check_output([str(a.aapt.resolve()), "dump", "badging", str(apk)], encoding="utf-8")
 assert "package: name='com.github.avbox.osc.tv'" in badging
 assert f"versionCode='{a.version}'" in badging
+assert f"versionName='1.3.2-TV-v{display_version}'" in badging
 assert "leanback-launchable-activity:" in badging
 with zipfile.ZipFile(apk) as z:
     assert {n.split("/")[1] for n in z.namelist() if n.startswith("lib/")} == {"armeabi-v7a"}
