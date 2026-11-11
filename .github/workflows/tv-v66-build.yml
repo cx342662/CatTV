@@ -15,6 +15,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+      - uses: android-actions/setup-android@v3
       - name: Get pinned build tools and public v66 APK
         run: |
           sdkmanager 'build-tools;37.0.0'
