@@ -1,0 +1,30 @@
+name: Build CatTV TV from v66
+on:
+  push:
+    branches: [tv-v66]
+    paths: ['tv-v66/dev/**', '.github/workflows/tv-v66-build.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Get pinned build tools and public v66 APK
+        run: |
+          sdkmanager 'build-tools;37.0.0'
+          curl -fL --retry 3 -o apktool.jar https://github.com/iBotPeaches/Apktool/releases/download/v3.0.3/apktool_3.0.3.jar
+          echo 'dbf930b076c6b9be08d57c449cacefc3bdd6b71ebd59b3066fc0e1f5b14f9423  apktool.jar' | sha256sum -c
+          curl -fL --retry 3 -o base.apk https://github.com/cx342662/CatTV/releases/download/tv-arm32-v66/CatTV-TV-ARM32-v66.apk
+      - name: Build and verify unsigned APK
+        run: python3 tv-v66/dev/build.py base.apk out --apktool apktool.jar --aapt "$ANDROID_HOME/build-tools/37.0.0/aapt" --version "$(cat tv-v66/dev/version.txt)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CatTV-TV-v66-based-unsigned
+          path: out/*-unsigned.apk
+          if-no-files-found: error
