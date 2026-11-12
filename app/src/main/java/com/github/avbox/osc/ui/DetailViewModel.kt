@@ -19,6 +19,7 @@ import com.github.avbox.osc.player.PlaybackService
 import com.github.avbox.osc.player.PlaybackSession
 import com.github.avbox.osc.sourcedata.SourceViewModel
 import com.github.avbox.osc.util.AppContextHolder
+import com.github.avbox.osc.api.MdbListRatings
 import com.github.avbox.osc.api.TmdbApi
 import com.github.avbox.osc.api.TmdbPoster
 import com.github.avbox.osc.bean.TmdbDetail
@@ -109,6 +110,9 @@ class DetailViewModel : ViewModel(), TmdbPosterCache {
 
     private val _tmdbDetail = MutableStateFlow<TmdbDetail?>(null)
     val tmdbDetail = _tmdbDetail.asStateFlow()
+    private val _mdbListRatings = MutableStateFlow<Map<String, Double>>(emptyMap())
+    val mdbListRatings = _mdbListRatings.asStateFlow()
+    private var detailRatingsJob: Job? = null
     private val _tmdbLogoPath = MutableStateFlow<String?>(null)
     val tmdbLogoPath = _tmdbLogoPath.asStateFlow()
     private val _tmdbEpisodeMeta = MutableStateFlow<List<TmdbEpisode>?>(null)
@@ -127,21 +131,27 @@ class DetailViewModel : ViewModel(), TmdbPosterCache {
 
     fun ensureTmdbDetail(name: String?, altName: String?, year: Int) {
         if (name.isNullOrBlank()) {
+            detailRatingsJob?.cancel()
             _tmdbDetail.value = null
+            _mdbListRatings.value = emptyMap()
             tmdbDetailKey = null
             return
         }
         val epoch = TmdbImages.configEpoch.value
-        val key = listOf(name, altName, year, epoch)
+        val mdbListKey = KV.get(KVKeys.MDBLIST_API_KEY, "")
+        val key = listOf(name, altName, year, epoch, mdbListKey)
         if (tmdbDetailKey == key) return
         tmdbDetailKey = key
         val cached = TmdbPoster.cachedDetail(name, year, altName)
         _tmdbDetail.value = cached
-        if (cached == null) {
-            viewModelScope.launch {
-                val resolved = TmdbPoster.resolveDetail(name, year, altName)
-                if (tmdbDetailKey == key) _tmdbDetail.value = resolved
-            }
+        detailRatingsJob?.cancel()
+        _mdbListRatings.value = emptyMap()
+        detailRatingsJob = viewModelScope.launch {
+            val resolved = cached ?: TmdbPoster.resolveDetail(name, year, altName)
+            if (tmdbDetailKey != key || resolved == null) return@launch
+            _tmdbDetail.value = resolved
+            val ratings = MdbListRatings.ratings(resolved.tmdbId, resolved.mediaType, mdbListKey)
+            if (tmdbDetailKey == key) _mdbListRatings.value = ratings.orEmpty()
         }
     }
 

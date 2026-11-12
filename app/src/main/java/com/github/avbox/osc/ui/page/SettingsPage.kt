@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -60,7 +61,9 @@ import com.github.avbox.osc.util.DefaultConfig
 import com.github.avbox.osc.util.HistoryHelper
 import com.github.avbox.osc.util.SearchSettingsState
 import com.github.avbox.osc.api.TmdbPoster
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -151,6 +154,8 @@ fun SettingsPage(
     val updateScope = rememberCoroutineScope()
     var updateBusy by remember { mutableStateOf(false) }
     var pendingUpdate by remember { mutableStateOf<CatTvUpdater.UpdateInfo?>(null) }
+    var updateProgress by remember { mutableStateOf<Int?>(null) }
+    var updateDownloadJob by remember { mutableStateOf<Job?>(null) }
 
 
     val listState = rememberScrollState()
@@ -344,32 +349,58 @@ fun SettingsPage(
     }
 
     pendingUpdate?.let { update ->
+        val progress = updateProgress
         AVBoxAlertDialog(
             onDismissRequest = { pendingUpdate = null },
+            dismissible = progress == null,
             title = { Text("发现 CatTV 新版本 ${update.versionName}") },
-            text = { Text("是否下载并安装此版本？下载完成后需要你确认安装。") },
+            text = {
+                if (progress == null) {
+                    Text("是否下载并安装此版本？下载完成后需要你确认安装。")
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text(
+                            if (progress == 100) stringResource(R.string.settings_update_verifying)
+                            else stringResource(R.string.settings_update_download_progress, progress),
+                        )
+                        LinearProgressIndicator(
+                            progress = { progress / 100f },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
+            },
             dismissButton = {
-                TextButton(onClick = { pendingUpdate = null }) {
+                TextButton(onClick = {
+                    if (progress == null) pendingUpdate = null
+                    else updateDownloadJob?.cancel()
+                }) {
                     Text(stringResource(R.string.common_cancel))
                 }
             },
             confirmButton = {
-                TextButton(onClick = {
-                    pendingUpdate = null
-                    if (!updateBusy) {
+                if (progress == null) {
+                    TextButton(onClick = {
+                        if (updateBusy) return@TextButton
                         updateBusy = true
-                        updateScope.launch {
+                        updateProgress = 0
+                        updateDownloadJob = updateScope.launch {
                             try {
-                                CatTvUpdater.downloadAndInstall(context, update)
+                                CatTvUpdater.downloadAndInstall(context, update) { updateProgress = it }
+                            } catch (e: CancellationException) {
+                                throw e
                             } catch (e: Exception) {
                                 Toast.makeText(context, "更新失败：${e.message ?: "请稍后重试"}", Toast.LENGTH_LONG).show()
                             } finally {
+                                pendingUpdate = null
+                                updateProgress = null
+                                updateDownloadJob = null
                                 updateBusy = false
                             }
                         }
+                    }) {
+                        Text(stringResource(R.string.common_confirm))
                     }
-                }) {
-                    Text(stringResource(R.string.common_confirm))
                 }
             },
         )

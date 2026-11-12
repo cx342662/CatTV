@@ -325,6 +325,7 @@ class TmdbApiTest {
             {
               "overview":"剧情简介",
               "vote_average":6.1,
+              "release_date":"2002-08-07",
               "genres":[{"id":35,"name":"喜剧"},{"id":28,"name":"动作"}],
               "credits":{"cast":[
                 {"id":1041,"name":"刘嘉玲","character":"C","profile_path":"/c.jpg","order":3},
@@ -337,6 +338,7 @@ class TmdbApiTest {
         val detail = TmdbApi.parseDetail(json)!!
         assertEquals("剧情简介", detail.overview)
         assertEquals(6.1, detail.rating, 0.001)
+        assertEquals("2002-08-07", detail.releaseDate)
         assertEquals(listOf("喜剧", "动作"), detail.genres)
         assertEquals(listOf("张小斐", "迪丽热巴", "刘嘉玲"), detail.cast.map { it.name })
         assertEquals(listOf(1043, 1044, 1041), detail.cast.map { it.id })
@@ -367,10 +369,12 @@ class TmdbApiTest {
     fun parseDetail_toleratesMissingParts() {
         val detail = TmdbApi.parseDetail("""{"overview":"x"}""")!!
         assertEquals("x", detail.overview)
+        assertNull(detail.releaseDate)
         assertEquals(0.0, detail.rating, 0.001)
         assertTrue(detail.genres.isEmpty())
         assertTrue(detail.cast.isEmpty())
         assertNull(TmdbApi.parseDetail("not-json"))
+        assertEquals("2024-03-15", TmdbApi.parseDetail("""{"first_air_date":"2024-03-15"}""")?.releaseDate)
     }
 
     @Test

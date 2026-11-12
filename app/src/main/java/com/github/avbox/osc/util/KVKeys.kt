@@ -126,6 +126,7 @@ object KVKeys {
     const val TMDB_ENABLE = "tmdb_enable"
     const val TMDB_POSTER_STYLE = "tmdb_poster_style"
     const val TMDB_API_KEY = "tmdb_api_key"
+    const val MDBLIST_API_KEY = "mdblist_api_key"
     const val TMDB_API_BASE = "tmdb_api_base"
     const val TMDB_IMAGE_BASE = "tmdb_image_base"
     const val TMDB_API_BASE_DEFAULT = "https://api.tmdb.org"

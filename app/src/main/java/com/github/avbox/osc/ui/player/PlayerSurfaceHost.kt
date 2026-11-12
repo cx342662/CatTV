@@ -27,7 +27,7 @@ import com.github.avbox.osc.ui.theme.AVBoxTheme
  * 字幕 → media3 字幕 → 歌词 → Compose 控件层，后者盖在前者之上。
  */
 @Composable
-internal fun PlayerSurfaceHost(controller: VideoPlayerController) {
+internal fun PlayerSurfaceHost(controller: VideoPlayerController, onPictureInPicture: () -> Unit) {
     val cfg = controller.playerConfig
     val codecFlow = controller.videoCodecFlow
     val decodeFlow = remember(cfg, codecFlow) { controller.config.decodeChoiceFlow(cfg) }
@@ -65,6 +65,7 @@ internal fun PlayerSurfaceHost(controller: VideoPlayerController) {
                     controller.gestureActions.beginSession(w, h, sw, y)
                 },
                 onTapPending = { controller.onGestureTapPending() },
+                onPictureInPicture = onPictureInPicture,
             )
         }
     }

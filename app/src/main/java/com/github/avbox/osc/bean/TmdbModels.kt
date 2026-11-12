@@ -25,6 +25,9 @@ data class TmdbDetail(
     val genres: List<String>,
     val cast: List<TmdbCastMember>,
     val seasons: List<TmdbSeason>,
+    val releaseDate: String? = null,
+    val tmdbId: Int = 0,
+    val mediaType: String? = null,
 )
 
 data class TmdbSeason(

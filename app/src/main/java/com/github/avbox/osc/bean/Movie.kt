@@ -27,6 +27,12 @@ class Movie : Serializable {
 
     @XStreamAlias("video")
     class Video : Serializable {
+        companion object {
+            private const val serialVersionUID = -4011115277143414435L
+        }
+
+        @JvmField
+        var doubanScore: Double? = null
         @JvmField
         @XStreamAlias("last")
         var last: String? = null

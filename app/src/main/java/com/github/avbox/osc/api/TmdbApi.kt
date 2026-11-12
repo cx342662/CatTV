@@ -277,6 +277,8 @@ object TmdbApi {
         val root = parseJsonObject(json) ?: return null
         return TmdbDetail(
             overview = root.stringOrNull("overview").orEmpty(),
+            releaseDate = root.stringOrNull("release_date")?.takeIf { it.isNotBlank() }
+                ?: root.stringOrNull("first_air_date"),
             rating = root.doubleOrNull("vote_average") ?: 0.0,
             genres = root.arrayOrNull(GENRES_KEY)?.mapNotNull { element ->
                 if (!element.isJsonObject) null else element.asJsonObject.stringOrNull("name")

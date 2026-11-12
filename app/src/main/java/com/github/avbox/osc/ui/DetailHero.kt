@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -100,7 +101,6 @@ import com.github.avbox.osc.ui.theme.AppThemeState
 import com.github.avbox.osc.util.TmdbImages
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
-import java.util.Locale
 import kotlin.random.Random
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -167,15 +167,11 @@ private val HeroButtonRowSpacing = 16.dp
 
 private val HeroLogoHeight = 84.dp
 
-private val HeroRatingIconSize = 14.dp
-
-private val HeroRatingStarColor = Color(0xFFFFC107)
-
 private val HeroDescriptionSpacing = 14.dp
 
 private const val HeroDescriptionAlpha = 0.82f
 
-private const val HeroDescriptionCollapsedLines = 3
+private const val HeroDescriptionCollapsedLines = 2
 
 private val MetaSeparator = " · "
 
@@ -206,6 +202,7 @@ internal fun DetailHero(
     area: String?,
     type: String?,
     note: String?,
+    doubanScore: Double?,
     description: String?,
     collected: Boolean,
     followed: Boolean,
@@ -225,20 +222,29 @@ internal fun DetailHero(
     val glassBackdrop = rememberLayerBackdrop(onDraw = { drawContent() })
     val circleColor = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = HeroCircleAlpha)
     val detail = rememberTmdbDetail(vm, title, altTitle, year)
-    val ratingText = detail?.rating
-        ?.takeIf { it > 0.0 }
-        ?.let { String.format(Locale.US, "%.1f", it) }
+    val mdbListRatings by vm.mdbListRatings.collectAsState()
+    val ratings = mdbListRatings + listOfNotNull(
+        detail?.rating?.takeIf { it > 0.0 && it <= 10.0 }?.let { "tmdb" to it },
+        doubanScore?.let { "douban" to it },
+    )
     val types = type.orEmpty()
         .split(TypeSeparators)
         .map { it.trim() }
         .filter { it.isNotEmpty() }
         .joinToString(MetaSeparator)
-    val metaTail = listOfNotNull(
-        note?.trim().orEmpty().takeIf { it.isNotEmpty() && !isRatingNote(it) },
-        year.takeIf { it > 0 }?.toString(),
-        area?.takeIf { it.isNotBlank() },
-        types.takeIf { it.isNotEmpty() },
-    ).joinToString(MetaSeparator)
+    val date = detail?.releaseDate?.takeIf { it.isNotBlank() }
+        ?: year.takeIf { it > 0 }?.toString()
+    val genres = detail?.genres.orEmpty().filter { it.isNotBlank() }.take(2)
+    val metaTail = if (genres.isNotEmpty()) {
+        (listOfNotNull(date) + genres).joinToString(MetaSeparator)
+    } else {
+        listOfNotNull(
+            date,
+            types.takeIf { it.isNotEmpty() },
+            area?.takeIf { it.isNotBlank() },
+            note?.trim()?.takeIf { it.isNotEmpty() && !isRatingNote(it) },
+        ).joinToString(MetaSeparator)
+    }
     val descriptionText = detail?.overview?.takeIf { it.isNotBlank() }
         ?: description?.takeIf { it.isNotBlank() }
     var descriptionExpanded by rememberSaveable(title) { mutableStateOf(false) }
@@ -286,7 +292,7 @@ internal fun DetailHero(
                     color = captionColor,
                 )
                 DetailHeroInfoBlock(
-                    ratingText = ratingText,
+                    ratings = ratings,
                     metaTail = metaTail,
                     descriptionText = descriptionText,
                     descriptionExpanded = descriptionExpanded,
@@ -376,7 +382,7 @@ internal fun DetailHero(
             }
         }
         DetailHeroInfoBlock(
-            ratingText = ratingText,
+            ratings = ratings,
             metaTail = metaTail,
             descriptionText = descriptionText,
             descriptionExpanded = descriptionExpanded,
@@ -437,7 +443,7 @@ private fun DetailHeroTopActions(
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun DetailHeroInfoBlock(
-    ratingText: String?,
+    ratings: Map<String, Double>,
     metaTail: String,
     descriptionText: String?,
     descriptionExpanded: Boolean,
@@ -458,9 +464,19 @@ private fun DetailHeroInfoBlock(
             .clipToBounds(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        if (ratingText != null || metaTail.isNotEmpty()) {
-            DetailHeroRatingLine(rating = ratingText, tail = metaTail, color = captionColor)
+        if (metaTail.isNotEmpty()) {
+            Text(
+                text = metaTail,
+                color = captionColor,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 5.dp),
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
+        DetailRatingBadges(ratings, captionColor)
         if (!descriptionText.isNullOrEmpty()) {
             DetailHeroDescription(
                 text = descriptionText,
@@ -475,9 +491,12 @@ private fun DetailHeroInfoBlock(
             onClick = onPlay,
             modifier = Modifier
                 .padding(top = HeroActionSpacing)
-                .widthIn(min = HeroPlayCapsuleMinWidth)
+                .then(if (flat) Modifier.widthIn(min = HeroPlayCapsuleMinWidth) else Modifier.fillMaxWidth(0.76f))
                 .height(HeroPlayCapsuleHeight)
-                .pressScale(playInteraction, PLAYER_PRESS_SCALE),
+                .pressScale(playInteraction, PLAYER_PRESS_SCALE)
+                .detailGlass(CircleShape),
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent, contentColor = captionColor),
+            elevation = ButtonDefaults.buttonElevation(),
             shapes = PressMorphButtonShapes,
             contentPadding = PaddingValues(horizontal = HeroPlayCapsuleHorizontalPadding),
             interactionSource = playInteraction,
@@ -485,14 +504,14 @@ private fun DetailHeroInfoBlock(
             Image(
                 painter = painterResource(R.drawable.player_ic_play),
                 contentDescription = null,
-                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onPrimary),
+                colorFilter = ColorFilter.tint(captionColor),
                 modifier = Modifier.size(22.dp),
             )
             Text(
                 text = stringResource(R.string.common_play),
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onPrimary,
+                fontWeight = FontWeight.Bold,
+                color = captionColor,
                 modifier = Modifier.padding(start = 6.dp),
             )
         }
@@ -613,43 +632,6 @@ private fun DetailHeroTitleText(title: String, color: Color) {
         overflow = TextOverflow.Ellipsis,
         modifier = Modifier.fillMaxWidth(),
     )
-}
-
-@Composable
-private fun DetailHeroRatingLine(rating: String?, tail: String, color: Color) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        if (rating != null) {
-            Icon(
-                painter = painterResource(R.drawable.ic_tab_collect_filled),
-                contentDescription = null,
-                tint = HeroRatingStarColor,
-                modifier = Modifier.size(HeroRatingIconSize),
-            )
-            Text(
-                text = rating,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Medium,
-                color = color,
-                maxLines = 1,
-                modifier = Modifier.padding(start = 4.dp),
-            )
-        }
-        if (tail.isNotEmpty()) {
-            Text(
-                text = if (rating != null) MetaSeparator + tail else tail,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Medium,
-                color = color,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f, fill = false),
-            )
-        }
-    }
 }
 
 @Composable

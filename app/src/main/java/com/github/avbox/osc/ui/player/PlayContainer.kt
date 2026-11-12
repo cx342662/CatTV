@@ -9,6 +9,7 @@ import android.text.TextUtils
 import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.MotionEvent
+import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebView
 import android.widget.FrameLayout
@@ -50,7 +51,10 @@ import kotlinx.coroutines.withTimeoutOrNull
 
 private const val CAST_URL_WAIT_MS = 5_000L
 
-class PlayContainer(activity: Activity) : FrameLayout(activity), CustomAdapt, PlaybackHostApi, PlaybackPage {
+class PlayContainer(
+    activity: Activity,
+    private val onPictureInPicture: () -> Unit,
+) : FrameLayout(activity), CustomAdapt, PlaybackHostApi, PlaybackPage {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
@@ -132,6 +136,11 @@ class PlayContainer(activity: Activity) : FrameLayout(activity), CustomAdapt, Pl
     }
 
     internal fun uiState(): PlayerUiState = playerController.getUiState()
+
+    internal fun setPictureInPictureMode(enabled: Boolean) {
+        val controller = playerController as? VideoPlayerController ?: return
+        controller.controllerView().visibility = if (enabled) View.INVISIBLE else View.VISIBLE
+    }
 
     fun interface OnQualitySelectedListener {
         fun onQualitySelected(position: Int)
@@ -298,7 +307,7 @@ class PlayContainer(activity: Activity) : FrameLayout(activity), CustomAdapt, Pl
         surfaceSlot = findViewById(R.id.surfaceSlot)
         val activity = attachedActivity ?: return
         val controller = VideoPlayerController(activity)
-        controller.setPlayerContent { PlayerSurfaceHost(controller) }
+        controller.setPlayerContent { PlayerSurfaceHost(controller, onPictureInPicture) }
         playerController = controller
         controller.onVideoSizeReady = { width, height ->
             if (VideoOrientation.isUsableSize(width, height)) {

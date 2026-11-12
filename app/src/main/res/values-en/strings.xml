@@ -637,4 +637,9 @@
     <string name="settings_update">Online update</string>
     <string name="settings_update_subtitle">Check for and install the latest version</string>
     <string name="settings_update_unavailable">The update service has not been configured yet. It will be available later.</string>
+    <string name="mdblist_api_key">MDBList API Key</string>
+    <string name="player_picture_in_picture">Picture-in-picture</string>
+    <string name="settings_update_download_progress">Downloading · %1$d%%</string>
+    <string name="settings_update_verifying">Download complete. Verifying the APK…</string>
+    <string name="detail_douban_rating">Douban</string>
 </resources>

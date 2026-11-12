@@ -441,7 +441,7 @@ private fun PlayerArea(state: LivePlayUiState, actions: LivePlayActions, modifie
                 IconButton(onClick = actions.player.onEnterPictureInPicture) {
                     Icon(
                         imageVector = Icons.Filled.PictureInPictureAlt,
-                        contentDescription = "窗口化播放（画中画）",
+                        contentDescription = stringResource(R.string.player_picture_in_picture),
                         tint = Color.White,
                         modifier = Modifier.size(27.dp),
                     )

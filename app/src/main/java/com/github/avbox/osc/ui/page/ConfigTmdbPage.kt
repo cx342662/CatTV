@@ -74,6 +74,17 @@ fun ConfigTmdbScreen(
             }
         }
         SettingsGroup(title = null) {
+            SettingsCard(SettingsCardPosition.SINGLE) {
+                TmdbTextField(
+                    label = stringResource(R.string.mdblist_api_key),
+                    value = state.mdbListApiKey,
+                    onValueChange = actions.setMdbListApiKey,
+                    masked = true,
+                    clearable = true,
+                )
+            }
+        }
+        SettingsGroup(title = null) {
             SettingsCard(SettingsCardPosition.FIRST) {
                 TmdbTextField(
                     label = stringResource(R.string.tmdb_api_key),

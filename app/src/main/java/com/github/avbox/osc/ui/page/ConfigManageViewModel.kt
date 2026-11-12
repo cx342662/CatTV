@@ -16,6 +16,7 @@ import com.github.avbox.osc.util.ApiLineSignal
 import com.github.avbox.osc.boot.BootGuard
 import com.github.avbox.osc.util.AppContextHolder
 import com.github.avbox.osc.util.KVKeys
+import com.github.avbox.osc.util.TmdbImages
 import com.github.avbox.osc.util.HistoryHelper
 import com.github.avbox.osc.util.KV
 import com.github.avbox.osc.util.AppLog
@@ -63,6 +64,7 @@ data class ConfigTmdbState(
     val imageBase: String,
     val apiBaseError: Boolean = false,
     val imageBaseError: Boolean = false,
+    val mdbListApiKey: String = "",
 )
 
 @Immutable
@@ -76,6 +78,7 @@ data class ConfigTmdbActions(
     val commitImageBase: () -> Unit,
     val testApi: () -> Unit,
     val testImage: () -> Unit,
+    val setMdbListApiKey: (String) -> Unit = {},
 )
 
 enum class TmdbTest { None, Api, Image }
@@ -134,6 +137,7 @@ class ConfigManageViewModel(
             apiKey = KV.get(KVKeys.TMDB_API_KEY, ""),
             apiBase = KV.get(KVKeys.TMDB_API_BASE, ""),
             imageBase = KV.get(KVKeys.TMDB_IMAGE_BASE, ""),
+            mdbListApiKey = KV.get(KVKeys.MDBLIST_API_KEY, ""),
         ),
     )
     private val tmdbTesting = MutableStateFlow(TmdbTest.None)
@@ -164,6 +168,14 @@ class ConfigManageViewModel(
         commitImageBase = { commitTmdbImageBase() },
         testApi = { testTmdbApi() },
         testImage = { testTmdbImage() },
+        setMdbListApiKey = { value ->
+            val key = sanitizeConfigText(value)
+            if (key != tmdbState.value.mdbListApiKey) {
+                KV.put(KVKeys.MDBLIST_API_KEY, key)
+                tmdbState.value = tmdbState.value.copy(mdbListApiKey = key)
+                TmdbImages.notifyConfigChanged()
+            }
+        },
     )
 
     private fun updateTmdbEnabled(enabled: Boolean) {

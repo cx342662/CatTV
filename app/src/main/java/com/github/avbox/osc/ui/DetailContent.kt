@@ -83,6 +83,7 @@ internal fun DetailContent(
                 area = info.area,
                 type = info.type,
                 note = info.note,
+                doubanScore = info.doubanScore,
                 description = description,
                 collected = collected,
                 followed = followRecord != null,

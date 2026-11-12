@@ -8,6 +8,9 @@ import android.os.Build
 import androidx.core.content.FileProvider
 import com.github.avbox.osc.BuildConfig
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.File
@@ -23,6 +26,7 @@ import java.security.MessageDigest
 object CatTvUpdater {
     private const val RELEASE_API = "https://api.github.com/repos/cx342662/CatTV/releases/latest"
     private const val MAX_APK_BYTES = 250L * 1024 * 1024
+    private val downloadLock = Mutex()
 
     data class UpdateInfo(
         val versionName: String,
@@ -65,7 +69,11 @@ object CatTvUpdater {
         }
     }
 
-    suspend fun downloadAndInstall(context: Context, update: UpdateInfo) {
+    suspend fun downloadAndInstall(
+        context: Context,
+        update: UpdateInfo,
+        onProgress: (Int) -> Unit,
+    ) = downloadLock.withLock {
         val apk = withContext(Dispatchers.IO) {
             val file = File(context.externalCacheDir ?: context.cacheDir, "cattv-update.apk")
             val con = (URL(update.assetUrl).openConnection() as HttpURLConnection).apply {
@@ -78,20 +86,28 @@ object CatTvUpdater {
                 check(con.responseCode == 200) { "下载失败，HTTP ${con.responseCode}" }
                 val sha = MessageDigest.getInstance("SHA-256")
                 var total = 0L
+                var progress = 0
                 con.inputStream.use { input ->
                     file.outputStream().use { out ->
                         val buffer = ByteArray(64 * 1024)
                         while (true) {
+                            ensureActive()
                             val n = input.read(buffer)
                             if (n < 0) break
                             total += n
                             check(total <= MAX_APK_BYTES && total <= update.assetSize) { "APK 大小异常" }
                             sha.update(buffer, 0, n)
                             out.write(buffer, 0, n)
+                            val percent = (total * 100 / update.assetSize).toInt()
+                            if (percent != progress) {
+                                progress = percent
+                                withContext(Dispatchers.Main.immediate) { onProgress(percent) }
+                            }
                         }
                     }
                 }
                 check(total == update.assetSize) { "APK 文件下载不完整" }
+                ensureActive()
                 val actual = sha.digest().joinToString("") { "%02x".format(it) }
                 check(actual.equals(update.expectedSha256, ignoreCase = true)) { "APK 校验失败" }
                 verifyArchive(context, file)

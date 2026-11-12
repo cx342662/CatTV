@@ -29,7 +29,7 @@ object TmdbPoster {
     private const val HITS_CACHE_PREFIX = "cache_tmdb_hits_"
     private const val IMAGES_CACHE_PREFIX = "cache_tmdb_images_"
     private const val LOGOS_CACHE_PREFIX = "cache_tmdb_logos_"
-    private const val DETAIL_CACHE_PREFIX = "cache_tmdb_detail2_"
+    private const val DETAIL_CACHE_PREFIX = "cache_tmdb_detail3_"
     private const val EPISODES_CACHE_PREFIX = "cache_tmdb_episodes2_"
     private const val SEASON_CACHE_PREFIX = "cache_tmdb_season_"
     private const val STILLS_CACHE_PREFIX = "cache_tmdb_stills_"
@@ -194,7 +194,7 @@ object TmdbPoster {
             val hits = cachedHits(candidate) ?: continue
             val best = bestHit(hits, candidate, year) ?: cachedAliasHit(candidate) ?: continue
             val raw = readCached(detailKey(best.mediaType, best.id)) ?: return null
-            return decodeDetailValue(raw)
+            return decodeDetailValue(raw)?.copy(tmdbId = best.id, mediaType = best.mediaType)
         }
         return null
     }
@@ -220,7 +220,7 @@ object TmdbPoster {
         for (candidate in nameCandidates(name, altName)) {
             val hits = ensureHits(candidate) ?: continue
             val best = pickBestWithAlias(hits, candidate, year) ?: continue
-            return ensureDetail(best.mediaType, best.id)
+            return ensureDetail(best.mediaType, best.id)?.copy(tmdbId = best.id, mediaType = best.mediaType)
         }
         return null
     }

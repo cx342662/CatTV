@@ -25,6 +25,7 @@ private val BackdropScrimAlphas = listOf(0.22f, 0.48f, 0.80f)
 internal fun PosterBackdrop(
     pic: String?,
     modifier: Modifier = Modifier,
+    surfaceOpacity: Float = 1f,
     onImage: ((Image) -> Unit)? = null,
 ) {
     Box(modifier = modifier.fillMaxSize()) {
@@ -51,7 +52,7 @@ internal fun PosterBackdrop(
                 .background(
                     Brush.verticalGradient(
                         colors = BackdropScrimAlphas.map {
-                            MaterialTheme.colorScheme.surface.copy(alpha = it)
+                            MaterialTheme.colorScheme.surface.copy(alpha = it * surfaceOpacity)
                         },
                     ),
                 ),

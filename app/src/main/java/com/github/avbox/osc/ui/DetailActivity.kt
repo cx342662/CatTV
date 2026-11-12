@@ -55,6 +55,7 @@ class DetailActivity : BaseActivity(), PageHost {
     private var pendingEpisodeSync = false
     private var videoSizeWatchArmed = false
     private var enteringPictureInPicture = false
+    private var wasInPictureInPicture = false
     var isPictureInPictureUi by mutableStateOf(false)
         private set
 
@@ -153,7 +154,7 @@ class DetailActivity : BaseActivity(), PageHost {
 
     fun ensurePlayContainer(): PlayContainer {
         if (playContainer == null) {
-            playContainer = PlayContainer(this).also {
+            playContainer = PlayContainer(this, ::enterVodPictureInPicture).also {
                 it.pageHostRef = this
                 it.setPreviewMode(true)
                 it.qualitySelectedListener = PlayContainer.OnQualitySelectedListener { position -> vm.onQualitySelectionAccepted(position) }
@@ -422,6 +423,7 @@ class DetailActivity : BaseActivity(), PageHost {
         super.onResume()
         applyStatusBarAppearance()
         if (isInPictureInPictureMode) return
+        wasInPictureInPicture = false
         playContainer?.hostResume()
         syncEpisodeAfterMusicPage()
         val container = playContainer ?: return
@@ -438,20 +440,33 @@ class DetailActivity : BaseActivity(), PageHost {
         super.onPause()
     }
 
+    override fun onStop() {
+        super.onStop()
+        if (wasInPictureInPicture || isInPictureInPictureMode) {
+            wasInPictureInPicture = false
+            playContainer?.cancelCastWait()
+            releasePlayContainer()
+            finish()
+        }
+    }
+
     override fun onPictureInPictureModeChanged(
         isInPictureInPictureMode: Boolean,
         newConfig: Configuration,
     ) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
-        isPictureInPictureUi = isInPictureInPictureMode
-        if (!isInPictureInPictureMode) {
-            enteringPictureInPicture = false
-            applyStatusBarAppearance()
-            playContainer?.hostResume()
-        }
+        applyPictureInPictureUi(isInPictureInPictureMode)
+        enteringPictureInPicture = false
+        if (isInPictureInPictureMode) wasInPictureInPicture = true
+        else applyStatusBarAppearance()
     }
 
-    fun enterVodPictureInPicture() {
+    private fun applyPictureInPictureUi(enabled: Boolean) {
+        isPictureInPictureUi = enabled
+        playContainer?.setPictureInPictureMode(enabled)
+    }
+
+    private fun enterVodPictureInPicture() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             Toast.makeText(this, "当前 Android 版本不支持画中画", Toast.LENGTH_SHORT).show()
             return
@@ -471,8 +486,18 @@ class DetailActivity : BaseActivity(), PageHost {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) builder.setSeamlessResizeEnabled(true)
         val params = builder.build()
         enteringPictureInPicture = true
-        if (!enterPictureInPictureMode(params)) {
+        applyPictureInPictureUi(true)
+        val entered = try {
+            enterPictureInPictureMode(params)
+        } catch (error: IllegalStateException) {
+            AppLog.e("DetailActivity", error)
+            false
+        }
+        if (entered) {
+            showHomeBehindPictureInPicture()
+        } else {
             enteringPictureInPicture = false
+            applyPictureInPictureUi(false)
             Toast.makeText(this, "无法进入画中画模式", Toast.LENGTH_SHORT).show()
         }
     }

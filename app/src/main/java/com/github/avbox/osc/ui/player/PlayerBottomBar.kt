@@ -22,6 +22,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PictureInPictureAlt
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -74,6 +77,7 @@ fun PlayerBottomBar(
     state: PlayerUiState,
     actions: PlayerActions,
     modifier: Modifier = Modifier,
+    onPictureInPicture: (() -> Unit)? = null,
 ) {
     val edge = playerEdgePadding()
     val configuration = LocalConfiguration.current
@@ -158,11 +162,21 @@ fun PlayerBottomBar(
             }
         }
 
+        if (state.previewMode && onPictureInPicture != null) {
+            PictureInPictureButton(
+                box = PreviewPlayPauseBox,
+                iconSize = 24.dp,
+                onClick = onPictureInPicture,
+                modifier = Modifier.align(Alignment.End).padding(end = edge),
+            )
+        }
+
         if (!state.previewMode) {
             PlayerActionRow(
                 state = state,
                 actions = actions,
                 modifier = Modifier.padding(top = 6.dp),
+                onPictureInPicture = onPictureInPicture,
             )
         }
 
@@ -202,6 +216,7 @@ private fun PlayerActionRow(
     state: PlayerUiState,
     actions: PlayerActions,
     modifier: Modifier = Modifier,
+    onPictureInPicture: (() -> Unit)?,
 ) {
     val actionBox = playerDim(R.dimen.vs_70)
     val actionIcon = playerDim(R.dimen.vs_50)
@@ -214,6 +229,9 @@ private fun PlayerActionRow(
             horizontalArrangement = Arrangement.spacedBy(playerDim(R.dimen.vs_12)),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            if (onPictureInPicture != null) {
+                PictureInPictureButton(actionBox, actionIcon, onPictureInPicture)
+            }
             TransportButton(
                 iconRes = R.drawable.player_ic_menu_episodes,
                 contentDescription = stringResource(R.string.detail_episodes),
@@ -229,6 +247,23 @@ private fun PlayerActionRow(
                 onClick = actions::onParamsClicked,
             )
         }
+    }
+}
+
+@Composable
+private fun PictureInPictureButton(
+    box: Dp,
+    iconSize: Dp,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(modifier.size(box), contentAlignment = Alignment.Center) {
+        Icon(
+            imageVector = Icons.Filled.PictureInPictureAlt,
+            contentDescription = stringResource(R.string.player_picture_in_picture),
+            tint = Color.White,
+            modifier = Modifier.size(iconSize).playerPressEffect(onTap = onClick),
+        )
     }
 }
 

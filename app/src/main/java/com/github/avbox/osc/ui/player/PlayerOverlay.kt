@@ -1,5 +1,8 @@
 package com.github.avbox.osc.ui.player
 
+import android.content.pm.PackageManager
+import android.os.Build
+
 import android.content.res.Configuration
 import android.content.res.Resources
 import android.util.TypedValue
@@ -49,8 +52,15 @@ fun PlayerOverlay(
     gestureHandler: VideoGestureHandler,
     gestureSession: (width: Int, height: Int, screenWidth: Int, downY: Float) -> VideoGestureSession,
     onTapPending: () -> Unit,
+    onPictureInPicture: () -> Unit,
 ) {
-    val screenWidthPx = LocalContext.current.resources.displayMetrics.widthPixels
+    val context = LocalContext.current
+    val pipSupported = remember(context) {
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+            context.packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
+    }
+    val pipAction = onPictureInPicture.takeIf { pipSupported }
+    val screenWidthPx = context.resources.displayMetrics.widthPixels
     BoxWithConstraints(
         Modifier
             .fillMaxSize()
@@ -81,7 +91,7 @@ fun PlayerOverlay(
             fromTop = false,
             modifier = Modifier.align(Alignment.BottomCenter),
         ) {
-            PlayerBottomBar(state, actions)
+            PlayerBottomBar(state, actions, onPictureInPicture = pipAction)
         }
         PlayerSlideHint(state)
         PlayerSeekHint(state)

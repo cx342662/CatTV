@@ -33,6 +33,7 @@ data class VodInfo(
     val updateTime: Long = 0,
     val playerCfg: String = "",
     val reverseSort: Boolean = false,
+    val doubanScore: Double? = null,
 ) : Serializable {
 
     fun reverse() {
@@ -48,6 +49,7 @@ data class VodInfo(
     class VodSeries(val name: String? = null, val url: String? = null) : Serializable
 
     companion object {
+        private const val serialVersionUID = -5265042211842688620L
 
         fun fromVideo(video: Movie.Video): VodInfo {
             var flags: ArrayList<VodSeriesFlag>? = null
@@ -91,6 +93,7 @@ data class VodInfo(
                 year = video.year,
                 state = video.state,
                 note = video.note,
+                doubanScore = video.doubanScore,
                 actor = video.actor,
                 director = video.director,
                 des = video.des,

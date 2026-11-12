@@ -80,6 +80,7 @@ class LivePlayActivity : BaseActivity() {
     private val livePlayerManager = LivePlayerManager()
     private var exitingLivePlay = false
     private var enteringPictureInPicture = false
+    private var wasInPictureInPicture = false
     private var nowday = Date()
 
     private val epgController = LiveEpgController(object : LiveEpgController.Host {
@@ -223,6 +224,7 @@ class LivePlayActivity : BaseActivity() {
         super.onResume()
         applyStatusBarAppearance()
         if (isInPictureInPictureMode) return
+        wasInPictureInPicture = false
         exitingLivePlay = false
         val takenOverByVod = PlaybackService.peek()?.enterLiveState() ?: false
         rebindLiveControllerIfNeeded()
@@ -241,18 +243,24 @@ class LivePlayActivity : BaseActivity() {
         }
     }
 
+    override fun onStop() {
+        super.onStop()
+        if (wasInPictureInPicture || isInPictureInPictureMode) {
+            wasInPictureInPicture = false
+            releaseLivePlayback()
+            finish()
+        }
+    }
+
     override fun onPictureInPictureModeChanged(
         isInPictureInPictureMode: Boolean,
         newConfig: Configuration,
     ) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
         vm.setPictureInPictureMode(isInPictureInPictureMode)
-        if (isInPictureInPictureMode) {
-            // Keep the existing page state intact: the whole app UI is rendered in PiP.
-        } else {
-            enteringPictureInPicture = false
-            applyStatusBarAppearance()
-        }
+        enteringPictureInPicture = false
+        if (isInPictureInPictureMode) wasInPictureInPicture = true
+        else applyStatusBarAppearance()
     }
 
     private fun enterLivePictureInPicture() {
@@ -279,7 +287,9 @@ class LivePlayActivity : BaseActivity() {
         val params = builder.build()
         enteringPictureInPicture = true
         val entered = enterPictureInPictureMode(params)
-        if (!entered) {
+        if (entered) {
+            showHomeBehindPictureInPicture()
+        } else {
             enteringPictureInPicture = false
             Toast.makeText(this, "无法进入画中画模式", Toast.LENGTH_SHORT).show()
         }
@@ -288,11 +298,16 @@ class LivePlayActivity : BaseActivity() {
     override fun onDestroy() {
         super.onDestroy()
         overlay.hideSwitchChannelSnapshot()
-        PlaybackService.peek()?.exitLive()
-        kernelView = null
+        releaseLivePlayback()
         handler.removeCallbacksAndMessages(null)
         epgController.cancelAll()
         channelSourceLoader.cancelAll()
+    }
+
+    private fun releaseLivePlayback() {
+        val view = kernelView ?: return
+        kernelView = null
+        if (view.videoController === liveController) PlaybackService.peek()?.exitLive()
     }
 
     private fun initVideoView() {
