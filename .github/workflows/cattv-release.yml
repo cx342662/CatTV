@@ -1,19 +1,14 @@
 name: Publish CatTV Signed Release
 
 on:
-  push:
-    branches:
-      - fix/pip-fongmi-style
-    paths:
-      - ".github/workflows/cattv-release.yml"
   workflow_dispatch:
     inputs:
       versionName:
-        description: 'Release version (for example 1.3.2)'
+        description: 'Release version (for example 1.3.3)'
         required: true
         type: string
       versionCode:
-        description: 'Android versionCode (must increase, for example 38)'
+        description: 'Android versionCode (must increase, for example 39)'
         required: true
         type: string
 
@@ -55,8 +50,8 @@ jobs:
           python scripts/prepare_cattv_icons.py
       - name: Validate requested version and private signing secrets
         env:
-          VERSION_NAME: ${{ inputs.versionName || '1.3.2' }}
-          VERSION_CODE: ${{ inputs.versionCode || '38' }}
+          VERSION_NAME: ${{ inputs.versionName }}
+          VERSION_CODE: ${{ inputs.versionCode }}
           CATTV_KEYSTORE_BASE64: ${{ secrets.CATTV_KEYSTORE_BASE64 }}
           CATTV_KEY_ALIAS: ${{ secrets.CATTV_KEY_ALIAS }}
           CATTV_STORE_PASSWORD: ${{ secrets.CATTV_STORE_PASSWORD }}
@@ -65,7 +60,7 @@ jobs:
           set -euo pipefail
           [[ "$VERSION_NAME" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::Invalid version"; exit 1; }
           [[ "$VERSION_CODE" =~ ^[0-9]+$ ]] || { echo "::error::Invalid versionCode"; exit 1; }
-          [ "$VERSION_CODE" = "38" ] || { echo "::error::CatTV 1.3.2 must use versionCode 38"; exit 1; }
+          (( 10#$VERSION_CODE > 38 )) || { echo "::error::versionCode must exceed the previous mobile release"; exit 1; }
           test -n "$CATTV_KEYSTORE_BASE64"
           test -n "$CATTV_KEY_ALIAS"
           test -n "$CATTV_STORE_PASSWORD"
@@ -74,8 +69,8 @@ jobs:
           chmod 600 "$RUNNER_TEMP/cattv-release.jks"
       - name: Build signed release
         env:
-          VERSION_NAME: ${{ inputs.versionName || '1.3.2' }}
-          VERSION_CODE: ${{ inputs.versionCode || '38' }}
+          VERSION_NAME: ${{ inputs.versionName }}
+          VERSION_CODE: ${{ inputs.versionCode }}
           CATTV_KEY_ALIAS: ${{ secrets.CATTV_KEY_ALIAS }}
           CATTV_STORE_PASSWORD: ${{ secrets.CATTV_STORE_PASSWORD }}
           CATTV_KEY_PASSWORD: ${{ secrets.CATTV_KEY_PASSWORD }}
@@ -92,8 +87,8 @@ jobs:
       - name: Verify signed APK and publish
         env:
           GH_TOKEN: ${{ github.token }}
-          VERSION_NAME: ${{ inputs.versionName || '1.3.2' }}
-          VERSION_CODE: ${{ inputs.versionCode || '38' }}
+          VERSION_NAME: ${{ inputs.versionName }}
+          VERSION_CODE: ${{ inputs.versionCode }}
         run: |
           set -euo pipefail
           SRC="app/build/outputs/apk/release/AVBox_release.apk"
@@ -101,36 +96,29 @@ jobs:
           OUT="CatTV_${VERSION_NAME}_arm64-v8a.apk"
           cp "$SRC" "$OUT"
           APKSIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n1)"
-          "$APKSIGNER" verify --print-certs "$OUT"
+          CERTS="$("$APKSIGNER" verify --print-certs "$OUT")"
+          echo "$CERTS"
+          EXPECTED_CERT="59749dbdd0679fc48d9546b88e16cd345896b9664e5d42bf34552da23483bd62"
+          grep -F "certificate SHA-256 digest: $EXPECTED_CERT" <<< "$CERTS" >/dev/null
           AAPT="$(find "$ANDROID_HOME/build-tools" -name aapt -type f | sort -V | tail -n1)"
           BADGING="$("$AAPT" dump badging "$OUT")"
-          echo "$BADGING" | head -n 4
           echo "$BADGING" | grep -F "versionCode='$VERSION_CODE' versionName='$VERSION_NAME'" >/dev/null
           echo "$BADGING" | grep -F "package: name='com.github.avbox.osc'" >/dev/null
-          unzip -l "$OUT" | grep -q 'lib/arm64-v8a/'
+          grep -F "native-code: 'arm64-v8a'" <<< "$BADGING" >/dev/null
           echo "$(sha256sum "$OUT")" > "$OUT.sha256"
           NOTES="$(cat <<EOF
-          # CatTV v$VERSION_NAME
+          ## 新增
+          - 点播详情页新增 IMDb、TMDB、Trakt、烂番茄、Metacritic 和豆瓣评分徽标。有评分数据时显示。
+          - 在线更新新增下载进度条、百分比和安装包校验状态。
 
-          ## 更新内容
-          - 参考 FongMi/TV 的原生 Android 系统画中画交互，优化画中画进入与退出。
-          - 修复直播画中画切换时播放器视图重挂载风险，降低有声音无画面的概率。
-          - 修复点播画中画期间页面覆盖层与播放器视图管理问题。
-          - 点播播放时默认隐藏画中画按钮；点击视频显示控制栏后再显示入口。
-          - 全屏播放时，画中画按钮固定在视频区域右下角。
-          - 优化 PiP 生命周期处理，减少重复初始化播放器宿主。
-          - 保留 CatTV 原有播放内核、接口及其他功能。
-
-          ## 安装信息
-          - 版本：$VERSION_NAME
-          - versionCode：$VERSION_CODE
-          - 架构：ARM64-v8a
-          - 包名：com.github.avbox.osc
-          - 安装包：正式签名 APK
-          - 校验：附带 SHA-256 文件
+          ## 优化
+          - 优化点播详情页的海报过渡、信息布局和播放按钮，评分徽标更紧凑。
+          - 点播画中画入口移至全屏「选集」左侧，小窗内收起播放控件。
+          - 缩短进入画中画后切换到系统桌面的等待，关闭小窗时停止点播或直播。
           EOF
           )"
           gh release create "v$VERSION_NAME" "$OUT" "$OUT.sha256" \
+            --target "$GITHUB_SHA" \
             --title "CatTV v$VERSION_NAME" \
             --notes "$NOTES" \
             --latest
