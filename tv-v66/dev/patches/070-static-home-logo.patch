@@ -1,0 +1,69 @@
+--- a/smali/com/fongmi/android/tv/ui/activity/HomeActivityV2.smali
++++ b/smali/com/fongmi/android/tv/ui/activity/HomeActivityV2.smali
+@@ -7091,27 +7091,7 @@
+     .line 685
+     .line 686
+     .line 687
+-    invoke-virtual {v0, v3}, Landroid/view/View;->setOnClickListener(Landroid/view/View$OnClickListener;)V
+-
+     invoke-direct {p0, v0, v3}, Lcom/fongmi/android/tv/ui/activity/HomeActivityV2;->cattvBindSiteNav(Landroid/view/View;Landroid/view/View$OnClickListener;)V
+-
+-    .line 688
+-    .line 689
+-    .line 690
+-    iget-object v0, p0, Lcom/fongmi/android/tv/ui/activity/HomeActivityV2;->b0:Landroid/widget/FrameLayout;
+-
+-    .line 691
+-    .line 692
+-    new-instance v3, Lm31;
+-
+-    .line 693
+-    .line 694
+-    invoke-direct {v3, p0, v4}, Lm31;-><init>(Ljava/lang/Object;I)V
+-
+-    .line 695
+-    .line 696
+-    .line 697
+-    invoke-virtual {v0, v3}, Landroid/view/View;->setOnLongClickListener(Landroid/view/View$OnLongClickListener;)V
+ 
+     .line 698
+     .line 699
+@@ -7204,18 +7184,8 @@
+     .line 746
+     .line 747
+     :cond_7
+-    const-string v0, "home_history_mode"
+-
+-    .line 748
+-    .line 749
+-    invoke-static {v0, p1}, Lg01;->q(Ljava/lang/String;Z)Z
+-
+-    .line 750
+-    .line 751
+-    .line 752
+-    move-result v0
+-
+-    .line 753
++    const/4 v0, 0x0
++
+     if-eqz v0, :cond_9
+ 
+     .line 754
+--- a/res/layout/activity_home_v2.xml
++++ b/res/layout/activity_home_v2.xml
+@@ -31,13 +31,13 @@
+     </com.fongmi.android.tv.ui.custom.ProgressLayout>
+     <FrameLayout android:id="@id/historyPanelContainer" android:visibility="gone" android:layout_width="match_parent" android:layout_height="match_parent" />
+     <androidx.appcompat.widget.LinearLayoutCompat android:gravity="center_vertical" android:layout_gravity="top" android:orientation="horizontal" android:id="@id/navBar" android:clipChildren="false" android:clipToPadding="false" android:layout_width="match_parent" android:layout_height="64.0dp" android:paddingStart="24.0dp" android:paddingEnd="24.0dp">
+-        <FrameLayout android:layout_gravity="center_vertical" android:id="@id/homeBtn" android:background="@drawable/selector_home_logo" android:focusable="true" android:focusableInTouchMode="true" android:nextFocusRight="@id/cattvSiteNav" android:nextFocusDown="@id/typeRecycler" android:clickable="true" android:layout_width="28.0dp" android:layout_height="28.0dp" android:stateListAnimator="@null" android:defaultFocusHighlightEnabled="false">
++        <FrameLayout android:layout_gravity="center_vertical" android:id="@id/homeBtn" android:focusable="false" android:clickable="false" android:layout_width="28.0dp" android:layout_height="28.0dp" android:stateListAnimator="@null" android:defaultFocusHighlightEnabled="false">
+             <FrameLayout android:layout_gravity="center" android:id="@id/homeBtnClip" android:background="@drawable/shape_oval_clip" android:layout_width="24.0dp" android:layout_height="24.0dp" android:clipToOutline="true">
+                 <androidx.appcompat.widget.AppCompatImageView android:layout_gravity="center" android:id="@id/homeBtnHome" android:layout_width="24.0dp" android:layout_height="24.0dp" android:src="@drawable/cattv_logo_clear" android:scaleType="fitCenter" android:contentDescription="@string/home_vod" />
+                 <androidx.appcompat.widget.AppCompatImageView android:layout_gravity="center" android:id="@id/homeBtnHistory" android:layout_width="16.0dp" android:layout_height="16.0dp" android:layout_marginBottom="1.0dp" android:src="@drawable/ic_history_ring" android:contentDescription="@string/home_history" android:translationY="28.0dp" />
+             </FrameLayout>
+         </FrameLayout>
+-        <TextView android:textSize="15.0sp" android:textStyle="bold" android:textColor="@color/white" android:gravity="center" android:id="@id/cattvSiteNav" android:tag="cattv_site_nav" android:background="@drawable/selector_item_round" android:focusable="true" android:focusableInTouchMode="true" android:nextFocusLeft="@id/homeBtn" android:nextFocusRight="@id/navRecycler" android:nextFocusDown="@id/typeRecycler" android:clickable="true" android:layout_width="wrap_content" android:layout_height="34.0dp" android:minWidth="54.0dp" android:text="@string/cattv_nav_site" android:singleLine="true" android:paddingStart="10.0dp" android:paddingEnd="10.0dp" android:layout_marginStart="14.0dp" />
++        <TextView android:textSize="15.0sp" android:textStyle="bold" android:textColor="@color/white" android:gravity="center" android:id="@id/cattvSiteNav" android:tag="cattv_site_nav" android:background="@drawable/selector_item_round" android:focusable="true" android:focusableInTouchMode="true" android:nextFocusRight="@id/navRecycler" android:nextFocusDown="@id/typeRecycler" android:clickable="true" android:layout_width="wrap_content" android:layout_height="34.0dp" android:minWidth="54.0dp" android:text="@string/cattv_nav_site" android:singleLine="true" android:paddingStart="10.0dp" android:paddingEnd="10.0dp" android:layout_marginStart="14.0dp" />
+         <androidx.leanback.widget.HorizontalGridView android:id="@id/navRecycler" android:background="@android:color/transparent" android:nextFocusLeft="@id/cattvSiteNav" android:nextFocusDown="@id/typeRecycler" android:clipChildren="false" android:clipToPadding="false" android:layout_width="0.0dp" android:layout_height="64.0dp" android:layout_weight="1.0" android:layout_marginStart="20.0dp" app:focusOutEnd="false" app:focusOutFront="false" />
+     </androidx.appcompat.widget.LinearLayoutCompat>
+     <FrameLayout android:layout_gravity="top" android:id="@id/filterPanel" android:visibility="gone" android:clipChildren="false" android:clipToPadding="false" android:layout_width="match_parent" android:layout_height="wrap_content">
