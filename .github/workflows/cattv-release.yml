@@ -1,14 +1,16 @@
 name: Publish CatTV Signed Release
 
 on:
+  push:
+    branches: [release/mobile-v1.3.4]
   workflow_dispatch:
     inputs:
       versionName:
-        description: 'Release version (for example 1.3.3)'
+        description: 'Release version (for example 1.3.4)'
         required: true
         type: string
       versionCode:
-        description: 'Android versionCode (must increase, for example 39)'
+        description: 'Android versionCode (must increase, for example 40)'
         required: true
         type: string
 
@@ -50,8 +52,8 @@ jobs:
           python scripts/prepare_cattv_icons.py
       - name: Validate requested version and private signing secrets
         env:
-          VERSION_NAME: ${{ inputs.versionName }}
-          VERSION_CODE: ${{ inputs.versionCode }}
+          VERSION_NAME: ${{ inputs.versionName || '1.3.4' }}
+          VERSION_CODE: ${{ inputs.versionCode || '40' }}
           CATTV_KEYSTORE_BASE64: ${{ secrets.CATTV_KEYSTORE_BASE64 }}
           CATTV_KEY_ALIAS: ${{ secrets.CATTV_KEY_ALIAS }}
           CATTV_STORE_PASSWORD: ${{ secrets.CATTV_STORE_PASSWORD }}
@@ -60,7 +62,7 @@ jobs:
           set -euo pipefail
           [[ "$VERSION_NAME" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::Invalid version"; exit 1; }
           [[ "$VERSION_CODE" =~ ^[0-9]+$ ]] || { echo "::error::Invalid versionCode"; exit 1; }
-          (( 10#$VERSION_CODE > 38 )) || { echo "::error::versionCode must exceed the previous mobile release"; exit 1; }
+          (( 10#$VERSION_CODE > 39 )) || { echo "::error::versionCode must exceed the previous mobile release"; exit 1; }
           test -n "$CATTV_KEYSTORE_BASE64"
           test -n "$CATTV_KEY_ALIAS"
           test -n "$CATTV_STORE_PASSWORD"
@@ -69,56 +71,64 @@ jobs:
           chmod 600 "$RUNNER_TEMP/cattv-release.jks"
       - name: Build signed release
         env:
-          VERSION_NAME: ${{ inputs.versionName }}
-          VERSION_CODE: ${{ inputs.versionCode }}
+          VERSION_NAME: ${{ inputs.versionName || '1.3.4' }}
+          VERSION_CODE: ${{ inputs.versionCode || '40' }}
           CATTV_KEY_ALIAS: ${{ secrets.CATTV_KEY_ALIAS }}
           CATTV_STORE_PASSWORD: ${{ secrets.CATTV_STORE_PASSWORD }}
           CATTV_KEY_PASSWORD: ${{ secrets.CATTV_KEY_PASSWORD }}
         run: |
           set -euo pipefail
           chmod +x ./gradlew
-          ./gradlew :app:assembleRelease --no-daemon \
-            "-PCATTV_VERSION_NAME=$VERSION_NAME" \
-            "-PCATTV_VERSION_CODE=$VERSION_CODE" \
-            "-PRELEASE_STORE_FILE=$RUNNER_TEMP/cattv-release.jks" \
-            "-PRELEASE_KEY_ALIAS=$CATTV_KEY_ALIAS" \
-            "-PRELEASE_STORE_PASSWORD=$CATTV_STORE_PASSWORD" \
-            "-PRELEASE_KEY_PASSWORD=$CATTV_KEY_PASSWORD"
-      - name: Verify signed APK and publish
+          mkdir -p dist
+          APKSIGNER="$ANDROID_HOME/build-tools/37.0.0/apksigner"
+          AAPT="$ANDROID_HOME/build-tools/37.0.0/aapt"
+          for PACKAGE in com.github.avbox.osc com.cattv.mobile; do
+            SUFFIX=""
+            if [ "$PACKAGE" = "com.cattv.mobile" ]; then SUFFIX="_coexist"; fi
+            ./gradlew :app:assembleRelease --no-daemon \
+              "-PCATTV_VERSION_NAME=$VERSION_NAME" \
+              "-PCATTV_VERSION_CODE=$VERSION_CODE" \
+              "-PCATTV_APPLICATION_ID=$PACKAGE" \
+              "-PRELEASE_STORE_FILE=$RUNNER_TEMP/cattv-release.jks" \
+              "-PRELEASE_KEY_ALIAS=$CATTV_KEY_ALIAS" \
+              "-PRELEASE_STORE_PASSWORD=$CATTV_STORE_PASSWORD" \
+              "-PRELEASE_KEY_PASSWORD=$CATTV_KEY_PASSWORD"
+            OUT="CatTV_${VERSION_NAME}${SUFFIX}_arm64-v8a.apk"
+            cp app/build/outputs/apk/release/AVBox_release.apk "dist/$OUT"
+            CERTS="$("$APKSIGNER" verify --print-certs "dist/$OUT")"
+            grep -F "certificate SHA-256 digest: 59749dbdd0679fc48d9546b88e16cd345896b9664e5d42bf34552da23483bd62" <<< "$CERTS"
+            BADGING="$("$AAPT" dump badging "dist/$OUT")"
+            grep -F "package: name='$PACKAGE' versionCode='$VERSION_CODE' versionName='$VERSION_NAME'" <<< "$BADGING"
+            grep -F "native-code: 'arm64-v8a'" <<< "$BADGING"
+            (cd dist && sha256sum "$OUT" > "$OUT.sha256")
+          done
+      - name: Publish mobile release
         env:
           GH_TOKEN: ${{ github.token }}
-          VERSION_NAME: ${{ inputs.versionName }}
-          VERSION_CODE: ${{ inputs.versionCode }}
+          VERSION_NAME: ${{ inputs.versionName || '1.3.4' }}
         run: |
           set -euo pipefail
-          SRC="app/build/outputs/apk/release/AVBox_release.apk"
-          test -s "$SRC"
           OUT="CatTV_${VERSION_NAME}_arm64-v8a.apk"
-          cp "$SRC" "$OUT"
-          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n1)"
-          CERTS="$("$APKSIGNER" verify --print-certs "$OUT")"
-          echo "$CERTS"
-          EXPECTED_CERT="59749dbdd0679fc48d9546b88e16cd345896b9664e5d42bf34552da23483bd62"
-          grep -F "certificate SHA-256 digest: $EXPECTED_CERT" <<< "$CERTS" >/dev/null
-          AAPT="$(find "$ANDROID_HOME/build-tools" -name aapt -type f | sort -V | tail -n1)"
-          BADGING="$("$AAPT" dump badging "$OUT")"
-          echo "$BADGING" | grep -F "versionCode='$VERSION_CODE' versionName='$VERSION_NAME'" >/dev/null
-          echo "$BADGING" | grep -F "package: name='com.github.avbox.osc'" >/dev/null
-          grep -F "native-code: 'arm64-v8a'" <<< "$BADGING" >/dev/null
-          echo "$(sha256sum "$OUT")" > "$OUT.sha256"
+          COEXIST="CatTV_${VERSION_NAME}_coexist_arm64-v8a.apk"
           NOTES="$(cat <<EOF
           ## 新增
-          - 点播详情页新增 IMDb、TMDB、Trakt、烂番茄、Metacritic 和豆瓣评分徽标。有评分数据时显示。
-          - 在线更新新增下载进度条、百分比和安装包校验状态。
+          - 媒体徽章支持识别 4K、HDR、杜比、HEVC 等规格。可粘贴长链接导入 JSON 徽章包，保存多组并自由切换、删除。
+          - 播放设置新增退出自动画中画开关。
 
           ## 优化
-          - 优化点播详情页的海报过渡、信息布局和播放按钮，评分徽标更紧凑。
-          - 点播画中画入口移至全屏「选集」左侧，小窗内收起播放控件。
-          - 缩短进入画中画后切换到系统桌面的等待，关闭小窗时停止点播或直播。
+          - 点播先进入全屏，返回后在详情页顶部继续播放，可边看边选集。详情内播放器默认收起控件和弹幕。
+          - 全屏左下角显示当前影片片名，支持 TMDB 片名标志。媒体规格徽章显示在左上角。
+          - 优化豆瓣评分徽标、首页轮播评分和选集封面显示。
+          - 修复部分徽章图片链接无法加载的问题。
+
+          ## 安装
+          - 1.3.3 用户可使用普通 ARM64 包覆盖升级。
+          - 需要与原版共存时，请下载文件名包含 coexist 的 ARM64 包。
           EOF
           )"
-          gh release create "v$VERSION_NAME" "$OUT" "$OUT.sha256" \
+          gh release create "v$VERSION_NAME" "dist/$OUT" "dist/$OUT.sha256" "dist/$COEXIST" "dist/$COEXIST.sha256" \
             --target "$GITHUB_SHA" \
             --title "CatTV v$VERSION_NAME" \
             --notes "$NOTES" \
             --latest
+
