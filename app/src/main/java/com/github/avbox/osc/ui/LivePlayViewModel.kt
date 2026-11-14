@@ -99,6 +99,7 @@ internal data class LiveOverlayUi(
 
 internal data class LivePlayUiState(
     val isInPictureInPictureMode: Boolean = false,
+    val controlsLocked: Boolean = false,
     val frame: LivePageFrame = LivePageFrame(),
     val player: LivePlayerUi = LivePlayerUi(),
     val overlay: LiveOverlayUi = LiveOverlayUi(),
@@ -114,6 +115,10 @@ internal class LivePlayViewModel : ViewModel() {
 
     private val _state = MutableStateFlow(LivePlayUiState())
     val state: StateFlow<LivePlayUiState> = _state.asStateFlow()
+
+    internal fun toggleControlsLock() {
+        _state.update { it.copy(controlsLocked = !it.controlsLocked) }
+    }
 
     internal fun setPictureInPictureMode(enabled: Boolean) {
         _state.update { it.copy(isInPictureInPictureMode = enabled) }
@@ -281,12 +286,25 @@ internal class LivePlayViewModel : ViewModel() {
         updateChannelList { it.copy(confirmedPasswordGroups = it.confirmedPasswordGroups + index) }
     }
 
-    internal var pendingSourceIndex = 0
+    internal var pendingSourceIndex: Int? = null
 
-    internal fun consumePendingSourceIndex(): Int {
+    internal fun consumePendingSourceIndex(): Int? {
         val index = pendingSourceIndex
-        pendingSourceIndex = 0
+        pendingSourceIndex = null
         return index
+    }
+
+    internal fun preferredLine(channel: LiveChannelItem?): Int {
+        if (channel == null) return 0
+        val preferred = KV.get(liveLineKey(channel), "")
+        return channel.channelUrls.orEmpty().indexOf(preferred).coerceAtLeast(0)
+    }
+
+    private fun liveLineKey(channel: LiveChannelItem): String {
+        val config = ConfigRepository.liveUrl().ifEmpty { ConfigRepository.vodUrl() }
+        val group = channelGroups.getOrNull(_state.value.channelList.playingGroupIndex)?.groupName
+        val identity = listOf(config, ApiConfig.liveGroupIndex, group, channel.channelName).joinToString("\n")
+        return "live_preferred_line_" + com.github.avbox.osc.util.MD5.string2MD5(identity)
     }
 
     internal fun currentSourceIndex(): Int = _state.value.channelList.playingSourceIndex
@@ -373,9 +391,9 @@ internal class LivePlayViewModel : ViewModel() {
         settingsSource = source
     }
 
-    internal fun onSettingsOpened() {
+    internal fun onSettingsOpened(sourcesOnly: Boolean = false) {
         refreshSettingsSnapshot()
-        _state.update { it.copy(settings = it.settings.copy(sheetVisible = true)) }
+        updateSettings { it.copy(sheetVisible = true, sourcesOnly = sourcesOnly) }
     }
 
     internal fun onSettingsInputsChanged() {
@@ -435,7 +453,11 @@ internal class LivePlayViewModel : ViewModel() {
         when (groupIndex) {
             0 -> {
                 val item = host.currentChannelItem() ?: return
-                if (position < 0 || position >= item.sourceNum || position == currentSourceIndex()) return
+                if (position !in 0 until item.sourceNum) return
+                val url = item.urlAt(position)
+                if (url.isBlank()) return
+                KV.put(liveLineKey(item), url)
+                if (position == currentSourceIndex()) return
                 updateSourceIndex(position)
                 host.replayCurrentChannel()
             }

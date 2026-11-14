@@ -1,6 +1,13 @@
 package com.github.avbox.osc.ui
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -23,7 +30,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.grid.itemsIndexed as gridItemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -45,6 +51,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -52,7 +59,18 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.platform.LocalDensity
+import coil3.imageLoader
 import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.compose.rememberConstraintsSizeResolver
+import coil3.compose.rememberAsyncImagePainter
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.draw.drawWithContent
 import com.github.avbox.osc.R
 import com.github.avbox.osc.bean.TmdbEpisode
 import com.github.avbox.osc.bean.VodInfo
@@ -65,7 +83,7 @@ import kotlinx.coroutines.launch
 
 private val EpisodeThumbWidth = 210.dp
 
-private const val EpisodeSheetHeightFraction = 0.6f
+private const val EpisodeSheetHeightFraction = 0.94f
 
 @Composable
 internal fun EpisodeRow(
@@ -74,6 +92,9 @@ internal fun EpisodeRow(
     episodes: List<VodInfo.VodSeries>,
     playIndex: Int,
     currentFlag: String?,
+    episodeNumbers: List<Int>,
+    episodeMeta: List<TmdbEpisode>?,
+    cover: String?,
 ) {
     Column(
         modifier = Modifier
@@ -113,23 +134,7 @@ internal fun EpisodeRow(
         }
         val listState = rememberLazyListState()
         var prevReverseSort by remember { mutableStateOf(info.reverseSort) }
-        val seasonHint = remember(info.name, currentFlag) {
-            vm.seasonHintFor(info.name, currentFlag)
-        }
-        val episodeNumbers = remember(episodes, info.reverseSort) {
-            episodes.map { EpisodeMatcher.extractEpisodeNumber(it.name) }
-        }
-        val episodeMeta = rememberEpisodeMeta(
-            vm,
-            info.name,
-            info.en,
-            info.year,
-            episodes.size,
-            seasonHint,
-            episodeNumbers,
-            info.reverseSort,
-        )
-        val thumbnails = !episodeMeta.isNullOrEmpty()
+        val thumbnails = !cover.isNullOrBlank() || !episodeMeta.isNullOrEmpty()
         LaunchedEffect(playIndex, currentFlag, episodes.size, info.reverseSort) {
             if (episodes.isEmpty()) return@LaunchedEffect
             val reverseChanged = info.reverseSort != prevReverseSort
@@ -151,6 +156,7 @@ internal fun EpisodeRow(
                         name = ep.name ?: (index + 1).toString(),
                         episodeNumber = episodeNumbers.getOrNull(index)?.takeIf { it > 0 } ?: (index + 1),
                         episode = episodeMeta?.getOrNull(index),
+                        cover = cover,
                         selected = index == playIndex,
                         onClick = { vm.onEpisodeClick(index) },
                     )
@@ -168,7 +174,7 @@ internal fun EpisodeRow(
 }
 
 @Composable
-private fun rememberEpisodeMeta(
+internal fun rememberEpisodeMeta(
     vm: DetailViewModel,
     name: String?,
     altName: String?,
@@ -192,10 +198,35 @@ private fun rememberEpisodeMeta(
 }
 
 @Composable
+private fun episodeThumbnailRequest(url: String): ImageRequest {
+    val context = LocalContext.current
+    val width = with(LocalDensity.current) { EpisodeThumbWidth.roundToPx() }
+    val height = (width * 9 / 16).coerceAtLeast(1)
+    return remember(context, url, width, height) {
+        ImageRequest.Builder(context).data(url).size(width, height)
+            .scale(coil3.size.Scale.FILL).build()
+    }
+}
+
+@Composable
+internal fun PrefetchEpisodeThumbnails(episodes: List<TmdbEpisode>?, playIndex: Int) {
+    val context = LocalContext.current
+    val start = playIndex.coerceIn(0, (episodes.orEmpty().size - 1).coerceAtLeast(0))
+    val requests = episodes.orEmpty().drop(start).take(3).mapNotNull { episode ->
+        episode.stillPath.takeIf { it.isNotBlank() }?.let { episodeThumbnailRequest(TmdbImages.stillUrl(it)) }
+    }
+    DisposableEffect(requests) {
+        val jobs = requests.map { context.imageLoader.enqueue(it) }
+        onDispose { jobs.forEach { it.dispose() } }
+    }
+}
+
+@Composable
 private fun EpisodeCard(
     name: String,
     episodeNumber: Int,
     episode: TmdbEpisode?,
+    cover: String?,
     selected: Boolean,
     onClick: () -> Unit,
 ) {
@@ -221,25 +252,35 @@ private fun EpisodeCard(
                     },
                 ),
         ) {
+            if (!cover.isNullOrBlank()) {
+                AsyncImage(
+                    model = episodeThumbnailRequest(cover),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
             if (stillPath.isNotEmpty()) {
                 AsyncImage(
-                    model = TmdbImages.stillUrl(stillPath),
+                    model = episodeThumbnailRequest(TmdbImages.stillUrl(stillPath)),
                     contentDescription = title,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize(),
                 )
             }
+            Box(
+                Modifier.fillMaxSize().background(
+                    Brush.verticalGradient(0.45f to Color.Transparent, 1f to Color.Black.copy(alpha = 0.72f)),
+                ),
+            )
             Text(
-                text = episodeNumber.toString(),
+                text = stringResource(R.string.detail_episode_cover_number, episodeNumber),
                 style = MaterialTheme.typography.labelMedium,
                 color = Color.White,
                 maxLines = 1,
                 modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(6.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color.Black.copy(alpha = 0.55f))
-                    .padding(horizontal = 7.dp, vertical = 1.dp),
+                    .align(Alignment.BottomStart)
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
             )
         }
         Text(
@@ -321,7 +362,7 @@ private fun PillAction(iconRes: Int, text: String, onClick: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-internal fun EpisodeSheet(vm: DetailViewModel, slideFromEnd: Boolean, showQuality: Boolean) {
+internal fun EpisodeSheet(vm: DetailViewModel, slideFromEnd: Boolean, showQuality: Boolean, poster: String? = null) {
     val vodUi by vm.vodUi.collectAsState()
     val show by vm.episodeSheet.collectAsState()
     if (!show) return
@@ -332,136 +373,159 @@ internal fun EpisodeSheet(vm: DetailViewModel, slideFromEnd: Boolean, showQualit
     val qualityOptions by vm.qualityOptions.collectAsState()
     val qualitySelected by vm.qualitySelected.collectAsState()
 
-    val groupCount = when {
-        episodes.size > 400 -> 120
-        episodes.size > 100 -> 60
-        else -> 20
-    }
-    val groups = if (episodes.size > groupCount) {
-        val result = ArrayList<String>()
-        var i = 0
-        while (i < episodes.size) {
-            val end = minOf(i + groupCount, episodes.size)
-            result.add("${i + 1} - $end")
-            i += groupCount
-        }
-        result
-    } else {
-        emptyList()
-    }
-    val gridState = androidx.compose.foundation.lazy.grid.rememberLazyGridState()
-    val gridScope = rememberCoroutineScope()
-    var selectedGroup by rememberSaveable { mutableStateOf(0) }
+    val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
+    var jump by rememberSaveable(currentFlag) { mutableStateOf("") }
 
-    LaunchedEffect(show, currentFlag, playIndex) {
-        if (show && playIndex >= 0) {
-            selectedGroup = playIndex / groupCount
-            if (playIndex in episodes.indices) gridState.scrollToItem(playIndex)
+    LaunchedEffect(currentFlag, playIndex, info.reverseSort, episodes.size) {
+        if (playIndex in episodes.indices) listState.scrollToItem(playIndex)
+    }
+
+    val posterUrl = poster?.takeIf { it.isNotBlank() } ?: info.pic?.takeIf { it.isNotBlank() }
+    val panelSize = if (slideFromEnd) Modifier else Modifier.fillMaxHeight(EpisodeSheetHeightFraction)
+    val panelModifier = if (posterUrl == null) panelSize else {
+        val sizeResolver = rememberConstraintsSizeResolver()
+        val context = LocalContext.current
+        val request = remember(context, posterUrl, sizeResolver) {
+            ImageRequest.Builder(context).data(posterUrl).size(sizeResolver).build()
+        }
+        val artwork = rememberAsyncImagePainter(request, contentScale = ContentScale.Crop)
+        val surface = Color(0xFF20242D)
+        panelSize.then(sizeResolver).drawWithContent {
+            drawRect(Brush.horizontalGradient(listOf(Color(0xFF463441), Color(0xFF202E37))))
+            val imageSize = artwork.intrinsicSize
+            if (imageSize.width.isFinite() && imageSize.height.isFinite() &&
+                imageSize.width > 0 && imageSize.height > 0
+            ) {
+                val scale = ContentScale.Crop.computeScaleFactor(imageSize, size)
+                val cropSize = Size(imageSize.width * scale.scaleX, imageSize.height * scale.scaleY)
+                clipRect {
+                    translate(left = (size.width - cropSize.width) / 2f) {
+                        with(artwork) { draw(cropSize) }
+                    }
+                }
+                drawRect(Brush.verticalGradient(listOf(surface.copy(alpha = 0.79f), surface.copy(alpha = 0.94f))))
+            }
+            drawContent()
         }
     }
 
     AVBoxBottomSheet(
         onDismissRequest = { vm.dismissEpisodeSheet() },
-        title = if (info.name.isNullOrEmpty()) {
-                stringResource(R.string.detail_episodes)
-            } else {
-                stringResource(R.string.detail_episodes_of, info.name.orEmpty())
-            },
         isScrollable = false,
         slideFromEnd = slideFromEnd,
-        modifier = if (slideFromEnd) {
-            Modifier
-        } else {
-            Modifier.fillMaxHeight(EpisodeSheetHeightFraction)
-        },
+        modifier = panelModifier,
+        containerColor = if (posterUrl == null) Color(0xFF252B34) else Color.Transparent,
     ) {
         val dismissAnimated = LocalSheetDismiss.current
-        Column(modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.fillMaxWidth()) {
+            Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp), contentAlignment = Alignment.Center) {
+                Text(
+                    stringResource(R.string.detail_all_episodes_count, episodes.size),
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 72.dp),
+                    textAlign = TextAlign.Center,
+                )
+                TextButton(onClick = dismissAnimated, modifier = Modifier.align(Alignment.CenterEnd)) {
+                    Text(stringResource(R.string.common_done), color = Color.White)
+                }
+            }
+            val flags = info.seriesFlags.orEmpty().mapNotNull { it.name?.takeIf(String::isNotBlank) }
+            if (flags.size > 1) {
+                EpisodeSheetOptions(flags, flags.indexOf(currentFlag)) { vm.onFlagClick(flags[it]) }
+            }
             if (showQuality && qualityOptions.size > 1) {
-                LazyRow(
-                    contentPadding = PaddingValues(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    itemsIndexed(qualityOptions) { index, option ->
-                        FilterChip(
-                            selected = index == qualitySelected,
-                            onClick = { vm.switchQuality(index) },
-                            label = { Text(option) },
-                            shape = RoundedCornerShape(20.dp),
-                            colors = MaterialTheme.colorScheme.filterChipColors(),
-                        )
-                    }
+                EpisodeSheetOptions(qualityOptions, qualitySelected, vm::switchQuality)
+            }
+            val jumpNumber = jump.toIntOrNull()
+            val jumpIndex = jumpNumber?.let { number ->
+                episodes.indexOfFirst { EpisodeMatcher.extractEpisodeNumber(it.name) == number }
+                    .takeIf { it >= 0 } ?: (if (info.reverseSort) episodes.size - number else number - 1)
+            }
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                OutlinedTextField(
+                    value = jump,
+                    onValueChange = { jump = it.filter(Char::isDigit).take(6) },
+                    placeholder = { Text(stringResource(R.string.detail_jump_episode), color = Color.White.copy(alpha = 0.65f)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White),
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(
+                    enabled = jumpIndex != null && jumpIndex in episodes.indices,
+                    onClick = { jumpIndex?.let { scope.launch { listState.scrollToItem(it) } } },
+                ) { Text("#", color = Color.White.copy(alpha = if (jumpIndex != null && jumpIndex in episodes.indices) 1f else 0.45f)) }
+                TextButton(onClick = vm::toggleReverse) {
+                    Text(stringResource(if (info.reverseSort) R.string.detail_episode_ascending else R.string.detail_episode_descending), color = Color.White)
                 }
-                Spacer(modifier = Modifier.height(12.dp))
             }
-            if (groups.isNotEmpty()) {
-                LazyRow(
-                    contentPadding = PaddingValues(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    itemsIndexed(groups) { index, label ->
-                        FilterChip(
-                            selected = index == selectedGroup,
-                            onClick = {
-                                selectedGroup = index
-                                gridScope.launch { gridState.scrollToItem(index * groupCount) }
-                            },
-                            label = { Text(label) },
-                            shape = RoundedCornerShape(20.dp),
-                            colors = MaterialTheme.colorScheme.filterChipColors(),
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-            val maxNameLength = episodes.maxOfOrNull { it.name?.length ?: 0 } ?: 0
-            val gridColumnCount = when {
-                maxNameLength <= 4 -> if (slideFromEnd) 2 else 4
-                maxNameLength <= 12 -> 2
-                else -> 1
-            }
-            val gridModifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-            androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
-                state = gridState,
-                columns = androidx.compose.foundation.lazy.grid.GridCells.Fixed(gridColumnCount),
-                modifier = gridModifier,
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxWidth().weight(1f),
                 contentPadding = PaddingValues(
                     start = 16.dp,
                     end = 16.dp,
                     bottom = WindowInsets.navigationBarsIgnoringVisibility.asPaddingValues().calculateBottomPadding() + 16.dp,
                 ),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                gridItemsIndexed(episodes) { index, ep ->
-                    FilterChip(
-                        selected = index == playIndex,
-                        onClick = {
-                            vm.onEpisodeClick(index)
-                            dismissAnimated()
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(40.dp),
-                        label = {
+                itemsIndexed(episodes) { index, episode ->
+                    val number = EpisodeMatcher.extractEpisodeNumber(episode.name).takeIf { it > 0 }
+                        ?: if (info.reverseSort) episodes.size - index else index + 1
+                    val shape = RoundedCornerShape(18.dp)
+                    val selected = index == playIndex
+                    Row(
+                        Modifier.fillMaxWidth().clip(shape)
+                            .background(Color.White.copy(alpha = if (selected) 0.22f else 0.10f))
+                            .border(1.dp, Color.White.copy(alpha = if (selected) 0.45f else 0.14f), shape)
+                            .clickable { vm.onEpisodeClick(index); dismissAnimated() }
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Text(number.toString(), color = Color.White.copy(alpha = 0.7f), modifier = Modifier.width(30.dp))
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                             Text(
-                                text = ep.name ?: (index + 1).toString(),
-                                maxLines = 1,
-                                softWrap = false,
-                                textAlign = TextAlign.Center,
-                                fontSize = 13.sp,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.fillMaxWidth(),
+                            episode.name?.takeIf { it.isNotBlank() } ?: number.toString(),
+                            color = Color.White,
+                            fontWeight = FontWeight.Medium,
+                            maxLines = 3,
+                            overflow = TextOverflow.Ellipsis,
                             )
-                        },
-                        contentPadding = PaddingValues(horizontal = 6.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = MaterialTheme.colorScheme.filterChipColors(),
-                    )
+                            if (com.github.avbox.osc.ui.components.MediaBadges.display.cards) {
+                                com.github.avbox.osc.ui.components.MediaBadgeRow(episode.name.orEmpty())
+                            }
+                        }
+                    }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun EpisodeSheetOptions(labels: List<String>, selected: Int, onSelect: (Int) -> Unit) {
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        itemsIndexed(labels) { index, label ->
+            FilterChip(
+                selected = index == selected,
+                onClick = { onSelect(index) },
+                label = { Text(label) },
+                shape = RoundedCornerShape(20.dp),
+                colors = FilterChipDefaults.filterChipColors(
+                    labelColor = Color.White,
+                    selectedLabelColor = Color.White,
+                    containerColor = Color.White.copy(alpha = 0.09f),
+                    selectedContainerColor = Color.White.copy(alpha = 0.23f),
+                ),
+            )
         }
     }
 }

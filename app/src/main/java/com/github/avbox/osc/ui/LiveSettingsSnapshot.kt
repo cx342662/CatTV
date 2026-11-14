@@ -39,11 +39,14 @@ internal data class LiveSettingsGroupUi(
 internal data class LiveSettingsUi(
     val sheetVisible: Boolean = false,
     val groups: List<LiveSettingsGroupUi> = emptyList(),
+    val sourcesOnly: Boolean = false,
 )
 
 internal object LiveSettingsSnapshot {
 
     internal const val SWITCH_GROUP_INDEX = 4
+    internal const val CHANNEL_LINE_GROUP_INDEX = 0
+    internal const val MULTI_SOURCE_GROUP_INDEX = 5
     internal const val CONFIG_GROUP_INDEX = 6
 
     fun of(source: LiveSettingsSource, channel: LiveChannelItem?, sourceIndex: Int): List<LiveSettingsGroupUi> {

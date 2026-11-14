@@ -107,7 +107,8 @@ class DetailPlaybackPolicyTest {
     fun onlyPlayAndResumableEntriesStartPlayback() {
         for (entry in DetailPlaybackEntry.entries) {
             val plan = decide(entry, resumable = true)
-            val shouldStart = entry == DetailPlaybackEntry.PlayCapsule ||
+            val shouldStart = entry == DetailPlaybackEntry.Inline ||
+                entry == DetailPlaybackEntry.PlayCapsule ||
                 entry == DetailPlaybackEntry.Episode ||
                 entry == DetailPlaybackEntry.SwitchRollback ||
                 entry == DetailPlaybackEntry.MusicReturn

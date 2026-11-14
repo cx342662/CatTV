@@ -181,6 +181,7 @@ class LivePlayActivity : BaseActivity() {
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 when {
+                    vm.state.value.controlsLocked -> vm.toggleControlsLock()
                     vm.state.value.epg.sheetVisible -> vm.hideEpgSheet()
                     vm.state.value.settings.sheetVisible -> vm.hideSettingsSheet()
                     fullScreen && vm.state.value.overlay.visible -> {
@@ -190,6 +191,7 @@ class LivePlayActivity : BaseActivity() {
                     fullScreen -> applyFullscreen(false)
                     vm.state.value.timeshift.isBackState -> catchupController.backToLiveFromEpg()
                     else -> {
+                        if (tryAutomaticPictureInPicture(moveToHome = true)) return
                         exitingLivePlay = true
                         finish()
                     }
@@ -263,16 +265,31 @@ class LivePlayActivity : BaseActivity() {
         else applyStatusBarAppearance()
     }
 
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        tryAutomaticPictureInPicture(moveToHome = false)
+    }
+
+    private fun tryAutomaticPictureInPicture(moveToHome: Boolean): Boolean {
+        if (!com.github.avbox.osc.player.state.PlaybackSettingsState.config.autoExitPip) return false
+        val playing = kernelView?.isPlaying == true
+        return playing && requestPictureInPicture(moveToHome, automatic = true)
+    }
+
     private fun enterLivePictureInPicture() {
+        requestPictureInPicture(moveToHome = true, automatic = false)
+    }
+
+    private fun requestPictureInPicture(moveToHome: Boolean, automatic: Boolean): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-            Toast.makeText(this, "当前 Android 版本不支持画中画", Toast.LENGTH_SHORT).show()
-            return
+            if (!automatic) Toast.makeText(this, "当前 Android 版本不支持画中画", Toast.LENGTH_SHORT).show()
+            return false
         }
         if (!packageManager.hasSystemFeature("android.software.picture_in_picture")) {
-            Toast.makeText(this, "当前设备不支持画中画", Toast.LENGTH_SHORT).show()
-            return
+            if (!automatic) Toast.makeText(this, "当前设备不支持画中画", Toast.LENGTH_SHORT).show()
+            return false
         }
-        if (isInPictureInPictureMode || enteringPictureInPicture) return
+        if (isInPictureInPictureMode || enteringPictureInPicture) return false
 
         // Preserve the current Activity's full UI shape in PiP (portrait or landscape),
         // rather than forcing a 16:9 crop that would hide the channel list and app chrome.
@@ -286,13 +303,19 @@ class LivePlayActivity : BaseActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) builder.setSeamlessResizeEnabled(true)
         val params = builder.build()
         enteringPictureInPicture = true
-        val entered = enterPictureInPictureMode(params)
+        val entered = try {
+            enterPictureInPictureMode(params)
+        } catch (failure: IllegalStateException) {
+            AppLog.e("LivePlayActivity", failure)
+            false
+        }
         if (entered) {
-            showHomeBehindPictureInPicture()
+            if (moveToHome) showHomeBehindPictureInPicture()
         } else {
             enteringPictureInPicture = false
-            Toast.makeText(this, "无法进入画中画模式", Toast.LENGTH_SHORT).show()
+            if (!automatic) Toast.makeText(this, "无法进入画中画模式", Toast.LENGTH_SHORT).show()
         }
+        return entered
     }
 
     override fun onDestroy() {
@@ -497,7 +520,8 @@ class LivePlayActivity : BaseActivity() {
             vm.setTappedGroupIndex(channelGroupIndex)
             vm.setPlayingChannelIndex(liveChannelIndex)
             vm.setPlayingChannel(channelSourceLoader.getLiveChannels(currentChannelGroupIndex)?.get(currentLiveChannelIndex))
-            vm.updateSourceIndex(vm.consumePendingSourceIndex())
+            val preferred = vm.consumePendingSourceIndex() ?: vm.preferredLine(currentLiveChannelItem)
+            vm.updateSourceIndex(preferred.takeIf { it in 0 until (currentLiveChannelItem?.sourceNum ?: 0) } ?: 0)
             KV.put(KVKeys.LIVE_CHANNEL, currentLiveChannelItem?.channelName ?: "")
             requestChannelScroll()
         }
@@ -705,12 +729,12 @@ class LivePlayActivity : BaseActivity() {
         )
     }
 
-    internal fun openSettingsSheet() {
+    internal fun openSettingsSheet(sourcesOnly: Boolean = false) {
         LiveSettingsState.reload()
         ApiConfig.get().refreshLiveApiHistoryItems()
         initLiveSettingGroupList()
         loadCurrentSourceList()
-        vm.onSettingsOpened()
+        vm.onSettingsOpened(sourcesOnly)
     }
 
     internal fun removeLiveConfigHistory(itemIndex: Int) {
@@ -861,7 +885,7 @@ class LivePlayActivity : BaseActivity() {
             onPasswordConfirm = { onPasswordConfirmed(it) },
             onPasswordDismiss = {
                 vm.updatePasswordDialogTarget(null)
-                vm.pendingSourceIndex = 0
+                vm.pendingSourceIndex = null
             },
         ),
         player = LivePlayerActions(
@@ -869,11 +893,13 @@ class LivePlayActivity : BaseActivity() {
             onEnterFullscreen = { applyFullscreen(true) },
             onExitFullscreen = { applyFullscreen(false) },
             onEnterPictureInPicture = { enterLivePictureInPicture() },
+            onToggleControlsLock = vm::toggleControlsLock,
             onHideChannels = {
                 overlay.cancelOverlayHide()
                 vm.setOverlayVisible(false)
             },
             onEpgSheetOpen = { vm.showEpgSheet() },
+            onSourceSheetOpen = { openSettingsSheet(sourcesOnly = true) },
             onSettingsSheetOpen = { openSettingsSheet() },
             onTimeshiftSeek = { onTimeshiftSeek(it) },
             onTimeshiftTogglePlay = { onTimeshiftTogglePlay() },

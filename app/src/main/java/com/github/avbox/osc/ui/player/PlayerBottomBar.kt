@@ -48,6 +48,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.Shadow
+import coil3.compose.AsyncImage
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.github.avbox.osc.R
@@ -100,6 +104,7 @@ fun PlayerBottomBar(
             .padding(start = edge, end = edge, top = 10.dp, bottom = bottomPad)
     ) {
         if (!state.previewMode) {
+            PlaybackFeatureTitle(state.featureTitle, state.featureLogoUrl)
             Box(
                 Modifier
                     .fillMaxWidth()
@@ -120,21 +125,20 @@ fun PlayerBottomBar(
             }
         }
 
-        if (portraitActions) {
+        if (portraitActions && !state.previewMode) {
             PlayerActionIcons(
                 actions = actions,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 8.dp),
-                size = if (state.previewMode) TopBarActionSize else playerDim(R.dimen.vs_70),
-                iconSize = if (state.previewMode) TopBarActionIconSize else playerDim(R.dimen.vs_50),
+                size = playerDim(R.dimen.vs_70),
+                iconSize = playerDim(R.dimen.vs_50),
                 spread = true,
             )
         }
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(end = if (state.previewMode) 44.dp else 0.dp),
         ) {
             if (state.previewMode) {
                 PreviewPlayPauseButton(state, actions)
@@ -160,15 +164,13 @@ fun PlayerBottomBar(
                     modifier = Modifier.widthIn(min = 48.dp),
                 )
             }
-        }
-
-        if (state.previewMode && onPictureInPicture != null) {
-            PictureInPictureButton(
-                box = PreviewPlayPauseBox,
-                iconSize = 24.dp,
-                onClick = onPictureInPicture,
-                modifier = Modifier.align(Alignment.End).padding(end = edge),
-            )
+            if (state.previewMode && onPictureInPicture != null) {
+                PictureInPictureButton(
+                    box = PreviewPlayPauseBox,
+                    iconSize = 20.dp,
+                    onClick = onPictureInPicture,
+                )
+            }
         }
 
         if (!state.previewMode) {
@@ -548,5 +550,39 @@ private fun PlayerSeekRow(
             center = thumbCenter,
             style = Stroke(width = 2.dp.toPx()),
         )
+    }
+}
+
+@Composable
+private fun PlaybackFeatureTitle(title: String, logoUrl: String?) {
+    if (title.isBlank()) return
+    var logoReady by remember(title, logoUrl) { mutableStateOf(false) }
+    Box(
+        Modifier.widthIn(max = 172.dp).padding(bottom = 4.dp),
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        if (logoUrl != null) {
+            AsyncImage(
+                model = logoUrl,
+                contentDescription = if (logoReady) title else null,
+                contentScale = ContentScale.Fit,
+                alignment = Alignment.CenterStart,
+                modifier = Modifier.fillMaxWidth().height(36.dp),
+                onSuccess = { logoReady = true },
+                onError = { logoReady = false },
+            )
+        }
+        if (!logoReady) {
+            Text(
+                text = title,
+                color = Color.White,
+                style = androidx.compose.material3.MaterialTheme.typography.titleMedium.copy(
+                    shadow = Shadow(Color.Black, Offset(0f, 1f), blurRadius = 5f),
+                ),
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
 }

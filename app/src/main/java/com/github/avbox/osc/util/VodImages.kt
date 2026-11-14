@@ -80,13 +80,16 @@ object VodImages {
         }
     }
 
+    private val HeaderMarker = Regex("@(?:Headers|Cookie|User-Agent|Referer)=")
+
     private fun parseVodPicUrl(raw: String): Pair<String, Map<String, String>>? {
-        if (raw.startsWith("data:") || !raw.contains('@')) return null
+        if (raw.startsWith("data:")) return null
+        val headerStart = HeaderMarker.find(raw)?.range?.first ?: return null
 
         fun grab(key: String): String? =
             if (raw.contains("$key=")) raw.split("$key=")[1].split("@")[0] else null
 
-        val url = raw.split("@")[0]
+        val url = raw.substring(0, headerStart)
         if (url.isEmpty()) return null
 
         val headers = LinkedHashMap<String, String>()

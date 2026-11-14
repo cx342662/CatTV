@@ -49,6 +49,38 @@ import kotlinx.coroutines.withContext
 
 class HomeViewModel : ViewModel(), TmdbPosterCache {
 
+    suspend fun heroRatings(video: Movie.Video, onRatings: (Map<String, Double>) -> Unit) {
+        val detail = TmdbPoster.cachedDetail(video.name, video.year, video.en)
+            ?: TmdbPoster.resolveDetail(video.name, video.year, video.en)
+            ?: return
+        val tmdb = detail.rating.takeIf { it > 0 && it <= 10 }?.let { mapOf("tmdb" to it) }.orEmpty()
+        onRatings(tmdb)
+        val key = KV.get(KVKeys.MDBLIST_API_KEY, "")
+        val external = com.github.avbox.osc.api.MdbListRatings.ratings(detail.tmdbId, detail.mediaType, key)
+        onRatings(external.orEmpty() + tmdb)
+    }
+
+    suspend fun heroDoubanRating(video: Movie.Video): Double? {
+        val ratings = com.github.avbox.osc.api.DoubanRatings
+        val source = ApiConfig.get().getSource(video.sourceKey)
+        val isDouban = com.github.avbox.osc.sourcedata.SourceHelper.isDoubanSource(source)
+        ratings.sourceScore(video, isDouban)?.let { return it }
+        val id = video.id
+        val subject = ratings.parseBinding(video.doubanId.orEmpty())
+            ?: ratings.parseBinding(id.orEmpty()).takeIf { isDouban || id.orEmpty().startsWith("https://movie.douban.com/") }
+        if (subject != null) return ratings.score(subject)
+        val key = video.sourceKey ?: return null
+        if (source == null || id.isNullOrBlank()) return null
+        val result = kotlinx.coroutines.withTimeoutOrNull(6500) {
+            recViewModel.lookupDetail(key, id)
+        } ?: return null
+        return ratings.sourceScore(result, isDouban)
+            ?: ratings.parseBinding(result.doubanId.orEmpty())?.let { ratings.score(it) }
+    }
+
+    override fun tmdbCachedRating(name: String?, year: Int, altName: String?): Double? =
+        TmdbPoster.cachedDetail(name, year, altName)?.rating
+
     override fun tmdbCachedPoster(name: String?, year: Int, altName: String?): String? =
         TmdbPoster.cachedPoster(name, year, altName)
 

@@ -15,6 +15,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -81,10 +82,17 @@ fun PlayerOverlay(
         val iconBox = playerIconBox(maxWidth - playerEdgePadding() * 2)
         PlayerTipLayer(state)
         PlayerSlideVisibility(
-            visible = state.topLeftVisible || (state.topRightVisible && !state.previewMode),
+            visible = !state.previewMode && (state.topLeftVisible || state.topRightVisible),
             fromTop = true,
         ) {
             PlayerTopBar(state, actions)
+        }
+        val badgeDisplay = if (!state.previewMode && !state.locked && !state.topLeftVisible) {
+            playerBadgeDisplay()
+        } else null
+        if (badgeDisplay?.player == true && !badgeDisplay.followControls
+        ) {
+            PlayerMediaBadges(state, Modifier.padding(start = playerEdgePadding()).statusBarsPadding().padding(top = 12.dp))
         }
         PlayerSlideVisibility(
             visible = state.controlsVisible,
@@ -103,7 +111,7 @@ fun PlayerOverlay(
             PlayerLoadingLayer(state)
         }
         PlayerNetSpeedCenter(state)
-        PlayerSideButtons(state, actions, iconBox)
+        if (!state.previewMode) PlayerSideButtons(state, actions, iconBox)
         PlayerFadeVisibility(
             visible = state.infoOsdVisible,
             enterMs = PLAYER_OSD_IN_MS,

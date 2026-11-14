@@ -1,6 +1,8 @@
 package com.github.avbox.osc.util
 
 object KVKeys {
+    const val AUTO_EXIT_PIP = "auto_exit_pip"
+    const val MEDIA_BADGES = "media_badges"
     const val API_URL = "api_url"
     const val EPG_URL = "epg_url"
     const val API_HISTORY = "api_history"

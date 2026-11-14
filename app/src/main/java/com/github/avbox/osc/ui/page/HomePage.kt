@@ -358,6 +358,8 @@ fun HomePage(
                                     onPosterPic = { pic -> backdropPic = pic },
                                     onCardClick = { video -> handleCardClick(vm, video, context) },
                                     fadeToBackdrop = heroBackdropEnabled,
+                                    loadDoubanRating = vm::heroDoubanRating,
+                                    loadRatings = vm::heroRatings,
                                 )
                             }
                         }

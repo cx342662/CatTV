@@ -20,6 +20,7 @@ import com.github.avbox.osc.player.PlaybackSession
 import com.github.avbox.osc.sourcedata.SourceViewModel
 import com.github.avbox.osc.util.AppContextHolder
 import com.github.avbox.osc.api.MdbListRatings
+import com.github.avbox.osc.api.DoubanRatings
 import com.github.avbox.osc.api.TmdbApi
 import com.github.avbox.osc.api.TmdbPoster
 import com.github.avbox.osc.bean.TmdbDetail
@@ -102,6 +103,13 @@ class DetailViewModel : ViewModel(), TmdbPosterCache {
     private val _exitingFullscreen = MutableStateFlow(false)
     val exitingFullscreen = _exitingFullscreen.asStateFlow()
     private val _playSignal = MutableStateFlow(0)
+    private val _inlinePlayback = MutableStateFlow(false)
+    val inlinePlayback = _inlinePlayback.asStateFlow()
+
+    fun closeInlinePlayback() {
+        _inlinePlayback.value = false
+    }
+
     val playSignal = _playSignal.asStateFlow()
     private val _collected = MutableStateFlow(false)
     val collected = _collected.asStateFlow()
@@ -112,6 +120,9 @@ class DetailViewModel : ViewModel(), TmdbPosterCache {
     val tmdbDetail = _tmdbDetail.asStateFlow()
     private val _mdbListRatings = MutableStateFlow<Map<String, Double>>(emptyMap())
     val mdbListRatings = _mdbListRatings.asStateFlow()
+    private val _doubanRating = MutableStateFlow<Pair<String, Double>?>(null)
+    val doubanRating = _doubanRating.asStateFlow()
+    private var doubanRatingJob: Job? = null
     private var detailRatingsJob: Job? = null
     private val _tmdbLogoPath = MutableStateFlow<String?>(null)
     val tmdbLogoPath = _tmdbLogoPath.asStateFlow()
@@ -128,6 +139,25 @@ class DetailViewModel : ViewModel(), TmdbPosterCache {
 
     fun seasonHintFor(name: String?, flag: String?): Int? =
         TmdbApi.parseSeasonHint(name) ?: TmdbApi.parseSeasonHint(flag)
+
+    fun doubanBinding(source: String?, id: String?, title: String, year: Int): String? {
+        val configured = KV.get<String>(DoubanRatings.bindingKey(title, year))
+            ?: KV.get<String>(DoubanRatings.bindingKey(title, 0))
+        if (configured != null || source.isNullOrBlank() || id.isNullOrBlank()) return configured
+        val legacyKey = "douban_binding_" + com.github.avbox.osc.util.MD5.string2MD5("$source\n$id")
+        return KV.get(legacyKey)
+    }
+
+    fun ensureDoubanRating(id: String?) {
+        doubanRatingJob?.cancel()
+        if (id != null && _doubanRating.value?.first == id) return
+        _doubanRating.value = null
+        if (id == null) return
+        doubanRatingJob = viewModelScope.launch {
+            val score = DoubanRatings.score(id) ?: return@launch
+            _doubanRating.value = id to score
+        }
+    }
 
     fun ensureTmdbDetail(name: String?, altName: String?, year: Int) {
         if (name.isNullOrBlank()) {
@@ -485,6 +515,7 @@ class DetailViewModel : ViewModel(), TmdbPosterCache {
     }
 
     private fun resetContentState() {
+        closeInlinePlayback()
         publishVodInfo(null)
         switchSnapshot = null
         firstsourceKey = ""
@@ -504,7 +535,7 @@ class DetailViewModel : ViewModel(), TmdbPosterCache {
         resetEngineState(keepChips = false)
     }
 
-    fun onFullScreenToggleRequested(requested: Boolean, facts: DetailPlaybackFacts) {
+    fun onFullScreenToggleRequested(requested: Boolean, facts: DetailPlaybackFacts, keepPlaying: Boolean = false) {
         if (requested) {
             val reason = DetailFullScreenGate.refusalReason(
                 _pageState.value,
@@ -520,7 +551,11 @@ class DetailViewModel : ViewModel(), TmdbPosterCache {
         }
         val next = DetailFullScreenSlide.exit(slideState()) ?: return
         applySlideState(next)
-        Thunder.cancelPendingParse()
+        if (keepPlaying) {
+            _inlinePlayback.value = true
+        } else {
+            Thunder.cancelPendingParse()
+        }
         _rotating.value = DetailPlaybackCommands.exitFullScreenState(facts).second
     }
 
@@ -554,6 +589,7 @@ class DetailViewModel : ViewModel(), TmdbPosterCache {
 
     internal fun applyPlaybackEntry(entry: DetailPlaybackEntry, resumable: Boolean = false) {
         val plan = DetailPlaybackPolicy.plan(entry, resumable)
+        if (entry == DetailPlaybackEntry.Inline) _inlinePlayback.value = true
         if (plan.enterFullScreen) enterFullscreen()
         if (plan.startPlayback) _playSignal.value += 1
     }
@@ -1092,7 +1128,7 @@ class DetailViewModel : ViewModel(), TmdbPosterCache {
         if (position < 0 || position >= list.size) return
         if (position != manualLineSwitchTargetIndex) manualLineSwitchPending = false
         commitVodInfo(info.copy(playIndex = position))
-        onPlayRequested(DetailPlaybackEntry.Episode)
+        onPlayRequested(if (_inlinePlayback.value && !_fullScreen.value) DetailPlaybackEntry.Inline else DetailPlaybackEntry.Episode)
     }
 
     fun onFlagClick(flagName: String) {

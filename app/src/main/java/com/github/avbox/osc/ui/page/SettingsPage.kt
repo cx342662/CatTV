@@ -4,6 +4,12 @@ package com.github.avbox.osc.ui.page
 
 import android.os.SystemClock
 import android.widget.Toast
+import android.content.ContentResolver
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import com.github.avbox.osc.data.MobileBackup
+import com.github.avbox.osc.util.AppLog
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -74,6 +80,14 @@ data class SettingsState(
 )
 
 class SettingsViewModel : ViewModel() {
+    suspend fun transferBackup(resolver: ContentResolver, uri: Uri, restore: Boolean) {
+        if (restore) {
+            MobileBackup.restore { resolver.openInputStream(uri) }
+        } else {
+            MobileBackup.export { resolver.openOutputStream(uri, "wt") }
+        }
+    }
+
     private var cacheSizeText: String = ""
     private var cacheSizeRefreshedAt = 0L
 
@@ -150,8 +164,34 @@ fun SettingsPage(
     }
     val context = LocalContext.current
     val versionName = remember { DefaultConfig.appVersionName(context) ?: "" }
+    var badgeSheet by remember { mutableStateOf(false) }
     var aboutSheet by remember { mutableStateOf(false) }
     val updateScope = rememberCoroutineScope()
+    var backupBusy by remember { mutableStateOf(false) }
+    fun transferBackup(uri: Uri, restore: Boolean) {
+        if (backupBusy) return
+        backupBusy = true
+        updateScope.launch {
+            try {
+                vm.transferBackup(context.contentResolver, uri, restore)
+                Toast.makeText(context, if (restore) R.string.backup_restored else R.string.backup_saved, Toast.LENGTH_LONG).show()
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                AppLog.e("MobileBackup", error)
+                Toast.makeText(context, R.string.backup_failed, Toast.LENGTH_LONG).show()
+            } finally {
+                backupBusy = false
+            }
+        }
+    }
+    val exportBackup = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) {
+        it?.let { uri -> transferBackup(uri, false) }
+    }
+    val importBackup = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) {
+        it?.let { uri -> transferBackup(uri, true) }
+    }
+
     var updateBusy by remember { mutableStateOf(false) }
     var pendingUpdate by remember { mutableStateOf<CatTvUpdater.UpdateInfo?>(null) }
     var updateProgress by remember { mutableStateOf<Int?>(null) }
@@ -315,6 +355,27 @@ fun SettingsPage(
                         onClick = { aboutSheet = true },
                     )
                 }
+                SettingsCard(SettingsCardPosition.MIDDLE) {
+                    SettingsRow(
+                        title = stringResource(R.string.media_badges_title),
+                        iconRes = R.drawable.ic_settings_play,
+                        onClick = { badgeSheet = true },
+                    )
+                }
+                SettingsCard(SettingsCardPosition.MIDDLE) {
+                    SettingsRow(
+                        title = stringResource(R.string.backup_export),
+                        iconRes = R.drawable.ic_settings_api,
+                        onClick = { if (!backupBusy) exportBackup.launch("CatTV-backup.json") },
+                    )
+                }
+                SettingsCard(SettingsCardPosition.MIDDLE) {
+                    SettingsRow(
+                        title = stringResource(R.string.backup_import),
+                        iconRes = R.drawable.ic_settings_api,
+                        onClick = { if (!backupBusy) importBackup.launch(arrayOf("application/json", "text/plain")) },
+                    )
+                }
                 SettingsCard(SettingsCardPosition.LAST) {
                     SettingsRow(
                         title = stringResource(R.string.settings_update),
@@ -343,6 +404,8 @@ fun SettingsPage(
             }
         }
     }
+
+    if (badgeSheet) MediaBadgeSettings { badgeSheet = false }
 
     if (aboutSheet) {
         AboutSheet(versionName = versionName, onDismiss = { aboutSheet = false })

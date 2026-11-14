@@ -50,8 +50,10 @@ class AbsJson : Serializable {
         var vod_copyright: String? = null
         @JvmField
         var vod_director: String? = null
+        @com.google.gson.annotations.SerializedName(value = "vod_douban_id", alternate = ["douban_id", "doubanId"])
         @JvmField
         var vod_douban_id: String? = null
+        @com.google.gson.annotations.SerializedName(value = "vod_douban_score", alternate = ["douban_score", "doubanScore"])
         @JvmField
         var vod_douban_score: String? = null
         @JvmField
@@ -221,6 +223,7 @@ class AbsJson : Serializable {
             video.note = vod_remarks
             video.doubanScore = vod_douban_score?.trim()?.toDoubleOrNull()
                 ?.takeIf { it > 0.0 && it <= 10.0 }
+            video.doubanId = vod_douban_id?.trim()
             video.actor = vod_actor
             video.director = vod_director
             val urlBean = Movie.Video.UrlBean()

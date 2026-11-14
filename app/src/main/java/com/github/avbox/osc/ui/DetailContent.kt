@@ -10,6 +10,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import coil3.compose.AsyncImage
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
@@ -50,6 +56,7 @@ internal fun DetailContent(
     activity: DetailActivity,
     vm: DetailViewModel,
     listState: LazyListState,
+    inlinePlayback: Boolean,
     onPosterPic: (String) -> Unit,
     onSeed: (Int?) -> Unit,
 ) {
@@ -60,6 +67,15 @@ internal fun DetailContent(
     val currentFlag = info.playFlag
     val episodes = info.seriesMap?.get(currentFlag).orEmpty()
     val playIndex = info.playIndex
+    var episodeCover by remember(info.id, info.sourceKey, info.pic) { mutableStateOf(info.pic) }
+    val episodeNumbers = remember(episodes) {
+        episodes.map { com.github.avbox.osc.data.EpisodeMatcher.extractEpisodeNumber(it.name) }
+    }
+    val episodeMeta = rememberEpisodeMeta(
+        vm, info.name, info.en, info.year, episodes.size,
+        vm.seasonHintFor(info.name, currentFlag), episodeNumbers, info.reverseSort,
+    )
+    PrefetchEpisodeThumbnails(episodeMeta, playIndex)
     val collected by vm.collected.collectAsState()
     val followRecord by vm.follow.collectAsState()
     val description = remember(info.des) { removeHtmlTag(info.des) }
@@ -75,7 +91,36 @@ internal fun DetailContent(
         contentPadding = PaddingValues(bottom = 32.dp),
     ) {
         item(key = "hero") {
-            DetailHero(
+            if (inlinePlayback) {
+                val detail = rememberTmdbDetail(vm, info.name, info.en, info.year)
+                val ratings by vm.mdbListRatings.collectAsState()
+                val douban by vm.doubanRating.collectAsState()
+                val lookupId = vm.doubanBinding(info.sourceKey ?: vm.firstsourceKey, info.id, info.name.orEmpty(), info.year)
+                    ?: info.doubanId
+                androidx.compose.runtime.LaunchedEffect(vm, lookupId) { vm.ensureDoubanRating(lookupId) }
+                val inlineRatings = ratings + listOfNotNull(
+                    detail?.rating?.takeIf { it > 0 && it <= 10 }?.let { "tmdb" to it },
+                    (douban?.takeIf { it.first == lookupId }?.second ?: info.doubanScore)?.let { "douban" to it },
+                )
+                Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                    AsyncImage(
+                        model = info.pic, contentDescription = null, contentScale = ContentScale.Crop,
+                        modifier = Modifier.width(104.dp).aspectRatio(2f / 3f).clip(RoundedCornerShape(14.dp)),
+                    )
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(info.name.orEmpty(), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                        val date = detail?.releaseDate?.takeIf { it.isNotBlank() } ?: info.year.takeIf { it > 0 }?.toString()
+                        val meta = listOfNotNull(date, info.type?.takeIf { it.isNotBlank() }).joinToString(" · ")
+                        if (meta.isNotEmpty()) Text(meta, style = MaterialTheme.typography.labelMedium)
+                        DetailRatingBadges(inlineRatings, MaterialTheme.colorScheme.onSurface)
+                        if (description.isNotBlank()) Text(description, maxLines = 3, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+                Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                    TextButton(onClick = vm::toggleCollect) { Text(stringResource(if (collected) R.string.detail_inline_unfavorite else R.string.detail_inline_favorite)) }
+                    TextButton(onClick = activity::expandInlinePlayer) { Text(stringResource(R.string.detail_inline_fullscreen)) }
+                }
+            } else DetailHero(
                 title = info.name ?: "TVBox",
                 altTitle = info.en,
                 picture = info.pic,
@@ -84,10 +129,16 @@ internal fun DetailContent(
                 type = info.type,
                 note = info.note,
                 doubanScore = info.doubanScore,
+                doubanId = info.doubanId,
+                bindingSource = info.sourceKey ?: vm.firstsourceKey,
+                bindingVideoId = info.id,
                 description = description,
                 collected = collected,
                 followed = followRecord != null,
-                onPosterPic = onPosterPic,
+                onPosterPic = { url ->
+                    episodeCover = url.takeIf { it.isNotBlank() } ?: info.pic
+                    onPosterPic(url)
+                },
                 onSeed = onSeed,
                 onBack = { activity.onBackPressedDispatcher.onBackPressed() },
                 onPlay = { vm.onPlayRequested(DetailPlaybackEntry.PlayCapsule) },
@@ -102,7 +153,7 @@ internal fun DetailContent(
 
         if (episodes.isNotEmpty()) {
             item(key = "episodes") {
-                EpisodeRow(vm, info, episodes, playIndex, currentFlag)
+                EpisodeRow(vm, info, episodes, playIndex, currentFlag, episodeNumbers, episodeMeta, episodeCover)
             }
         }
 

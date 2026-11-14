@@ -120,13 +120,13 @@ internal class LiveChannelSourceLoader(
     }
 
     private fun initLiveState() {
+        val preferredSourceIndex = if (refreshingLiveChannelList) vm.currentSourceIndex() else -1
         refreshingLiveChannelList = false
         val lastChannelName = pendingLiveRefreshChannelName
             ?: initialChannelName
             ?: KV.get(KVKeys.LIVE_CHANNEL, "")
         initialChannelName = null
         pendingLiveRefreshChannelName = null
-        val preferredSourceIndex = vm.currentSourceIndex()
 
         var lastChannelGroupIndex = -1
         var lastLiveChannelIndex = -1
@@ -162,7 +162,7 @@ internal class LiveChannelSourceLoader(
         } else {
             vm.updateSourceIndex(0)
         }
-        vm.pendingSourceIndex = vm.currentSourceIndex()
+        vm.pendingSourceIndex = vm.currentSourceIndex().takeIf { preferredSourceIndex >= 0 }
 
         host.videoView()?.let { host.initPlayer(it) }
         overlay.showTime()

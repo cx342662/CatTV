@@ -298,13 +298,13 @@ object TmdbPoster {
             )
             return null
         }
-        val seasonCache = HashMap<Int, List<TmdbEpisode>>()
-        val episodes = ArrayList<TmdbEpisode>(episodeCount)
-        for (ref in refs) {
-            val seasonEpisodes = seasonCache.getOrPut(ref.seasonNumber) {
-                ensureSeason(best.id, ref.seasonNumber)
-            }
-            episodes.add(seasonEpisodes.getOrNull(ref.episodeNumber - 1) ?: TmdbEpisode("", ""))
+        val seasonCache = kotlinx.coroutines.coroutineScope {
+            refs.map { it.seasonNumber }.distinct()
+                .associateWith { season -> async { ensureSeason(best.id, season) } }
+                .mapValues { (_, request) -> request.await() }
+        }
+        val episodes = refs.map { ref ->
+            seasonCache[ref.seasonNumber]?.getOrNull(ref.episodeNumber - 1) ?: TmdbEpisode("", "")
         }
         val fold = TmdbApi.foldSegmentsPerEpisode(detail.seasons, episodeCount, seasonHint)
         AppLog.i("echo-tmdb episodes tv=${best.id} count=$episodeCount hint=$seasonHint fold=$fold byNumber=${byNumber != null}")

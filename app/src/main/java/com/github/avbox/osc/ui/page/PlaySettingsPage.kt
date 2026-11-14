@@ -192,6 +192,13 @@ fun PlaySettingsScreen(onNavigateBack: () -> Unit) {
                         onCheckedChange = { PlaybackSettingsState.preferAac = it },
                     )
                 }
+                SettingsCard(SettingsCardPosition.MIDDLE) {
+                    SettingsSwitchRow(
+                        title = stringResource(R.string.settings_auto_exit_pip),
+                        checked = config.autoExitPip,
+                        onCheckedChange = { PlaybackSettingsState.autoExitPip = it },
+                    )
+                }
                 SettingsCard(SettingsCardPosition.LAST) {
                     SettingsSwitchRow(
                         title = stringResource(R.string.settings_music_page),

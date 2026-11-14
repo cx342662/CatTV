@@ -52,12 +52,17 @@ class PlayerUiState {
     var speedBoostValue: Float by mutableStateOf(3.0f)
         private set
 
+    var featureTitle: String by mutableStateOf("")
+    var featureLogoUrl: String? by mutableStateOf(null)
+
     var title: String by mutableStateOf("")
         private set
     var videoSize: String by mutableStateOf(VideoSizeGate.UNKNOWN)
         private set
     var videoRect: VideoRect by mutableStateOf(VideoRect(0, 0, 0, 0))
         private set
+    var mediaBadgeFormats by mutableStateOf("")
+
     var videoQuality: String by mutableStateOf("")
         private set
     var sysTime: String by mutableStateOf("")

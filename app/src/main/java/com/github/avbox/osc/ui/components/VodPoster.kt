@@ -43,12 +43,14 @@ internal val LocalTmdbPosterLookup = staticCompositionLocalOf<(String?, Int, Str
     { _, _, _ -> null }
 }
 
+internal val LocalTmdbRatingLookup = staticCompositionLocalOf<TmdbPosterCache?> { null }
+
 @Composable
 internal fun ProvideTmdbPosterLookup(cache: TmdbPosterCache, content: @Composable () -> Unit) {
     val lookup = remember(cache) {
         { name: String?, year: Int, altName: String? -> cache.tmdbCachedPoster(name, year, altName) }
     }
-    CompositionLocalProvider(LocalTmdbPosterLookup provides lookup, content = content)
+    CompositionLocalProvider(LocalTmdbPosterLookup provides lookup, LocalTmdbRatingLookup provides cache, content = content)
 }
 
 internal enum class PosterSize { THUMB, LARGE, WIDE, FULL }

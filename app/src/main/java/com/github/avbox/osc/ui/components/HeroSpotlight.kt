@@ -41,6 +41,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.github.avbox.osc.R
+import com.github.avbox.osc.ui.DetailRatingBadges
 import com.github.avbox.osc.bean.Movie
 import com.github.avbox.osc.bean.TMDB_SOURCE_KEY
 import com.github.avbox.osc.util.AppLog
@@ -79,6 +80,8 @@ fun HeroSpotlight(
     onCardClick: (Movie.Video) -> Unit,
     modifier: Modifier = Modifier,
     fadeToBackdrop: Boolean = false,
+    loadRatings: suspend (Movie.Video, (Map<String, Double>) -> Unit) -> Unit = { _, _ -> },
+    loadDoubanRating: suspend (Movie.Video) -> Double? = { null },
 ) {
     if (videos.isEmpty()) return
     val count = videos.size
@@ -97,6 +100,14 @@ fun HeroSpotlight(
     }
 
     val settledVideo = videos[settledPage % count]
+    var fetchedRatings by remember(settledVideo) { mutableStateOf(emptyMap<String, Double>()) }
+    LaunchedEffect(settledVideo) { loadRatings(settledVideo) { fetchedRatings = it } }
+    var fetchedDouban by remember(settledVideo) { mutableStateOf<Double?>(null) }
+    LaunchedEffect(settledVideo) {
+        if (settledVideo.doubanScore == null) {
+            fetchedDouban = loadDoubanRating(settledVideo)
+        }
+    }
     val settledPic = settledVideo.pic
     val heroSize = rememberHeroImageSizes().poster
     val settledTmdbPath = if (settledVideo.sourceKey == TMDB_SOURCE_KEY) {
@@ -202,7 +213,11 @@ fun HeroSpotlight(
                 .padding(bottom = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            HeroSpotlightCaption(video = current)
+            HeroSpotlightCaption(
+                current,
+                fetchedRatings.takeIf { current === settledVideo }.orEmpty(),
+                fetchedDouban.takeIf { current === settledVideo },
+            )
             if (count > 1) {
                 HeroSpotlightDots(
                     count = count,
@@ -214,7 +229,7 @@ fun HeroSpotlight(
 }
 
 @Composable
-private fun HeroSpotlightCaption(video: Movie.Video) {
+private fun HeroSpotlightCaption(video: Movie.Video, fetchedRatings: Map<String, Double>, fetchedDouban: Double?) {
     Text(
         text = video.name ?: "",
         style = MaterialTheme.typography.headlineSmall,
@@ -227,8 +242,17 @@ private fun HeroSpotlightCaption(video: Movie.Video) {
             .fillMaxWidth()
             .padding(start = 24.dp, end = 24.dp),
     )
+    val tmdb = fetchedRatings["tmdb"]
+        ?: LocalTmdbRatingLookup.current?.tmdbCachedRating(video.name, video.year, video.en)
+    val douban = video.doubanScore ?: fetchedDouban
+    val badges = fetchedRatings + listOfNotNull(
+        tmdb?.takeIf { it > 0 && it <= 10 }?.let { "tmdb" to it },
+        douban?.takeIf { it > 0 && it <= 10 }?.let { "douban" to it },
+    )
     val rating = ratingBadgeText(video.note)
-    if (!rating.isNullOrBlank()) {
+    if (badges.isNotEmpty()) {
+        DetailRatingBadges(badges, MaterialTheme.colorScheme.onSurface)
+    } else if (!rating.isNullOrBlank()) {
         Text(
             text = if (rating != video.note?.trim()) stringResource(R.string.detail_rating, rating) else rating,
             style = MaterialTheme.typography.titleMedium,

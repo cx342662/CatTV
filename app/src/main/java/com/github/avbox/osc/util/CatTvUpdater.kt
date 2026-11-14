@@ -50,10 +50,12 @@ object CatTvUpdater {
             val version = json.optString("tag_name").trimStart('v', 'V')
             if (!isNewerVersion(version, BuildConfig.VERSION_NAME)) return@withContext null
             val assets = json.getJSONArray("assets")
+            val coexist = context.packageName == "com.cattv.mobile"
             for (i in 0 until assets.length()) {
                 val asset = assets.getJSONObject(i)
                 val name = asset.optString("name")
                 if (!name.endsWith(".apk", ignoreCase = true)) continue
+                if (name.endsWith("_coexist_arm64-v8a.apk", ignoreCase = true) != coexist) continue
                 val digest = asset.optString("digest")
                 // Fail closed: no published sha256 digest = no automatic installation.
                 if (!digest.startsWith("sha256:") || digest.length != 71) continue

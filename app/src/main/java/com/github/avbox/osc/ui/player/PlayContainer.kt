@@ -721,6 +721,7 @@ class PlayContainer(
     }
 
     override fun setPreviewMode(previewMode: Boolean) {
+        overlays.setPreviewMode(previewMode)
         if (playerController != null) {
             playerController.setPreviewMode(previewMode)
             playerController.getLyricView().setTextSize(if (previewMode) 16f else 24f)

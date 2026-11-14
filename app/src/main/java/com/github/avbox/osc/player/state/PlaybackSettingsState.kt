@@ -26,6 +26,7 @@ data class PlaybackSettingsConfig(
     val anime4kEnabled: Boolean,
     val anime4kDeblur: Boolean,
     val subtitleTextStyle: Int,
+    val autoExitPip: Boolean = false,
 )
 
 object PlaybackSettingsState {
@@ -52,8 +53,16 @@ object PlaybackSettingsState {
         preloadDuration = KV.get(KVKeys.PRELOAD_DURATION, KVKeys.PRELOAD_DURATION_DEFAULT),
         anime4kEnabled = KV.get(KVKeys.ANIME4K_ENABLED, false),
         anime4kDeblur = KV.get(KVKeys.ANIME4K_DEBLUR, false),
+        autoExitPip = KV.get(KVKeys.AUTO_EXIT_PIP, false),
         subtitleTextStyle = KV.get(KVKeys.SUBTITLE_TEXT_STYLE, 0),
     )
+
+    var autoExitPip: Boolean
+        get() = current.autoExitPip
+        set(value) {
+            KV.put(KVKeys.AUTO_EXIT_PIP, value)
+            current = current.copy(autoExitPip = value)
+        }
 
     var playType: Int
         get() = current.playType

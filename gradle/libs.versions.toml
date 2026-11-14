@@ -32,7 +32,7 @@ robolectric = "4.17"
 androidxTestExtJunit = "1.3.0"
 danmakuFlameMaster = "0.9.25"
 xxPermissions = "28.3"
-jsoup = "1.23.2"
+jsoup = "1.24.1"
 commonsIo = "2.22.0"
 juniversalchardet = "1.0.3"
 zxingCore = "3.5.4"
@@ -53,6 +53,8 @@ shapes = "1.2.1"
 capsule = "2.1.3"
 
 [libraries]
+coil-svg = { group = "io.coil-kt.coil3", name = "coil-svg", version.ref = "coil" }
+re2j = { module = "com.google.re2j:re2j", version = "1.8" }
 nanohttpd = { group = "org.nanohttpd", name = "nanohttpd", version.ref = "nanohttpd" }
 cling-core = { group = "org.fourthline.cling", name = "cling-core", version.ref = "cling" }
 cling-support = { group = "org.fourthline.cling", name = "cling-support", version.ref = "cling" }

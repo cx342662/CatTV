@@ -203,6 +203,9 @@ internal fun DetailHero(
     type: String?,
     note: String?,
     doubanScore: Double?,
+    doubanId: String?,
+    bindingSource: String?,
+    bindingVideoId: String?,
     description: String?,
     collected: Boolean,
     followed: Boolean,
@@ -223,9 +226,14 @@ internal fun DetailHero(
     val circleColor = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = HeroCircleAlpha)
     val detail = rememberTmdbDetail(vm, title, altTitle, year)
     val mdbListRatings by vm.mdbListRatings.collectAsState()
+    val fetchedDoubanRating by vm.doubanRating.collectAsState()
+    val binding = vm.doubanBinding(bindingSource, bindingVideoId, title, year)
+    val lookupId = binding ?: doubanId.takeIf { doubanScore == null }
+    LaunchedEffect(vm, lookupId) { vm.ensureDoubanRating(lookupId) }
     val ratings = mdbListRatings + listOfNotNull(
         detail?.rating?.takeIf { it > 0.0 && it <= 10.0 }?.let { "tmdb" to it },
-        doubanScore?.let { "douban" to it },
+        (fetchedDoubanRating?.takeIf { it.first == lookupId }?.second ?: doubanScore.takeIf { binding == null })
+            ?.let { "douban" to it },
     )
     val types = type.orEmpty()
         .split(TypeSeparators)

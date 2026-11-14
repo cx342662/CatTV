@@ -12,6 +12,9 @@ interface VodRecordDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(record: VodRecord): Long
 
+    @Query("select * from vodRecord")
+    suspend fun backupRows(): List<VodRecord>
+
     @Query("select * from vodRecord where `cid`=:cid order by updateTime desc, id desc limit :size")
     suspend fun getAll(cid: String?, size: Int): List<VodRecord>
 

@@ -17,6 +17,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.avbox.osc.R
@@ -35,7 +37,7 @@ private enum class RatingBadge(
     Tomatoes("tomatoes", "🍅"),
     Audience("popcorn", "🍿"),
     Metacritic("metacritic", "MC", listOf(Color(0xFF80D537), Color(0xFF4CB320)), Color.White),
-    Douban("douban", "", listOf(Color(0xFF289B61), Color(0xFF16834C)), Color.White);
+    Douban("douban", "", listOf(Color(0xFF08BA29), Color(0xFF04A625)), Color.White);
 
     fun formatted(value: Double): String? = when (this) {
         IMDb, TMDB, Douban -> value.takeIf { it > 0 && it <= 10 }?.let { String.format(Locale.US, "%.1f", it) }
@@ -68,15 +70,16 @@ internal fun DetailRatingBadges(ratings: Map<String, Double>, numberColor: Color
                         if (badge == RatingBadge.Trakt) CircleShape else RoundedCornerShape(4.dp),
                     )
                     .padding(horizontal = 4.dp, vertical = 1.dp)
+                val sourceName = if (badge == RatingBadge.Douban) stringResource(R.string.detail_douban_rating) else null
                 Text(
-                    text = if (badge == RatingBadge.Douban) stringResource(R.string.detail_douban_rating) else badge.label,
+                    text = if (badge == RatingBadge.Douban) stringResource(R.string.detail_douban_short) else badge.label,
                     color = badge.labelColor,
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.labelSmall,
                     fontSize = if (badge.colors.isEmpty()) 13.sp else 10.sp,
                     lineHeight = 13.sp,
                     letterSpacing = 0.sp,
-                    modifier = labelModifier,
+                    modifier = if (sourceName == null) labelModifier else labelModifier.semantics { contentDescription = sourceName },
                 )
                 Text(
                     text = number,

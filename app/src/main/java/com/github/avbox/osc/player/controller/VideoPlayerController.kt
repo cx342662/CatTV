@@ -388,6 +388,7 @@ class VideoPlayerController(
 
     override fun onVideoSizeCleared() {
         videoSizeGate.onKernelContentReplaced()
+        state.mediaBadgeFormats = ""
     }
 
     internal fun progressSnapshot(): ProgressSnapshot? {
@@ -415,6 +416,25 @@ class VideoPlayerController(
             if (snapshot.durationMs > 0) state.updateDuration(snapshot.durationMs)
             if (snapshot.positionMs > 0 || snapshot.durationMs > 0) state.updatePosition(snapshot.positionMs)
             state.updateBufferedPercent(snapshot.bufferedPercent)
+            val exo = view?.mediaPlayer as? com.github.avbox.osc.player.ExoPlayer
+            val audio = exo?.selectedAudioFormat?.sampleMimeType
+            val video = exo?.selectedVideoFormat?.sampleMimeType
+            state.mediaBadgeFormats = listOfNotNull(
+                when (audio) {
+                    "audio/mp4a-latm" -> "AAC"
+                    "audio/eac3" -> "EAC3"
+                    "audio/eac3-joc" -> "Atmos"
+                    "audio/vnd.dts", "audio/vnd.dts.hd" -> "DTS"
+                    else -> null
+                },
+                when (video) {
+                    "video/hevc" -> "HEVC"
+                    "video/avc" -> "H264"
+                    "video/av01" -> "AV1"
+                    "video/dolby-vision" -> "Dolby Vision"
+                    else -> null
+                },
+            ).joinToString(" ")
             if (view?.isPlaying == true) listener?.onNearEndProgress(snapshot.positionMs.toLong(), snapshot.durationMs.toLong())
         }
         if (state.dragging) return

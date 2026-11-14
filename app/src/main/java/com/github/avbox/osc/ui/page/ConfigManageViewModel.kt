@@ -78,6 +78,7 @@ data class ConfigTmdbActions(
     val commitImageBase: () -> Unit,
     val testApi: () -> Unit,
     val testImage: () -> Unit,
+    val saveDoubanBinding: (String, String, String) -> Boolean = { _, _, _ -> false },
     val setMdbListApiKey: (String) -> Unit = {},
 )
 
@@ -158,6 +159,15 @@ class ConfigManageViewModel(
 
     fun tmdbTesting(): StateFlow<TmdbTest> = tmdbTesting.asStateFlow()
 
+    private fun saveDoubanBinding(title: String, yearText: String, input: String): Boolean {
+        if (title.isBlank()) return false
+        val year = if (yearText.isBlank()) 0 else yearText.trim().toIntOrNull()?.takeIf { it in 1800..9999 }
+            ?: return false
+        val value = if (input.isBlank()) null
+            else com.github.avbox.osc.api.DoubanRatings.parseBinding(input) ?: return false
+        return KV.put(com.github.avbox.osc.api.DoubanRatings.bindingKey(title, year), value)
+    }
+
     fun tmdbActions(): ConfigTmdbActions = ConfigTmdbActions(
         setEnabled = { value -> updateTmdbEnabled(value) },
         setPosterStyle = { style -> updateTmdbPosterStyle(style) },
@@ -168,6 +178,7 @@ class ConfigManageViewModel(
         commitImageBase = { commitTmdbImageBase() },
         testApi = { testTmdbApi() },
         testImage = { testTmdbImage() },
+        saveDoubanBinding = ::saveDoubanBinding,
         setMdbListApiKey = { value ->
             val key = sanitizeConfigText(value)
             if (key != tmdbState.value.mdbListApiKey) {

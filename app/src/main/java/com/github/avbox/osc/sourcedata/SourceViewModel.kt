@@ -5,7 +5,9 @@ import androidx.lifecycle.ViewModel
 import com.github.catvod.crawler.SpiderReaper
 import com.github.avbox.osc.api.ApiConfig
 import com.github.avbox.osc.bean.AbsSortXml
+import kotlinx.coroutines.flow.first
 import com.github.avbox.osc.bean.AbsXml
+import com.github.avbox.osc.bean.Movie
 import com.github.avbox.osc.bean.MovieSort
 import com.github.avbox.osc.util.AppLog
 import com.google.gson.Gson
@@ -67,6 +69,15 @@ class SourceViewModel : ViewModel() {
 
     fun getList(sourceKey: String?, sortData: MovieSort.SortData?, page: Int) {
         requestScope.launch { listLoader.getList(sourceKey, sortData, page) }
+    }
+
+    internal suspend fun lookupDetail(sourceKey: String, id: String): Movie.Video? {
+        val result = SourceChannel<AbsXml?>()
+        val parser = SourceResultParser(gson, SourceChannel(), result, PushDetailResolver(gson, result))
+        DetailLoader(gson, SourceRuntimeState.extendCache, result, parser).getDetail(sourceKey, id, fallback = true)
+        return kotlinx.coroutines.withTimeoutOrNull(1000) {
+            result.flow.first()?.movie?.videoList?.firstOrNull { it.id == id }
+        }
     }
 
     fun getDetail(sourceKey: String?, urlid: String) {

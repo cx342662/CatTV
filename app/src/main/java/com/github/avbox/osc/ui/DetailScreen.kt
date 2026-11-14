@@ -12,6 +12,9 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -47,6 +50,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.github.avbox.osc.R
+import com.github.avbox.osc.util.TmdbImages
 import com.github.avbox.osc.player.state.PlayerUiState
 import com.github.avbox.osc.ui.player.CastSheet
 import com.github.avbox.osc.ui.components.HomeBackdrop
@@ -88,6 +92,7 @@ fun DetailScreen(activity: DetailActivity, vm: DetailViewModel) {
     val pageState by vm.pageState.collectAsState()
     val full by vm.fullScreen.collectAsState()
     val rotating by vm.rotating.collectAsState()
+    val inlinePlayback by vm.inlinePlayback.collectAsState()
     val playSignal by vm.playSignal.collectAsState()
     val enteringFullscreen by vm.enteringFullscreen.collectAsState()
     val exitingFullscreen by vm.exitingFullscreen.collectAsState()
@@ -117,7 +122,6 @@ fun DetailScreen(activity: DetailActivity, vm: DetailViewModel) {
         configuration.screenWidthDp,
         configuration.screenHeightDp,
     )
-    LaunchedEffect(heroGone, flatHero) { activity.setStatusBarIconsLight(heroGone && !flatHero) }
 
     val isLandscapeNow = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     val fullBox = DetailFullScreenFrame.fullBox(rotating, full, isLandscapeNow)
@@ -125,6 +129,20 @@ fun DetailScreen(activity: DetailActivity, vm: DetailViewModel) {
     var slideWidthPx by remember { mutableFloatStateOf(0f) }
 
     val container = activity.playContainer
+    val inlinePlayer = inlinePlayback && !full && !fullBox && !inTransition && !isLandscapeNow
+    LaunchedEffect(heroGone, flatHero, inlinePlayer) {
+        activity.setStatusBarIconsLight(heroGone && !flatHero && !inlinePlayer)
+    }
+    val vodUi by vm.vodUi.collectAsState()
+    val titleInfo = vodUi?.info
+    val logoPath by vm.tmdbLogoPath.collectAsState()
+    val logoEpoch by TmdbImages.configEpoch.collectAsState()
+    LaunchedEffect(vm, titleInfo?.name, titleInfo?.en, titleInfo?.year, logoEpoch) {
+        if (titleInfo != null) vm.ensureTmdbLogo(titleInfo.name, titleInfo.en, titleInfo.year)
+    }
+    LaunchedEffect(inlinePlayback) {
+        if (inlinePlayback) listState.scrollToItem(0)
+    }
     val inPictureInPicture = activity.isPictureInPictureUi
     val scope = rememberCoroutineScope()
     var backdropPic by remember { mutableStateOf("") }
@@ -325,18 +343,24 @@ fun DetailScreen(activity: DetailActivity, vm: DetailViewModel) {
 
                         is DetailViewModel.PageState.Ready -> {
                             CompositionLocalProvider(LocalTopBarGlassBackdrop provides pageBackdrop) {
+                                Column {
+                                if (inlinePlayer) {
+                                    Box(Modifier.fillMaxWidth().background(Color.Black).statusBarsPadding().aspectRatio(16f / 9f))
+                                }
                                 DetailContent(
                                     activity = activity,
                                     vm = vm,
                                     listState = listState,
+                                    inlinePlayback = inlinePlayer,
                                     onPosterPic = { backdropPic = it },
                                     onSeed = { argb -> if (argb != null) backdropSeed = argb },
                                 )
+                                }
                             }
                         }
                     }
                 }
-                if (!fullBox || exitingFullscreen) {
+                if (!inlinePlayer && (!fullBox || exitingFullscreen)) {
                     DetailTopScrim(
                         modifier = Modifier.align(Alignment.TopCenter),
                         alpha = if (flatHero) 1f else 1f - heroProgress,
@@ -349,13 +373,21 @@ fun DetailScreen(activity: DetailActivity, vm: DetailViewModel) {
             if (playerContainer != null) {
                 Box(
                     modifier = Modifier
-                        .fillMaxSize()
+                        .then(if (inlinePlayer && !inPictureInPicture) {
+                            Modifier.fillMaxWidth().background(Color.Black).statusBarsPadding().aspectRatio(16f / 9f)
+                        } else Modifier.fillMaxSize())
                         .offset {
-                            IntOffset(if (inPictureInPicture) 0 else ((1f - slideProgress()) * slideWidthPx).toInt(), 0)
+                            IntOffset(if (inPictureInPicture || inlinePlayer) 0 else ((1f - slideProgress()) * slideWidthPx).toInt(), 0)
                         },
                 ) {
                     AndroidView(
                         factory = { playerContainer },
+                        update = { player ->
+                            player.uiState()?.let { state ->
+                                state.featureTitle = titleInfo?.name.orEmpty()
+                                state.featureLogoUrl = logoPath?.takeIf { it.isNotBlank() }?.let(TmdbImages::logoUrl)
+                            }
+                        },
                         modifier = Modifier.fillMaxSize(),
                     )
                 }
@@ -379,7 +411,7 @@ fun DetailScreen(activity: DetailActivity, vm: DetailViewModel) {
         }
 
         if (!inPictureInPicture) {
-            EpisodeSheet(vm, slideFromEnd = fullBox && isLandscapeNow, showQuality = full)
+            EpisodeSheet(vm, slideFromEnd = fullBox && isLandscapeNow, showQuality = full, poster = backdropSource)
             VodCardMenu(vodMenu) { menuContext.jumpToSearch(it) }
         }
     }

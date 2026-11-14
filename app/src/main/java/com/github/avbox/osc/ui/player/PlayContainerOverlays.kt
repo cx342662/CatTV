@@ -26,6 +26,18 @@ internal class PlayContainerOverlays(private val host: PlayContainer) {
 
     private var preloadReadyToast: Toast? = null
 
+    private var tipShowing = false
+    private var previewMode = false
+
+    fun setPreviewMode(enabled: Boolean) {
+        previewMode = enabled
+        syncDanmuVisibility()
+    }
+
+    private fun syncDanmuVisibility() {
+        host.danmuLoadController?.setOverlayHidden(tipShowing || previewMode)
+    }
+
     private var danmuView: DanmakuView? = null
 
     private val refreshPreloadToastRunnable: Runnable = Runnable {
@@ -35,18 +47,19 @@ internal class PlayContainerOverlays(private val host: PlayContainer) {
 
     fun onTipStateChanged(tip: PlayerTipState) {
         if (host.handler == null) return
-        val showing = tip.loading || tip.err
         host.handler?.post {
             if (host.playerController != null) {
                 host.playerController.getUiState().applyTip(tip.msg, tip.loading, tip.err)
             }
-            if (host.danmuLoadController != null) host.danmuLoadController?.setOverlayHidden(showing)
+            tipShowing = tip.loading || tip.err
+            syncDanmuVisibility()
         }
     }
 
     fun initDanmuView() {
         danmuView = host.findViewById(R.id.danmaku)
         host.danmuLoadController = DanmuLoadController(host.kernelView, host.playerController, danmuView)
+        syncDanmuVisibility()
     }
 
     fun setDanmuViewSettings(reload: Boolean) {

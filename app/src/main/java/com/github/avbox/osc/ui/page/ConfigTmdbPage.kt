@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -84,6 +86,7 @@ fun ConfigTmdbScreen(
                 )
             }
         }
+        DoubanBindingSettings(actions.saveDoubanBinding)
         SettingsGroup(title = null) {
             SettingsCard(SettingsCardPosition.FIRST) {
                 TmdbTextField(
@@ -178,4 +181,32 @@ private fun TmdbTextField(
         clearable = clearable,
         errorText = errorText,
     )
+}
+
+@Composable
+private fun DoubanBindingSettings(onSave: (String, String, String) -> Boolean) {
+    var title by remember { mutableStateOf("") }
+    var year by remember { mutableStateOf("") }
+    var link by remember { mutableStateOf("") }
+    var saved by remember { mutableStateOf<Boolean?>(null) }
+    SettingsGroup(title = stringResource(R.string.detail_bind_douban)) {
+        SettingsCard(SettingsCardPosition.SINGLE) {
+            Column {
+                TmdbTextField(stringResource(R.string.douban_binding_title), title, { title = it; saved = null })
+                TmdbTextField(stringResource(R.string.douban_binding_year), year, { year = it; saved = null })
+                TmdbTextField(stringResource(R.string.detail_douban_link), link, { link = it; saved = null })
+                Text(
+                    stringResource(when (saved) {
+                        true -> R.string.douban_binding_saved
+                        false -> R.string.douban_binding_error
+                        null -> R.string.detail_douban_clear
+                    }),
+                    modifier = Modifier.padding(horizontal = CardContentPadding),
+                )
+                TextButton(onClick = { saved = onSave(title, year, link) }) {
+                    Text(stringResource(R.string.common_confirm))
+                }
+            }
+        }
+    }
 }

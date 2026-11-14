@@ -219,7 +219,7 @@ fun PlayerTopBar(state: PlayerUiState, actions: PlayerActions) {
                         Column(
                             modifier = Modifier.padding(start = playerDim(R.dimen.vs_10)),
                         ) {
-                            Text(
+                            if (state.featureTitle.isBlank()) Text(
                                 text = state.title,
                                 color = Color.White,
                                 fontSize = playerTextSize(R.dimen.ts_26),
@@ -242,6 +242,9 @@ fun PlayerTopBar(state: PlayerUiState, actions: PlayerActions) {
                                     overflow = TextOverflow.Ellipsis,
                                     modifier = Modifier.padding(top = 2.dp),
                                 )
+                            }
+                            if (!state.previewMode && playerBadgeDisplay()?.player == true) {
+                                PlayerMediaBadges(state, Modifier.padding(top = 5.dp))
                             }
                         }
                     }
@@ -296,4 +299,17 @@ private fun batteryIcon(state: PlayerUiState): Int = when {
     state.batteryPercent <= 66 -> R.drawable.ic_battery_4
     state.batteryPercent <= 83 -> R.drawable.ic_battery_5
     else -> R.drawable.ic_battery_6
+}
+
+@Composable
+internal fun PlayerMediaBadges(state: PlayerUiState, modifier: Modifier = Modifier) {
+    com.github.avbox.osc.ui.components.MediaBadgeRow(
+        listOf(state.videoQuality, state.mediaBadgeFormats, state.title).joinToString(" "),
+        modifier,
+        onVideo = true,
+    )
+}
+
+internal fun playerBadgeDisplay() = com.github.avbox.osc.util.AppContextHolder.context()?.let {
+    com.github.avbox.osc.ui.components.MediaBadges.display
 }

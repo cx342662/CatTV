@@ -2,6 +2,7 @@ package com.github.avbox.osc.ui
 
 import android.content.Context
 import android.content.Intent
+import com.github.avbox.osc.ui.WindowSize
 import android.content.pm.ActivityInfo
 import android.app.PictureInPictureParams
 import android.os.Build
@@ -107,18 +108,29 @@ class DetailActivity : BaseActivity(), PageHost {
                 val container = playContainer
                 if (vm.enteringFullscreen.value) {
                     vm.cancelEntrySlide()
-                    container?.stopForExitFullscreen()
+                    if (!vm.inlinePlayback.value) container?.stopForExitFullscreen()
                     return
                 }
                 if (vm.exitingFullscreen.value) return
                 if (vm.fullScreen.value) {
-                    if (container != null && container.onBackPressed()) return
-                    if (DetailPlaybackPolicy.plan(DetailPlaybackEntry.ExitFullscreen).stopPlayback) {
+                    val keepPlaying = container?.hasClaimedPlayback() == true &&
+                        WindowSize.shouldLockPortrait(resources.configuration.smallestScreenWidthDp)
+                    if (keepPlaying) {
+                        container?.uiState()?.clearOverlays()
+                    } else {
+                        if (container?.onBackPressed() == true) return
                         container?.stopForExitFullscreen()
                     }
-                    vm.onFullScreenToggleRequested(false, playbackFacts())
-                    container?.hideTipOnUiThread()
+                    vm.onFullScreenToggleRequested(false, playbackFacts(), keepPlaying = keepPlaying)
+                    if (!keepPlaying) container?.hideTipOnUiThread()
                 } else {
+                    if (vm.inlinePlayback.value) {
+                        if (container?.onBackPressed() == true) return
+                        container?.stopForExitFullscreen()
+                        vm.closeInlinePlayback()
+                        return
+                    }
+                    if (tryAutomaticPictureInPicture(moveToHome = true)) return
                     if (vm.backToPreviousTarget()) {
                         pendingEpisodeSync = false
                         return
@@ -349,6 +361,10 @@ class DetailActivity : BaseActivity(), PageHost {
         vm.syncEpisodeAfterMusicReturn()
     }
 
+    fun expandInlinePlayer() {
+        vm.onFullScreenToggleRequested(true, playbackFacts())
+    }
+
     fun applyFullscreen(full: Boolean) {
         if (appliedFullscreen == full) return
         appliedFullscreen = full
@@ -466,16 +482,31 @@ class DetailActivity : BaseActivity(), PageHost {
         playContainer?.setPictureInPictureMode(enabled)
     }
 
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        tryAutomaticPictureInPicture(moveToHome = false)
+    }
+
+    private fun tryAutomaticPictureInPicture(moveToHome: Boolean): Boolean {
+        if (!com.github.avbox.osc.player.state.PlaybackSettingsState.config.autoExitPip) return false
+        val playing = playContainer?.let { it.ownsEngineContent() && it.isPlaybackActive() } == true
+        return playing && requestPictureInPicture(moveToHome, automatic = true)
+    }
+
     private fun enterVodPictureInPicture() {
+        requestPictureInPicture(moveToHome = true, automatic = false)
+    }
+
+    private fun requestPictureInPicture(moveToHome: Boolean, automatic: Boolean): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-            Toast.makeText(this, "当前 Android 版本不支持画中画", Toast.LENGTH_SHORT).show()
-            return
+            if (!automatic) Toast.makeText(this, "当前 Android 版本不支持画中画", Toast.LENGTH_SHORT).show()
+            return false
         }
         if (!packageManager.hasSystemFeature("android.software.picture_in_picture")) {
-            Toast.makeText(this, "当前设备不支持画中画", Toast.LENGTH_SHORT).show()
-            return
+            if (!automatic) Toast.makeText(this, "当前设备不支持画中画", Toast.LENGTH_SHORT).show()
+            return false
         }
-        if (isInPictureInPictureMode || enteringPictureInPicture) return
+        if (isInPictureInPictureMode || enteringPictureInPicture) return false
         // Standard video PiP uses a conventional 16:9 video window, not the app page ratio.
         val sourceRect = Rect()
         val sourceView = playContainer
@@ -494,12 +525,13 @@ class DetailActivity : BaseActivity(), PageHost {
             false
         }
         if (entered) {
-            showHomeBehindPictureInPicture()
+            if (moveToHome) showHomeBehindPictureInPicture()
         } else {
             enteringPictureInPicture = false
             applyPictureInPictureUi(false)
-            Toast.makeText(this, "无法进入画中画模式", Toast.LENGTH_SHORT).show()
+            if (!automatic) Toast.makeText(this, "无法进入画中画模式", Toast.LENGTH_SHORT).show()
         }
+        return entered
     }
 
     override fun onDestroy() {

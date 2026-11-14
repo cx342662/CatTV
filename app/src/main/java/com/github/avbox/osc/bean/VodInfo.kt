@@ -34,6 +34,7 @@ data class VodInfo(
     val playerCfg: String = "",
     val reverseSort: Boolean = false,
     val doubanScore: Double? = null,
+    val doubanId: String? = null,
 ) : Serializable {
 
     fun reverse() {
@@ -94,6 +95,7 @@ data class VodInfo(
                 state = video.state,
                 note = video.note,
                 doubanScore = video.doubanScore,
+                doubanId = video.doubanId,
                 actor = video.actor,
                 director = video.director,
                 des = video.des,

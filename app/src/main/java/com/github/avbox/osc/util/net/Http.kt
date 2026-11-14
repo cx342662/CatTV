@@ -27,6 +27,14 @@ object Http {
         return executeWithRetry(HttpRequest(url).apply(init).build(), client())
     }
 
+    suspend fun getLimitedUtf8(url: String, maxBytes: Long): String {
+        return executeChecked(HttpRequest(url).build(), client(), retry = false) { response ->
+            val source = response.body.source()
+            require(!source.request(maxBytes + 1)) { "Response exceeds size limit" }
+            source.readUtf8()
+        }
+    }
+
     suspend fun once(url: String, init: HttpRequest.() -> Unit = {}): String {
         return executeChecked(HttpRequest(url).apply(init).build(), client(), retry = false) { it.body.string() }
     }

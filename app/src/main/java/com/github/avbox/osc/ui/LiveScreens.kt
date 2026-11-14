@@ -35,11 +35,13 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.PictureInPictureAlt
 import androidx.compose.material.icons.filled.ScreenRotation
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.Icon
@@ -65,6 +67,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
+import kotlinx.coroutines.delay
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -337,7 +342,24 @@ private fun PlayerArea(state: LivePlayUiState, actions: LivePlayActions, modifie
                 modifier = Modifier.fillMaxSize(),
             )
         }
-        if (!state.isInPictureInPictureMode) {
+        if (!state.isInPictureInPictureMode && state.controlsLocked) {
+            var wakeCount by remember { mutableStateOf(0) }
+            var unlockVisible by remember { mutableStateOf(true) }
+            LaunchedEffect(wakeCount) {
+                delay(3000)
+                unlockVisible = false
+            }
+            Box(Modifier.fillMaxSize().pointerInput(Unit) {
+                detectTapGestures {
+                    unlockVisible = true
+                    wakeCount++
+                }
+            })
+            if (unlockVisible) {
+                LiveLockButton(true, actions.player.onToggleControlsLock, Modifier.align(Alignment.CenterEnd).padding(end = 8.dp))
+            }
+        }
+        if (!state.isInPictureInPictureMode && !state.controlsLocked) {
         if (state.player.snapshotVisible) {
             Box(modifier = Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
                 state.player.snapshotBitmap?.let { bitmap ->
@@ -390,7 +412,7 @@ private fun PlayerArea(state: LivePlayUiState, actions: LivePlayActions, modifie
                 paused = state.player.playState == PlayState.PAUSED,
                 onSeek = actions.player.onTimeshiftSeek,
                 onTogglePlay = actions.player.onTimeshiftTogglePlay,
-                modifier = Modifier.align(Alignment.BottomCenter),
+                modifier = Modifier.align(Alignment.BottomCenter).padding(end = 58.dp),
             )
         }
         if (state.frame.isFullBox && state.overlay.visible) {
@@ -406,9 +428,34 @@ private fun PlayerArea(state: LivePlayUiState, actions: LivePlayActions, modifie
                     .fillMaxHeight(),
             )
         }
-        if (!state.frame.isFullBox) {
+        if (!state.frame.isFullBox || state.overlay.visible) {
             PlayerCornerButtons(actions.player, Modifier.align(Alignment.TopEnd))
-        } else if (state.overlay.visible) {
+            Column(Modifier.align(Alignment.CenterEnd).padding(end = 8.dp)) {
+                LiveLockButton(false, actions.player.onToggleControlsLock)
+                IconButton(
+                    onClick = if (state.frame.isFullBox) actions.player.onExitFullscreen
+                        else actions.player.onEnterFullscreen,
+                ) {
+                Icon(
+                    imageVector = Icons.Filled.ScreenRotation,
+                    contentDescription = "切换全屏/横竖屏",
+                    tint = Color.White,
+                    modifier = Modifier.size(28.dp),
+                )
+                }
+            }
+            IconButton(
+                onClick = actions.player.onEnterPictureInPicture,
+                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 8.dp, bottom = 6.dp),
+            ) {
+                Icon(
+                    Icons.Filled.PictureInPictureAlt,
+                    contentDescription = stringResource(R.string.player_picture_in_picture),
+                    tint = Color.White,
+                )
+            }
+        }
+        if (state.frame.isFullBox && state.overlay.visible) {
             IconButton(
                 onClick = actions.player.onExitFullscreen,
                 modifier = Modifier.align(Alignment.TopStart),
@@ -419,42 +466,37 @@ private fun PlayerArea(state: LivePlayUiState, actions: LivePlayActions, modifie
                     tint = Color.White,
                 )
             }
-            PlayerCornerButtons(actions.player, Modifier.align(Alignment.TopEnd))
-        }
-        if (!state.frame.isFullBox || state.overlay.visible) {
-            Column(
-                modifier = Modifier.align(Alignment.CenterEnd).padding(end = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                IconButton(
-                    onClick = if (state.frame.isFullBox) actions.player.onExitFullscreen
-                        else actions.player.onEnterFullscreen,
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.ScreenRotation,
-                        contentDescription = "切换全屏/横竖屏",
-                        tint = Color.White,
-                        modifier = Modifier.size(28.dp),
-                    )
-                }
-                IconButton(onClick = actions.player.onEnterPictureInPicture) {
-                    Icon(
-                        imageVector = Icons.Filled.PictureInPictureAlt,
-                        contentDescription = stringResource(R.string.player_picture_in_picture),
-                        tint = Color.White,
-                        modifier = Modifier.size(27.dp),
-                    )
-                }
-            }
         }
         }
     }
 }
 
 @Composable
+private fun LiveLockButton(locked: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    IconButton(onClick = onClick, modifier = modifier) {
+        Icon(
+            imageVector = if (locked) Icons.Filled.Lock else Icons.Filled.LockOpen,
+            contentDescription = stringResource(if (locked) R.string.live_unlock_controls else R.string.player_lock),
+            tint = Color.White,
+            modifier = Modifier.size(28.dp),
+        )
+    }
+}
+
+@Composable
 private fun PlayerCornerButtons(actions: LivePlayerActions, modifier: Modifier) {
     Row(modifier = modifier.padding(8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        PlayerCornerButton(
+            icon = {
+                Icon(
+                    Icons.Filled.SwapHoriz,
+                    contentDescription = stringResource(R.string.live_group_multi_source),
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp),
+                )
+            },
+            onClick = actions.onSourceSheetOpen,
+        )
         PlayerCornerButton(
             icon = {
                 Icon(
@@ -815,9 +857,21 @@ private fun SettingsSheet(
     onItemLongClick: (Int) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val groups = if (settings.sourcesOnly) {
+        listOfNotNull(
+            settings.groups.firstOrNull {
+                it.groupIndex == LiveSettingsSnapshot.MULTI_SOURCE_GROUP_INDEX && it.items.isNotEmpty()
+            },
+            settings.groups.firstOrNull {
+                it.groupIndex == LiveSettingsSnapshot.CHANNEL_LINE_GROUP_INDEX && it.items.isNotEmpty()
+            },
+        )
+    } else {
+        settings.groups
+    }
     AVBoxBottomSheet(
         onDismissRequest = onDismiss,
-        title = stringResource(R.string.live_settings),
+        title = stringResource(if (settings.sourcesOnly) R.string.live_group_multi_source else R.string.live_settings),
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
         isScrollable = false,
     ) {
@@ -826,7 +880,10 @@ private fun SettingsSheet(
             verticalArrangement = Arrangement.spacedBy(20.dp),
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
         ) {
-            settings.groups.forEach { group ->
+            if (settings.sourcesOnly && groups.isEmpty()) {
+                item { Text(stringResource(R.string.config_empty_live_source)) }
+            }
+            groups.forEach { group ->
                 item(key = "sg" + group.groupIndex) {
                     SettingsGroup(
                         title = if (group.longPressDelete) {

@@ -13,12 +13,12 @@ android {
     ndkVersion = libs.versions.ndk.get()
 
     defaultConfig {
-        applicationId = "com.github.avbox.osc"
+        applicationId = providers.gradleProperty("CATTV_APPLICATION_ID").getOrElse("com.cattv.mobile")
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        // Release workflow supplies version values; local debug keeps current defaults.
-        versionCode = (project.findProperty("CATTV_VERSION_CODE") as String?)?.toIntOrNull() ?: 37
-        versionName = (project.findProperty("CATTV_VERSION_NAME") as String?) ?: "1.3.3"
+        // Release workflow can override the packaged version.
+        versionCode = (project.findProperty("CATTV_VERSION_CODE") as String?)?.toIntOrNull() ?: 40
+        versionName = (project.findProperty("CATTV_VERSION_NAME") as String?) ?: "1.3.4"
         multiDexEnabled = true
         ndk {
             abiFilters += setOf("arm64-v8a")
@@ -183,6 +183,8 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation(libs.coil.compose)
+    implementation(libs.coil.svg)
+    implementation(libs.re2j)
     implementation(libs.coil.network.okhttp)
     implementation(libs.materialkolor)
     implementation(project(":libs:backdrop"))

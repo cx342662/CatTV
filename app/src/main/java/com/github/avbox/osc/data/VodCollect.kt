@@ -1,12 +1,14 @@
 package com.github.avbox.osc.data
 
 import androidx.room3.ColumnInfo
+import androidx.annotation.Keep
 import androidx.room3.Entity
 import androidx.room3.PrimaryKey
 
 import java.io.Serializable
 
 @Entity(tableName = "vodCollect")
+@Keep
 class VodCollect : Serializable {
     @PrimaryKey(autoGenerate = true)
     var id: Int = 0
