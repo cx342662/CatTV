@@ -22,7 +22,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          MATCHES="$(gh release list --limit 100 --json tagName,name --jq '.[] | select((.tagName + " " + .name) | test("(^|[^0-9])v?69([^0-9]|$)"; "i")) | .tagName')"
+          MATCHES="$(gh release list --limit 100 --json tagName,name --jq '.[] | select(((.tagName + " " + .name) | test("(^|[^0-9])v?69([^0-9]|$)"; "i")) and ((.tagName + " " + .name) | test("tv"; "i"))) | .tagName')"
           COUNT="$(printf '%s\n' "$MATCHES" | sed '/^$/d' | wc -l)"
           [ "$COUNT" -eq 1 ] || { echo "::error::Expected exactly one existing v69 release, found $COUNT. Do not overwrite a different release."; exit 1; }
           TAG="$MATCHES"
