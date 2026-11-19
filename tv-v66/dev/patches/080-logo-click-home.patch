@@ -20,156 +20,6 @@ index d595427..a068405 100644
      </androidx.appcompat.widget.LinearLayoutCompat>
      <FrameLayout android:layout_gravity="top" android:id="@id/filterPanel" android:visibility="gone" android:clipChildren="false" android:clipToPadding="false" android:layout_width="match_parent" android:layout_height="wrap_content">
          <androidx.appcompat.widget.LinearLayoutCompat android:orientation="vertical" android:clipChildren="false" android:clipToPadding="false" android:layout_width="match_parent" android:layout_height="wrap_content">
-diff --git a/smali/b61.smali b/smali/b61.smali
-index d9f4e7e..c53842a 100644
---- a/smali/b61.smali
-+++ b/smali/b61.smali
-@@ -31,120 +31,65 @@
- 
- # virtual methods
- .method public onInterceptKeyEvent(Landroid/view/KeyEvent;)Z
--    .locals 1
--
--    .line 1
--    sget v0, Lcom/fongmi/android/tv/ui/activity/HomeActivityV2;->p1:I
-+    .locals 4
- 
--    .line 2
--    .line 3
-     invoke-virtual {p1}, Landroid/view/KeyEvent;->getAction()I
- 
--    .line 4
--    .line 5
--    .line 6
-     move-result v0
- 
--    .line 7
-     if-eqz v0, :cond_0
- 
--    .line 8
--    .line 9
--    goto :goto_0
-+    const/4 v0, 0x0
-+
-+    return v0
- 
--    .line 10
-     :cond_0
-     invoke-virtual {p1}, Landroid/view/KeyEvent;->getKeyCode()I
- 
--    .line 11
--    .line 12
--    .line 13
--    move-result p1
-+    move-result v0
- 
--    .line 14
--    const/16 v0, 0x16
-+    const/16 v1, 0x15
- 
--    .line 15
--    .line 16
--    if-eq p1, v0, :cond_1
-+    if-ne v0, v1, :cond_2
- 
--    .line 17
--    .line 18
--    goto :goto_0
-+    iget-object v1, p0, Lb61;->c:Lcom/fongmi/android/tv/ui/activity/HomeActivityV2;
- 
--    .line 19
--    :cond_1
--    iget-object p0, p0, Lb61;->c:Lcom/fongmi/android/tv/ui/activity/HomeActivityV2;
--
--    .line 20
--    .line 21
--    iget-object p1, p0, Lcom/fongmi/android/tv/ui/activity/HomeActivityV2;->L:Landroidx/leanback/widget/HorizontalGridView;
-+    iget-object v1, v1, Lcom/fongmi/android/tv/ui/activity/HomeActivityV2;->J:Landroidx/leanback/widget/HorizontalGridView;
- 
--    .line 22
--    .line 23
--    invoke-virtual {p1}, Landroidx/recyclerview/widget/RecyclerView;->getAdapter()Landroidx/recyclerview/widget/g;
-+    invoke-virtual {v1}, Landroidx/leanback/widget/BaseGridView;->getSelectedPosition()I
- 
--    .line 24
--    .line 25
--    .line 26
--    move-result-object p1
-+    move-result v0
- 
--    .line 27
--    if-eqz p1, :cond_2
-+    if-lez v0, :cond_2
- 
--    .line 28
--    .line 29
--    invoke-virtual {p1}, Landroidx/recyclerview/widget/g;->getItemCount()I
-+    invoke-virtual {v1}, Landroid/view/View;->getParent()Landroid/view/ViewParent;
- 
--    .line 30
--    .line 31
--    .line 32
--    move-result v0
-+    move-result-object v2
- 
--    .line 33
--    if-lez v0, :cond_2
-+    instance-of v3, v2, Landroid/view/View;
- 
--    .line 34
--    .line 35
--    iget-object p0, p0, Lcom/fongmi/android/tv/ui/activity/HomeActivityV2;->L:Landroidx/leanback/widget/HorizontalGridView;
-+    if-eqz v3, :cond_2
- 
--    .line 36
--    .line 37
--    invoke-virtual {p0}, Landroidx/leanback/widget/BaseGridView;->getSelectedPosition()I
-+    check-cast v2, Landroid/view/View;
- 
--    .line 38
--    .line 39
--    .line 40
--    move-result p0
-+    const-string v3, "cattv_site_nav"
- 
--    .line 41
--    invoke-virtual {p1}, Landroidx/recyclerview/widget/g;->getItemCount()I
-+    invoke-virtual {v2, v3}, Landroid/view/View;->findViewWithTag(Ljava/lang/Object;)Landroid/view/View;
- 
--    .line 42
--    .line 43
--    .line 44
--    move-result p1
-+    move-result-object v2
- 
--    .line 45
--    const/4 v0, 0x1
-+    if-eqz v2, :cond_2
- 
--    .line 46
--    sub-int/2addr p1, v0
-+    invoke-virtual {v2}, Landroid/view/View;->requestFocus()Z
- 
--    .line 47
--    if-lt p0, p1, :cond_2
-+    move-result v0
- 
--    .line 48
--    .line 49
-     return v0
- 
--    .line 50
-     :cond_2
--    :goto_0
--    const/4 p0, 0x0
-+    const/4 v0, 0x0
- 
--    .line 51
--    return p0
-+    return v0
- .end method
- 
- .method public y(Ljava/lang/Object;)V
 diff --git a/smali/cattv/HomeClick.smali b/smali/cattv/HomeClick.smali
 new file mode 100644
 index 0000000..15ac032
@@ -272,7 +122,7 @@ index 0000000..15ac032
 +    return-void
 +.end method
 diff --git a/smali/com/fongmi/android/tv/ui/activity/HomeActivityV2.smali b/smali/com/fongmi/android/tv/ui/activity/HomeActivityV2.smali
-index 3d42586..1d831e2 100644
+index 3d42586..3abe425 100644
 --- a/smali/com/fongmi/android/tv/ui/activity/HomeActivityV2.smali
 +++ b/smali/com/fongmi/android/tv/ui/activity/HomeActivityV2.smali
 @@ -7095,6 +7095,14 @@
@@ -290,3 +140,259 @@ index 3d42586..1d831e2 100644
      .line 698
      .line 699
      .line 700
+@@ -8681,6 +8689,26 @@
+ .method public final dispatchKeyEvent(Landroid/view/KeyEvent;)Z
+     .locals 17
+ 
++    move-object/from16 v8, p0
++
++    move-object/from16 v9, p1
++
++    new-instance v10, Lb61;
++
++    invoke-direct {v10, v8}, Lb61;-><init>(Lcom/fongmi/android/tv/ui/activity/HomeActivityV2;)V
++
++    invoke-interface {v10, v9}, Landroidx/leanback/widget/BaseGridView$OnKeyInterceptListener;->onInterceptKeyEvent(Landroid/view/KeyEvent;)Z
++
++    move-result v11
++
++    if-eqz v11, :cattv_nav_skip
++
++    const/4 v11, 0x1
++
++    return v11
++
++    :cattv_nav_skip
++
+     .line 1
+     move-object/from16 v0, p0
+ 
+diff --git a/smali/b61.smali b/smali_classes2/b61.smali
+similarity index 82%
+rename from smali/b61.smali
+rename to smali_classes2/b61.smali
+index d9f4e7e..d5c6d26 100644
+--- a/smali/b61.smali
++++ b/smali_classes2/b61.smali
+@@ -31,120 +31,139 @@
+ 
+ # virtual methods
+ .method public onInterceptKeyEvent(Landroid/view/KeyEvent;)Z
+-    .locals 1
++    .locals 8
+ 
+-    .line 1
+-    sget v0, Lcom/fongmi/android/tv/ui/activity/HomeActivityV2;->p1:I
++    const/4 v0, 0x0
+ 
+-    .line 2
+-    .line 3
+     invoke-virtual {p1}, Landroid/view/KeyEvent;->getAction()I
+ 
+-    .line 4
+-    .line 5
+-    .line 6
+-    move-result v0
+-
+-    .line 7
+-    if-eqz v0, :cond_0
++    move-result v1
+ 
+-    .line 8
+-    .line 9
+-    goto :goto_0
++    if-eqz v1, :ret
+ 
+-    .line 10
+-    :cond_0
+     invoke-virtual {p1}, Landroid/view/KeyEvent;->getKeyCode()I
+ 
+-    .line 11
+-    .line 12
+-    .line 13
+-    move-result p1
++    move-result v1
+ 
+-    .line 14
+-    const/16 v0, 0x16
++    const/16 v2, 0x15
+ 
+-    .line 15
+-    .line 16
+-    if-eq p1, v0, :cond_1
++    if-ne v1, v2, :chk_right
+ 
+-    .line 17
+-    .line 18
+-    goto :goto_0
++    const/4 v2, 0x1
+ 
+-    .line 19
+-    :cond_1
+-    iget-object p0, p0, Lb61;->c:Lcom/fongmi/android/tv/ui/activity/HomeActivityV2;
++    goto :dir
+ 
+-    .line 20
+-    .line 21
+-    iget-object p1, p0, Lcom/fongmi/android/tv/ui/activity/HomeActivityV2;->L:Landroidx/leanback/widget/HorizontalGridView;
++    :chk_right
++    const/16 v2, 0x16
+ 
+-    .line 22
+-    .line 23
+-    invoke-virtual {p1}, Landroidx/recyclerview/widget/RecyclerView;->getAdapter()Landroidx/recyclerview/widget/g;
++    if-ne v1, v2, :ret
+ 
+-    .line 24
+-    .line 25
+-    .line 26
+-    move-result-object p1
++    const/4 v2, 0x0
+ 
+-    .line 27
+-    if-eqz p1, :cond_2
++    :dir
++    iget-object v3, p0, Lb61;->c:Lcom/fongmi/android/tv/ui/activity/HomeActivityV2;
+ 
+-    .line 28
+-    .line 29
+-    invoke-virtual {p1}, Landroidx/recyclerview/widget/g;->getItemCount()I
++    const v4, 0x7f0b04c4
+ 
+-    .line 30
+-    .line 31
+-    .line 32
+-    move-result v0
++    invoke-virtual {v3, v4}, Lcom/fongmi/android/tv/ui/activity/HomeActivityV2;->findViewById(I)Landroid/view/View;
+ 
+-    .line 33
+-    if-lez v0, :cond_2
++    move-result-object v4
+ 
+-    .line 34
+-    .line 35
+-    iget-object p0, p0, Lcom/fongmi/android/tv/ui/activity/HomeActivityV2;->L:Landroidx/leanback/widget/HorizontalGridView;
++    const v5, 0x7f0b0200
+ 
+-    .line 36
+-    .line 37
+-    invoke-virtual {p0}, Landroidx/leanback/widget/BaseGridView;->getSelectedPosition()I
++    invoke-virtual {v3, v5}, Lcom/fongmi/android/tv/ui/activity/HomeActivityV2;->findViewById(I)Landroid/view/View;
+ 
+-    .line 38
+-    .line 39
+-    .line 40
+-    move-result p0
++    move-result-object v5
+ 
+-    .line 41
+-    invoke-virtual {p1}, Landroidx/recyclerview/widget/g;->getItemCount()I
++    if-eqz v4, :ret
+ 
+-    .line 42
+-    .line 43
+-    .line 44
+-    move-result p1
++    if-nez v5, :ret
++
++    const v6, 0x7f0b02d2
++
++    invoke-virtual {v3, v6}, Lcom/fongmi/android/tv/ui/activity/HomeActivityV2;->findViewById(I)Landroid/view/View;
++
++    move-result-object v6
++
++    if-eqz v6, :ret
++
++    if-eqz v2, :right
++
++    invoke-virtual {v5}, Landroid/view/View;->hasFocus()Z
++
++    move-result v7
++
++    if-nez v7, :left_site
+ 
+-    .line 45
+     const/4 v0, 0x1
+ 
+-    .line 46
+-    sub-int/2addr p1, v0
++    return v0
+ 
+-    .line 47
+-    if-lt p0, p1, :cond_2
++    :left_site
++    invoke-virtual {v4}, Landroid/view/View;->hasFocus()Z
++
++    move-result v7
++
++    if-eqz v7, :left_nav
++
++    invoke-virtual {v5}, Landroid/view/View;->requestFocus()Z
++
++    move-result v0
+ 
+-    .line 48
+-    .line 49
+     return v0
+ 
+-    .line 50
+-    :cond_2
+-    :goto_0
+-    const/4 p0, 0x0
++    :left_nav
++    invoke-virtual {v6}, Landroid/view/View;->hasFocus()Z
+ 
+-    .line 51
+-    return p0
++    move-result v7
++
++    if-eqz v7, :ret
++
++    check-cast v6, Landroidx/leanback/widget/BaseGridView;
++
++    invoke-virtual {v6}, Landroidx/leanback/widget/BaseGridView;->getSelectedPosition()I
++
++    move-result v7
++
++    if-lez v7, :left_hit
++
++    goto :ret
++
++    :left_hit
++    invoke-virtual {v4}, Landroid/view/View;->requestFocus()Z
++
++    move-result v0
++
++    return v0
++
++    :right
++    invoke-virtual {v5}, Landroid/view/View;->hasFocus()Z
++
++    move-result v7
++
++    if-eqz v7, :right_site
++
++    invoke-virtual {v4}, Landroid/view/View;->requestFocus()Z
++
++    move-result v0
++
++    return v0
++
++    :right_site
++    invoke-virtual {v4}, Landroid/view/View;->hasFocus()Z
++
++    move-result v7
++
++    if-eqz v7, :ret
++
++    invoke-virtual {v6}, Landroid/view/View;->requestFocus()Z
++
++    move-result v0
++
++    return v0
++
++    :ret
++    return v0
+ .end method
+ 
+ .method public y(Ljava/lang/Object;)V
