@@ -15,7 +15,7 @@ android {
     ndkVersion = libs.versions.ndk.get()
 
     defaultConfig {
-        applicationId = if (isCatTvTvBuild) "com.github.avbox.osc.tv" else "com.github.avbox.osc"
+        applicationId = if (isCatTvTvBuild) "com.cattv.osc.tv" else "com.github.avbox.osc"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
         // Release workflow supplies version values; local debug keeps current defaults.
