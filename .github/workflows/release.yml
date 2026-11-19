@@ -7,6 +7,10 @@ on:
         description: 'Release version / tag (e.g. v1.0.0)'
         required: true
         default: 'v1.0.0'
+      versionCode:
+        description: 'Android versionCode (must be greater than installed version)'
+        required: true
+        type: string
       prerelease:
         description: '标记为 Pre-release'
         type: boolean
@@ -26,8 +30,10 @@ jobs:
     outputs:
       release_existed: ${{ steps.existing_release.outputs.existed }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
+      - name: Checkout CatTV TV release branch
+        uses: actions/checkout@v4
+        with:
+          ref: cattv-branding
 
       - name: Set up JDK 21
         uses: actions/setup-java@v6
@@ -75,16 +81,40 @@ jobs:
       - name: chmod gradlew
         run: chmod +x gradlew
 
-      - name: Verify signing material
+      - name: Restore canonical CatTV signing certificate
+        env:
+          CATTV_KEYSTORE_BASE64: ${{ secrets.CATTV_KEYSTORE_BASE64 }}
+          CATTV_KEY_ALIAS: ${{ secrets.CATTV_KEY_ALIAS }}
+          CATTV_STORE_PASSWORD: ${{ secrets.CATTV_STORE_PASSWORD }}
+          CATTV_KEY_PASSWORD: ${{ secrets.CATTV_KEY_PASSWORD }}
+          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_VERSION_CODE: ${{ inputs.versionCode }}
         run: |
-          test -f .key/app-release.jks || { echo "::error::缺少 .key/app-release.jks"; exit 1; }
-          for k in RELEASE_STORE_FILE RELEASE_KEY_ALIAS RELEASE_STORE_PASSWORD RELEASE_KEY_PASSWORD; do
-            grep -q "^$k=" gradle.properties || { echo "::error::gradle.properties 缺少 $k"; exit 1; }
+          set -euo pipefail
+          for v in CATTV_KEYSTORE_BASE64 CATTV_KEY_ALIAS CATTV_STORE_PASSWORD CATTV_KEY_PASSWORD; do
+            if [ -z "${!v}" ]; then echo "::error::Missing required secret $v"; exit 1; fi
           done
-          ls -l .key/app-release.jks
+          [[ "$RELEASE_VERSION" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::Invalid version"; exit 1; }
+          [[ "$RELEASE_VERSION_CODE" =~ ^[1-9][0-9]*$ ]] || { echo "::error::Invalid versionCode"; exit 1; }
+          printf '%s' "$CATTV_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/cattv-release.jks"
+          chmod 600 "$RUNNER_TEMP/cattv-release.jks"
 
-      - name: Build release APK
-        run: ./gradlew assembleRelease --no-daemon --stacktrace
+      - name: Build release APK with canonical certificate
+        env:
+          CATTV_KEY_ALIAS: ${{ secrets.CATTV_KEY_ALIAS }}
+          CATTV_STORE_PASSWORD: ${{ secrets.CATTV_STORE_PASSWORD }}
+          CATTV_KEY_PASSWORD: ${{ secrets.CATTV_KEY_PASSWORD }}
+          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_VERSION_CODE: ${{ inputs.versionCode }}
+        run: |
+          set -euo pipefail
+          ./gradlew :app:assembleRelease --no-daemon --stacktrace \
+            "-PCATTV_VERSION_NAME=${RELEASE_VERSION#v}" \
+            "-PCATTV_VERSION_CODE=$RELEASE_VERSION_CODE" \
+            "-PRELEASE_STORE_FILE=$RUNNER_TEMP/cattv-release.jks" \
+            "-PRELEASE_KEY_ALIAS=$CATTV_KEY_ALIAS" \
+            "-PRELEASE_STORE_PASSWORD=$CATTV_STORE_PASSWORD" \
+            "-PRELEASE_KEY_PASSWORD=$CATTV_KEY_PASSWORD"
 
       - name: Rename & verify APK
         id: apk
