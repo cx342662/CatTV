@@ -47,12 +47,12 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Run unit tests and assemble mobile debug APK
+      - name: Run unit tests and assemble mobile debug and Release APKs
         run: |
           set -euo pipefail
           echo "Validating commit: $GITHUB_SHA"
           chmod +x ./gradlew
-          ./gradlew :app:testDebugUnitTest :app:assembleDebug --no-daemon --stacktrace
+          ./gradlew :app:testDebugUnitTest :app:assembleDebug :app:assembleRelease --no-daemon --stacktrace
 
       - name: Verify APK package and ABI
         run: |
@@ -63,12 +63,21 @@ jobs:
           "$AAPT" dump badging "$APK" | tee "$RUNNER_TEMP/badging.txt"
           grep -q "name='com.cattv.mobile'" "$RUNNER_TEMP/badging.txt"
           unzip -Z1 "$APK" | grep -q '^lib/arm64-v8a/'
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n1)"
+          "$APKSIGNER" verify --verbose --print-certs "$APK" | tee "$RUNNER_TEMP/apk-signature.txt"
+          cp "$RUNNER_TEMP/apk-signature.txt" app/build/outputs/apk/
+          cp "$RUNNER_TEMP/badging.txt" app/build/outputs/apk/
           echo "APK=$APK" >> "$GITHUB_ENV"
 
       - name: Upload test APK
         uses: actions/upload-artifact@v4
         with:
           name: CatTV-mobile-panconfig-lifecycle-debug-arm64
-          path: ${{ env.APK }}
+          path: |
+            app/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/release/*.apk
+            app/build/outputs/apk/apk-signature.txt
+            app/build/outputs/apk/badging.txt
+            app/build/test-results/testDebugUnitTest/*.xml
           if-no-files-found: error
           retention-days: 14
