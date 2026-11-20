@@ -14,6 +14,7 @@ final class PlaybackModel: ObservableObject {
     @Published private(set) var activeEpisodeID: Int?
     @Published private(set) var activeLineID: Int?
     private let resolver = PlaybackResolver()
+    private var proxy: MediaHTTPProxy?
     private var onProgress: ((Episode, Double) -> Void)?
     private var resume: ((Episode) -> Double)?
     private var video: Video?
@@ -79,9 +80,24 @@ final class PlaybackModel: ObservableObject {
         player.pause()
         task = Task {
             do {
-                let url = try await resolver.resolve(site: source, episode: episode, line: line.name)
+                let resource = try await resolver.resolveResource(site: source, episode: episode, line: line.name)
                 guard !Task.isCancelled, token == expected else { return }
-                try play(url: url, episode: episode, position: resume?(episode) ?? 0)
+                let nextProxy: MediaHTTPProxy?
+                let url: URL
+                if resource.headers.isEmpty { nextProxy = nil; url = resource.url }
+                else {
+                    let created = MediaHTTPProxy(origin: resource.url, headers: resource.headers)
+                    do { url = try await created.start() }
+                    catch { await created.stop(); throw error }
+                    nextProxy = created
+                }
+                guard !Task.isCancelled, token == expected else { await nextProxy?.stop(); return }
+                do { try play(url: url, episode: episode, position: resume?(episode) ?? 0) }
+                catch { await nextProxy?.stop(); throw error }
+                player.allowsExternalPlayback = nextProxy == nil
+                let previous = proxy
+                proxy = nextProxy
+                await previous?.stop()
             } catch is CancellationError {} catch {
                 if !Task.isCancelled, token == expected { failure = error.localizedDescription }
             }
@@ -141,6 +157,8 @@ final class PlaybackModel: ObservableObject {
     func stop() {
         saveProgress()
         task?.cancel(); token = UUID(); resolving = false
+        let previousProxy = proxy; proxy = nil
+        Task { await previousProxy?.stop() }
         if let timeObserver { player.removeTimeObserver(timeObserver); self.timeObserver = nil }
         timer?.cancel(); timer = nil
         player.pause(); player.replaceCurrentItem(with: nil)
@@ -153,7 +171,8 @@ final class PlaybackModel: ObservableObject {
     }
     private func updateNowPlaying() {
         guard player.currentItem != nil else { return }
-        var info: [String: Any] = [MPMediaItemPropertyTitle: title, MPMediaItemPropertyAlbumTitle: episodeName, MPNowPlayingInfoPropertyPlaybackRate: player.rate, MPNowPlayingInfoPropertyExcludeFromSuggestions: true]
+        var info: [String: Any] = [MPMediaItemPropertyTitle: title, MPMediaItemPropertyAlbumTitle: episodeName, MPNowPlayingInfoPropertyPlaybackRate: player.rate]
+        if #available(iOS 18.0, *) { info[MPNowPlayingInfoPropertyExcludeFromSuggestions] = true }
         let elapsed = player.currentTime().seconds
         let duration = player.currentItem?.duration.seconds ?? .nan
         if elapsed.isFinite { info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = elapsed }
