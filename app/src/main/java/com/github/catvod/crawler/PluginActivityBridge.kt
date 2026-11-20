@@ -6,7 +6,6 @@ import android.os.Handler
 import android.os.Looper
 import com.github.avbox.osc.util.AppLog
 import com.github.avbox.osc.ui.MainActivity
-import dalvik.system.BaseDexClassLoader
 import java.lang.ref.WeakReference
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
@@ -217,15 +216,17 @@ object PluginActivityBridge {
             .filterIsInstance<Application.ActivityLifecycleCallbacks>()
         if (added.isEmpty()) return
 
-        added.forEach { callback ->
+        val safeCallbacks = added.map { callback ->
+            val safe = safeCallback(callback)
             try {
                 application.unregisterActivityLifecycleCallbacks(callback)
-                application.registerActivityLifecycleCallbacks(safeCallback(callback))
+                application.registerActivityLifecycleCallbacks(safe)
             } catch (error: Throwable) {
                 AppLog.e("PluginActivityBridge", "wrap lifecycle callback failed", error)
             }
+            safe
         }
-        added.forEach { callback ->
+        safeCallbacks.forEach { callback ->
             try {
                 callback.onActivityCreated(activity, null)
                 callback.onActivityStarted(activity)
