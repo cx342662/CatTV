@@ -26,10 +26,16 @@ jobs:
         run: xcodegen generate
       - name: Compile simulator
         run: xcodebuild -project ios/CatTV.xcodeproj -scheme CatTV -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath ios/build/simulator CODE_SIGNING_ALLOWED=NO build
+      - name: Generate CI-only media fixture
+        run: swift ios/scripts/generate-test-video.swift
       - name: Test app navigation in simulator
         shell: bash
         run: |
           set -euo pipefail
+          python3 ios/scripts/fixture-server.py > ios/build/fixture-server.log 2>&1 &
+          FIXTURE_PID=$!
+          trap 'kill "$FIXTURE_PID"' EXIT
+          python3 -c 'import urllib.request,time; time.sleep(1); assert urllib.request.urlopen("http://127.0.0.1:8765/health", timeout=5).read() == b"ok"'
           DEVICE_ID=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(x["udid"] for runtime,devices in d["devices"].items() if "iOS" in runtime for x in devices if x["name"].startswith("iPhone")))')
           xcodebuild -project ios/CatTV.xcodeproj -scheme CatTV -configuration Debug -destination "platform=iOS Simulator,id=$DEVICE_ID" -derivedDataPath ios/build/simulator -resultBundlePath ios/build/Navigation.xcresult -parallel-testing-enabled NO -maximum-concurrent-test-simulator-destinations 1 CODE_SIGN_IDENTITY=- CODE_SIGNING_ALLOWED=YES test
       - name: Export UI screenshots

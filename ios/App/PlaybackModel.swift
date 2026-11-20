@@ -11,6 +11,8 @@ final class PlaybackModel: ObservableObject {
     @Published private(set) var title = ""
     @Published private(set) var episodeName = ""
     @Published private(set) var isPlaying = false
+    @Published private(set) var elapsedSeconds = 0.0
+    private var lastProgressSave = 0.0
     @Published private(set) var resolving = false
     @Published private(set) var activeEpisodeID: Int?
     @Published private(set) var activeLineID: Int?
@@ -52,8 +54,8 @@ final class PlaybackModel: ObservableObject {
                 if reason == AVAudioSession.RouteChangeReason.oldDeviceUnavailable.rawValue { self?.player.pause() }
             }
         })
-        rateObservation = player.observe(\.rate, options: [.new]) { [weak self] player, _ in
-            let playing = player.rate != 0
+        rateObservation = player.observe(\.timeControlStatus, options: [.new]) { [weak self] player, _ in
+            let playing = player.timeControlStatus == .playing
             Task { @MainActor [weak self] in self?.isPlaying = playing; self?.updateNowPlaying() }
         }
         installRemoteCommands()
@@ -119,16 +121,22 @@ final class PlaybackModel: ObservableObject {
                 Task { @MainActor [weak self] in self?.failure = message }
             }
         }
+        elapsedSeconds = 0; lastProgressSave = 0
         currentEpisode = episode
         activeEpisodeID = episode.id
         episodeName = episode.name
         player.allowsExternalPlayback = true
         player.replaceCurrentItem(with: item)
         if position.isFinite && position > 0 { player.seek(to: CMTime(seconds: position, preferredTimescale: 600)) }
-        timeObserver = player.addPeriodicTimeObserver(forInterval: CMTime(seconds: 5, preferredTimescale: 1), queue: .main) { [weak self] time in
+        timeObserver = player.addPeriodicTimeObserver(forInterval: CMTime(seconds: 1, preferredTimescale: 1), queue: .main) { [weak self] time in
             Task { @MainActor [weak self] in
                 guard let self, self.player.currentItem === item else { return }
-                if time.seconds.isFinite { self.onProgress?(episode, time.seconds) }
+                if time.seconds.isFinite {
+                    self.elapsedSeconds = time.seconds
+                    if abs(time.seconds - self.lastProgressSave) >= 5 {
+                        self.onProgress?(episode, time.seconds); self.lastProgressSave = time.seconds
+                    }
+                }
                 self.updateNowPlaying()
             }
         }

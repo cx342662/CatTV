@@ -70,7 +70,7 @@ struct RootView: View {
                                         MediaBadgeRow(text: video.name + " " + video.remarks)
                                         Text(video.remarks).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
                                     }
-                                }.buttonStyle(.plain)
+                                }.buttonStyle(.plain).accessibilityIdentifier("video-\(video.id)")
                             }
                         }.padding(.horizontal, 16)
                         if library.canLoadMore { Button("加载更多") { library.loadMore() }.disabled(library.busy).padding() }
@@ -94,12 +94,13 @@ struct ConfigurationView: View {
     @State private var showEditor = false
     @State private var showScanner = false
     @State private var showQRCode = false
+    @FocusState private var addressFocused: Bool
     var body: some View {
         Form {
             Section("配置中心") {
-                TextField("配置地址", text: $library.configurationURL).keyboardType(.URL)
+                TextField("配置地址", text: $library.configurationURL).focused($addressFocused).keyboardType(.URL)
                     .textInputAutocapitalization(.never).autocorrectionDisabled()
-                Button("导入配置") { Task { await library.importConfiguration() } }.disabled(library.importing)
+                Button("导入配置") { addressFocused = false; Task { await library.importConfiguration() } }.disabled(library.importing)
                 Button("手动新增") { editor = nil; showEditor = true }
                 Button("扫描二维码") { showScanner = true }
                 if library.collection.active?.origin != nil { Button("配置二维码") { showQRCode = true } }
@@ -145,6 +146,7 @@ struct DetailView: View {
             VStack(alignment: .leading, spacing: 12) {
                 PlayerHost(player: playback.player).frame(height: 220).background(.black)
                 if playback.resolving { ProgressView("正在解析播放地址") }
+                Text("播放进度：\(Int(playback.elapsedSeconds))秒").font(.caption).foregroundStyle(.secondary).accessibilityIdentifier("playback-progress")
                 VStack(alignment: .leading, spacing: 8) {
                     Text((video ?? summary).name).font(.title3.bold())
                     let item = video ?? summary
@@ -185,7 +187,7 @@ struct DetailView: View {
                                         userLibrary.record(source: source, video: video, episode: item, position: position)
                                     }
                                 }
-                            }.buttonStyle(.bordered)
+                            }.buttonStyle(.bordered).accessibilityIdentifier("episode-\(episode.id)")
                         }
                     }
                     HStack {

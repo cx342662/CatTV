@@ -65,6 +65,7 @@ final class WebMediaSniffer: NSObject, WKScriptMessageHandler, WKNavigationDeleg
         self.continuation = nil
         deadline?.cancel(); deadline = nil
         activeNavigation = nil
+        webView.pauseAllMediaPlayback(completionHandler: nil)
         webView.stopLoading()
         continuation.resume(with: result)
     }
