@@ -24,6 +24,9 @@ class KVKeySpec : KVDecoder.TypeRegistry {
 
         @JvmStatic
         fun typeOfDynamic(key: String): Type? {
+            if (key.startsWith(KVKeys.MEDIA_BADGES + "_saved:") ||
+                key.startsWith("douban_title_binding_") || key.startsWith("douban_binding_")
+            ) return TYPES[KVKeys.API_URL]
             if (key.startsWith(KVKeys.LIVE_GROUP_INDEX)) return TYPES[KVKeys.LIVE_GROUP_INDEX]
             if (key.startsWith(JS_RUNTIME_PREFIX) || key.startsWith(CACHE_PREFIX)) return TYPES[KVKeys.API_URL]
             return null
@@ -43,6 +46,14 @@ class KVKeySpec : KVDecoder.TypeRegistry {
         }
 
         init {
+            register(KVKeys.MEDIA_BADGES + "_library", "")
+            register(KVKeys.MEDIA_BADGES + "_url", "")
+            register(KVKeys.MEDIA_BADGES + "_pack", "")
+            register(KVKeys.MEDIA_BADGES + "_enabled", true)
+            register(KVKeys.MEDIA_BADGES + "_player", true)
+            register(KVKeys.MEDIA_BADGES + "_controls", true)
+            register(KVKeys.MEDIA_BADGES + "_cards", true)
+            register("background_playback", false)
             register(KVKeys.API_URL, "")
             register(KVKeys.EPG_URL, "")
             register(KVKeys.API_LINE_SOURCE, "")

@@ -17,6 +17,9 @@ class MediaBadgePackParserTest {
         val saved = """{"urls":["https://example.com/badges.json"],"selected":"https://example.com/badges.json"}"""
         val encoded = codec.encode(saved)
         assertEquals(saved, codec.decode<String>("media_badges_library", encoded, null))
+        assertEquals(saved, codec.decode<String>("media_badges_saved:https://example.com/badges.json", encoded, null))
+        assertEquals("1306612", codec.decode<String>("douban_title_binding_example", codec.encode("1306612"), null))
+        assertEquals("1306612", codec.decode<String>("douban_binding_example", codec.encode("1306612"), null))
         assertEquals(false, codec.decode<Boolean>("media_badges_enabled", codec.encode(false), true))
         assertEquals(true, codec.decode<Boolean>("background_playback", codec.encode(true), false))
     }
