@@ -12,6 +12,8 @@ import com.github.avbox.osc.ui.page.MainScreen
 import com.github.avbox.osc.ui.theme.AVBoxTheme
 import com.github.avbox.osc.ui.theme.AppThemeState
 import com.github.avbox.osc.util.PermissionHelper
+import com.github.avbox.osc.util.AppLog
+import com.github.catvod.crawler.PluginActivityBridge
 
 private const val PREWARM_ON_RESUME_DELAY_MS = 2000L
 
@@ -32,10 +34,68 @@ class MainActivity : BaseActivity() {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        activeActivity = this
+        PluginActivityBridge.syncAllPluginActivities(this)
+    }
+
     override fun onResume() {
         super.onResume()
+        activeActivity = this
+        PluginActivityBridge.syncAllPluginActivities(this)
         applyStatusBarAppearance()
         PlaybackService.prewarm(this, PREWARM_ON_RESUME_DELAY_MS)
+    }
+
+    override fun onDestroy() {
+        if (activeActivity === this) activeActivity = null
+        super.onDestroy()
+    }
+
+    private fun pluginFinishCaller(): StackTraceElement? =
+        Throwable().stackTrace.firstOrNull {
+            it.className.startsWith("com.github.catvod.spider.") ||
+                it.className.startsWith("com.wexfnw.")
+        }
+
+    override fun finish() {
+        val caller = pluginFinishCaller()
+        if (caller != null) {
+            AppLog.e(
+                "PluginActivityBridge",
+                "blocked extension finish() from ${caller.className}#${caller.methodName}",
+                Throwable()
+            )
+            return
+        }
+        super.finish()
+    }
+
+    override fun finishAffinity() {
+        val caller = pluginFinishCaller()
+        if (caller != null) {
+            AppLog.e(
+                "PluginActivityBridge",
+                "blocked extension finishAffinity() from ${caller.className}#${caller.methodName}",
+                Throwable()
+            )
+            return
+        }
+        super.finishAffinity()
+    }
+
+    override fun finishAndRemoveTask() {
+        val caller = pluginFinishCaller()
+        if (caller != null) {
+            AppLog.e(
+                "PluginActivityBridge",
+                "blocked extension finishAndRemoveTask() from ${caller.className}#${caller.methodName}",
+                Throwable()
+            )
+            return
+        }
+        super.finishAndRemoveTask()
     }
 
     override fun init() {
@@ -50,5 +110,11 @@ class MainActivity : BaseActivity() {
                 MainScreen()
             }
         }
+    }
+
+    companion object {
+        @Volatile
+        @JvmField
+        var activeActivity: MainActivity? = null
     }
 }
