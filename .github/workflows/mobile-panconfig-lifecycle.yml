@@ -86,7 +86,8 @@ jobs:
           AAPT="$(find "$ANDROID_HOME/build-tools" -name aapt -type f | sort -V | tail -n1)"
           "$AAPT" dump badging "$APK" | tee "$RUNNER_TEMP/badging.txt"
           grep -q "name='com.cattv.mobile'" "$RUNNER_TEMP/badging.txt"
-          unzip -Z1 "$APK" | grep -q '^lib/arm64-v8a/'
+          unzip -Z1 "$APK" > "$RUNNER_TEMP/debug-files.txt"
+          grep -q '^lib/arm64-v8a/' "$RUNNER_TEMP/debug-files.txt"
           APKSIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n1)"
           "$APKSIGNER" verify --verbose --print-certs "$APK" | tee "$RUNNER_TEMP/apk-signature.txt"
           cp "$RUNNER_TEMP/apk-signature.txt" app/build/outputs/apk/
@@ -97,7 +98,7 @@ jobs:
           grep -q "name='com.cattv.mobile'" app/build/outputs/apk/release-badging.txt
           "$APKSIGNER" verify --verbose --print-certs "$RELEASE_APK" | tee app/build/outputs/apk/release-signature.txt
           KEY_CERT_SHA="$(keytool -exportcert -keystore "$RUNNER_TEMP/cattv-release.jks" -alias "$CATTV_KEY_ALIAS" -storepass "$CATTV_STORE_PASSWORD" 2>/dev/null | sha256sum | awk '{print $1}')"
-          APK_CERT_SHA="$(sed -n 's/.*Signer #1 certificate SHA-256 digest: //p' app/build/outputs/apk/release-signature.txt | head -n1 | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          APK_CERT_SHA="$(sed -n 's/.*certificate SHA-256 digest: //p' app/build/outputs/apk/release-signature.txt | head -n1 | tr -d ':' | tr '[:upper:]' '[:lower:]')"
           test "$KEY_CERT_SHA" = "$APK_CERT_SHA"
           unzip -Z1 "$RELEASE_APK" > "$RUNNER_TEMP/release-files.txt"
           grep -q '^lib/arm64-v8a/' "$RUNNER_TEMP/release-files.txt"
@@ -106,6 +107,7 @@ jobs:
           echo "APK=$APK" >> "$GITHUB_ENV"
 
       - name: Upload test APK
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: CatTV-mobile-panconfig-lifecycle-debug-arm64
