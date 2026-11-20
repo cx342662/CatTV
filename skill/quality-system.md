@@ -10,7 +10,7 @@ main 的 Android 版本声明与发布分支不同，不调整版本或签名。
 发布工作流仍检出 cattv-branding，以 secrets 恢复临时签名文件，保留原版本参数和手动发布入口。测试失败仅阻止发布，手动 APK 产物仍可下载。
 
 ## 自动化覆盖与边界
-复用 JUnit 4、Robolectric、Room 3、BundledSQLiteDriver，不新增依赖。
+复用 JUnit 4、Robolectric、Room 3；测试增加同版本 AndroidX sqlite-framework 驱动，生产 BundledSQLiteDriver 不变。
 ConfigParserTest 覆盖正常、多源、字段映射、缺失字段跳过、空和损坏集合 JSON；不改变已有容错行为。缺失字段当前仅日志提示，不额外制造 UI 提示。
 DatabasePersistenceTest 用真实文件数据库覆盖收藏写入/读取/同主键替换/删除、历史集数和线路更新、touch、订阅隔离及关闭重开。
 同主键替换不等于验证收藏 Repository 的重复添加防护；数据库重开不等于进程重启。

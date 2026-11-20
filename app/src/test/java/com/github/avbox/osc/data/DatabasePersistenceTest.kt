@@ -2,7 +2,7 @@ package com.github.avbox.osc.data
 
 import android.content.Context
 import androidx.room3.Room
-import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
 import com.github.avbox.osc.bean.VodInfo
 import com.github.avbox.osc.testing.TestApplication
@@ -24,7 +24,7 @@ class DatabasePersistenceTest {
     private val name = "quality-test.db"
 
     private fun open(): AppDataBase = Room.databaseBuilder(context, AppDataBase::class.java, name)
-        .setDriver(BundledSQLiteDriver()).build()
+        .setDriver(AndroidSQLiteDriver()).build()
 
     @Before
     fun setUp() {
