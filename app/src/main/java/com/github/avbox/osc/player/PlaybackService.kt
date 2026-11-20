@@ -65,6 +65,14 @@ class PlaybackService : Service() {
         return if (app == null) getString(resId) else LanguageManager.localized(app).getString(resId)
     }
 
+    private val noisyReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == android.media.AudioManager.ACTION_AUDIO_BECOMING_NOISY) {
+                getOwner()?.pauseFromMediaSession()
+            }
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
         instance = this
@@ -74,6 +82,9 @@ class PlaybackService : Service() {
         createNotificationChannel()
         createMediaSession()
         initPlayerCache()
+        androidx.core.content.ContextCompat.registerReceiver(this, noisyReceiver,
+            android.content.IntentFilter(android.media.AudioManager.ACTION_AUDIO_BECOMING_NOISY),
+            androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED)
     }
 
     private fun initPlayerCache() {
@@ -109,6 +120,7 @@ class PlaybackService : Service() {
 
     override fun onDestroy() {
         AppLog.i(TAG + " host onDestroy")
+        unregisterReceiver(noisyReceiver)
         instance = null
         stopPlaybackSession()
         if (releaseEngineOnDestroy) {
@@ -250,17 +262,29 @@ class PlaybackService : Service() {
         if (ACTION_UPDATE == action) {
             if (mediaSession == null) createMediaSession()
             if (mediaSession == null) return
-            acquirePlaybackLocks()
             title = intent.getStringExtra(EXTRA_TITLE)
             subtitle = intent.getStringExtra(EXTRA_SUBTITLE)
             val newArtworkUrl = intent.getStringExtra(EXTRA_ARTWORK)
             position = intent.getLongExtra(EXTRA_POSITION, 0)
             duration = intent.getLongExtra(EXTRA_DURATION, 0)
             playing = intent.getBooleanExtra(EXTRA_PLAYING, false)
+            if (playing) acquirePlaybackLocks() else releasePlaybackLocks()
+            updateResumeActivity()
             updateArtwork(newArtworkUrl)
             updateSessionState()
             startForegroundSafely()
         }
+    }
+
+    private fun updateResumeActivity() {
+        val vod = engine?.controller()?.vod() ?: return
+        val intent = Intent().setClassName(this, "com.github.avbox.osc.ui.DetailActivity")
+            .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            .putExtra("id", vod.id).putExtra("sourceKey", vod.sourceKey)
+            .putExtra("title", vod.name).putExtra("picture", vod.pic)
+        sessionActivity = PendingIntent.getActivity(this, 1, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        mediaSession?.setSessionActivity(sessionActivity)
     }
 
     private fun updateArtwork(url: String?) {
@@ -341,7 +365,7 @@ class PlaybackService : Service() {
         val art = artwork
         if (art != null) builder.setLargeIcon(art)
         builder.addAction(
-            NotificationCompat.Action(R.drawable.media_action_placeholder, "", actionIntent(ACTION_PLACEHOLDER))
+            NotificationCompat.Action(android.R.drawable.ic_menu_close_clear_cancel, text(R.string.player_notification_stop), actionIntent(ACTION_STOP))
         )
         builder.addAction(
             NotificationCompat.Action(
@@ -440,21 +464,9 @@ class PlaybackService : Service() {
         }
     }
 
-    private fun getOwner(): PlaybackHostApi? = owner?.get()
-
-    private val stopHandler = android.os.Handler(android.os.Looper.getMainLooper())
-    private val timedStop = Runnable {
-        getOwner()?.stopFromMediaSession()
-        stopPlaybackSession()
-    }
-
-    fun setStopTimer(minutes: Long?) {
-        stopHandler.removeCallbacks(timedStop)
-        if (minutes != null) stopHandler.postDelayed(timedStop, minutes * 60_000L)
-    }
+    private fun getOwner(): PlaybackHostApi? = owner?.get() ?: engine
 
     private fun stopPlaybackSession() {
-        stopHandler.removeCallbacks(timedStop)
         AppLog.i(TAG + " stopPlaybackSession (notification 1001 removed, playing=" + playing + ")")
         playing = false
         foregroundDenied = false

@@ -50,6 +50,10 @@ import kotlinx.coroutines.withContext
 class HomeViewModel : ViewModel(), TmdbPosterCache {
 
     suspend fun heroRatings(video: Movie.Video, onRatings: (Map<String, Double>) -> Unit) {
+        val source = ApiConfig.get().getSource(video.sourceKey)
+        val isDouban = com.github.avbox.osc.sourcedata.SourceHelper.isDoubanSource(source)
+        com.github.avbox.osc.api.DoubanRatings.rememberScore(video.name, video.year,
+            com.github.avbox.osc.api.DoubanRatings.sourceScore(video, isDouban))
         val detail = TmdbPoster.cachedDetail(video.name, video.year, video.en)
             ?: TmdbPoster.resolveDetail(video.name, video.year, video.en)
             ?: return
@@ -60,7 +64,10 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
         onRatings(external.orEmpty() + tmdb)
     }
 
-    suspend fun heroDoubanRating(video: Movie.Video): Double? {
+    suspend fun heroDoubanRating(video: Movie.Video): Double? =
+        com.github.avbox.osc.api.DoubanRatings.rememberScore(video.name, video.year, resolveHeroDoubanRating(video))
+
+    private suspend fun resolveHeroDoubanRating(video: Movie.Video): Double? {
         val ratings = com.github.avbox.osc.api.DoubanRatings
         val source = ApiConfig.get().getSource(video.sourceKey)
         val isDouban = com.github.avbox.osc.sourcedata.SourceHelper.isDoubanSource(source)

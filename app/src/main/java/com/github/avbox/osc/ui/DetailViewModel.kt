@@ -462,10 +462,29 @@ class DetailViewModel : ViewModel(), TmdbPosterCache {
         }
     }
 
+    var backgroundPlaybackRestored = false; private set
+
     fun initFromIntent(intent: Intent?) {
         if (vodId.isNotEmpty()) return
         val target = parseTarget(intent) ?: return
         navStack.push(target)
+        val engine = PlaybackService.peek()
+        val playing = engine?.controller()?.vod()
+        if (com.github.avbox.osc.player.state.PlaybackSettingsState.config.backgroundPlayback &&
+            engine?.controller()?.isPlaybackStarted() == true && playing != null &&
+            playing.id == target.vodId && playing.sourceKey == target.sourceKey
+        ) {
+            vodId = target.vodId
+            sourceKey = target.sourceKey
+            firstsourceKey = target.sourceKey
+            vodName = target.title
+            vodPicture = target.picture
+            publishVodInfo(playing)
+            _pageState.value = PageState.Ready
+            _inlinePlayback.value = true
+            backgroundPlaybackRestored = true
+            return
+        }
         applyTarget(target)
     }
 
@@ -748,7 +767,16 @@ class DetailViewModel : ViewModel(), TmdbPosterCache {
             val keep = vodInfo?.takeIf { it.sourceKey == detailVideo.sourceKey }
             val keepFlag = keep?.playFlag
             val keepIndex = keep?.playIndex
-            var info = VodInfo.fromVideo(detailVideo)
+            val source = ApiConfig.get().getSource(detailVideo.sourceKey ?: sourceKey)
+            val isDouban = com.github.avbox.osc.sourcedata.SourceHelper.isDoubanSource(source)
+            val sourceScore = DoubanRatings.sourceScore(detailVideo, isDouban)
+            val sourceSubject = DoubanRatings.parseBinding(detailVideo.doubanId.orEmpty())
+                ?: DoubanRatings.parseBinding(detailVideo.id.orEmpty()).takeIf { isDouban }
+            var info = VodInfo.fromVideo(detailVideo).copy(
+                doubanScore = DoubanRatings.rememberScore(detailVideo.name, detailVideo.year, sourceScore)
+                    ?: DoubanRatings.rememberedScore(detailVideo.name, detailVideo.year),
+                doubanId = sourceSubject,
+            )
             info = info.copy(sourceKey = detailVideo.sourceKey)
             sourceKey = detailVideo.sourceKey ?: sourceKey
 

@@ -235,6 +235,14 @@ class PlayContainer(
         }
     }
 
+    fun adoptBackgroundSession() {
+        ownedPlaybackKey = scheduler.currentSession()?.playbackKey()
+        syncSessionVod()
+        scheduler.playerCfg()?.let { playerController.setPlayerConfig(it) }
+        rebindPlaybackOverlay()
+        playerController.adoptCurrentContent()
+    }
+
     fun ensurePlaybackActive() {
         clearCastAbort()
         val view = kernelView ?: return
@@ -657,8 +665,7 @@ class PlayContainer(
     }
 
     override fun stopFromMediaSession() {
-        kernelView?.pause()
-        scheduler.stopMusicSession()
+        engine?.stopFromMediaSession()
     }
 
     override fun seekFromMediaSession(position: Long) {

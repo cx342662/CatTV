@@ -672,7 +672,7 @@
     <string name="media_badges_error">無法載入此徽章包</string>
     <string name="media_badges_loading">正在匯入…</string>
     <string name="media_badges_import">匯入</string>
-    <string name="media_badges_builtin">欣悅媒體徽章</string>
+    <string name="media_badges_builtin">內建徽章</string>
     <string name="media_badges_preview">效果預覽</string>
     <string name="detail_inline_favorite">收藏</string>
     <string name="detail_inline_unfavorite">取消收藏</string>
@@ -681,4 +681,5 @@
 <string name="detail_share">分享</string>
 <string name="detail_short_music">音樂</string>
 <string name="settings_background_playback">背景播放</string>
+    <string name="player_notification_stop">停止播放</string>
 </resources>

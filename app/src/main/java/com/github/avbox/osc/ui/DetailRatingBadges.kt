@@ -33,11 +33,12 @@ private enum class RatingBadge(
 ) {
     IMDb("imdb", "IMDb", listOf(Color(0xFFFFDE55), Color(0xFFF5C518))),
     TMDB("tmdb", "TMDB", listOf(Color(0xFF90CEA1), Color(0xFF01B4E4))),
+    Douban("douban", "", listOf(Color(0xFF08BA29), Color(0xFF04A625)), Color.White),
     Trakt("trakt", "✓", listOf(Color(0xFFED315B), Color(0xFF983CB7)), Color.White),
     Tomatoes("tomatoes", "🍅"),
     Audience("popcorn", "🍿"),
     Metacritic("metacritic", "MC", listOf(Color(0xFF80D537), Color(0xFF4CB320)), Color.White),
-    Douban("douban", "", listOf(Color(0xFF08BA29), Color(0xFF04A625)), Color.White);
+    ;
 
     fun formatted(value: Double): String? = when (this) {
         IMDb, TMDB, Douban -> value.takeIf { it > 0 && it <= 10 }?.let { String.format(Locale.US, "%.1f", it) }

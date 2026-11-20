@@ -316,6 +316,9 @@ class PlaybackEngine(context: Context) : PlaybackHostApi, VideoCodecObserver {
         videoView.setDanmuView(null)
         videoView.detachContainerFromHost()
         controller.attachViewBridge(headlessView)
+        if (keepPlayback || com.github.avbox.osc.player.state.PlaybackSettingsState.config.backgroundPlayback) {
+            controller.updateMusicSession()
+        }
         scheduleIdleRelease()
         AppLog.i(TAG + (if (keepPlayback) " detach for handover page=" else " detach page=") + page.hashCode())
     }
@@ -457,9 +460,11 @@ class PlaybackEngine(context: Context) : PlaybackHostApi, VideoCodecObserver {
     }
 
     override fun playNext(rmProgress: Boolean) {
+        controller.playAdjacentEpisode(true)
     }
 
     override fun playPrevious() {
+        controller.playAdjacentEpisode(false)
     }
 
     override fun selectQuality(position: Int): Boolean = false
@@ -513,9 +518,21 @@ class PlaybackEngine(context: Context) : PlaybackHostApi, VideoCodecObserver {
         controller.updateMusicSession()
     }
 
+    private val timedStop = Runnable { stopFromMediaSession() }
+
+    fun setStopTimer(minutes: Long?) {
+        main.removeCallbacks(timedStop)
+        if (minutes != null) main.postDelayed(timedStop, minutes * 60_000L)
+    }
+
     override fun stopFromMediaSession() {
+        main.removeCallbacks(timedStop)
+        videoView.saveCurrentProgress()
         videoView.pause()
-        controller.stopMusicSession()
+        videoView.stopPlaybackKeepPlayer()
+        controller.stopPlaybackForPageExit()
+        PlaybackService.forceStopSession(appContext)
+        scheduleIdleRelease()
     }
 
     override fun seekFromMediaSession(position: Long) {

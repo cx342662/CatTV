@@ -673,7 +673,7 @@
     <string name="media_badges_error">无法加载此徽章包</string>
     <string name="media_badges_loading">正在导入…</string>
     <string name="media_badges_import">导入</string>
-    <string name="media_badges_builtin">欣悦媒体徽章</string>
+    <string name="media_badges_builtin">内置徽章</string>
     <string name="media_badges_preview">效果预览</string>
     <string name="detail_inline_favorite">收藏</string>
     <string name="detail_inline_unfavorite">取消收藏</string>
@@ -682,4 +682,5 @@
 <string name="detail_share">分享</string>
 <string name="detail_short_music">音乐</string>
 <string name="settings_background_playback">后台播放</string>
+    <string name="player_notification_stop">停止播放</string>
 </resources>

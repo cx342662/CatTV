@@ -20,6 +20,17 @@ internal object DoubanRatings {
             ?: score?.groupValues?.get(1)?.toDoubleOrNull()?.takeIf { it > 0 && it <= 10 }
     }
 
+    private val titleRatings by lazy { android.util.LruCache<String, Double>(128) }
+
+    fun rememberScore(title: String?, year: Int, score: Double?): Double? {
+        val valid = score?.takeIf { it > 0 && it <= 10 } ?: return null
+        if (!title.isNullOrBlank()) titleRatings.put("${title.trim()}|$year", valid)
+        return valid
+    }
+
+    fun rememberedScore(title: String?, year: Int): Double? =
+        title?.trim()?.takeIf { it.isNotEmpty() }?.let { titleRatings.get("$it|$year") }
+
     fun bindingKey(title: String, year: Int): String =
         "douban_title_binding_" + com.github.avbox.osc.util.MD5.string2MD5(title.trim() + "|" + year)
 

@@ -143,6 +143,7 @@ class DetailActivity : BaseActivity(), PageHost {
             }
         })
         vm.initFromIntent(intent)
+        if (vm.backgroundPlaybackRestored) ensurePlayContainer().adoptBackgroundSession()
         findViewById<androidx.compose.ui.platform.ComposeView>(R.id.compose_view).setContent {
             AVBoxTheme(manageStatusBarIcons = false) {
                 SheetHostScaffold {
@@ -373,7 +374,7 @@ class DetailActivity : BaseActivity(), PageHost {
         androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle(R.string.detail_stop_timer)
             .setItems(arrayOf("15 min", "30 min", "60 min", getString(android.R.string.cancel))) { _, index ->
-                PlaybackService.peek()?.setStopTimer(if (index < 3) listOf(15L, 30L, 60L)[index] else null)
+                PlaybackService.engine(this).setStopTimer(if (index < 3) listOf(15L, 30L, 60L)[index] else null)
             }.show()
     }
 

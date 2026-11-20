@@ -72,7 +72,7 @@ internal object MediaBadges {
             val json = JSONObject(saved)
             val urls = json.getJSONArray("urls")
             val entries = List(urls.length()) { urls.getString(it) }
-            return Library(entries, json.optString("selected").takeIf { it in entries }.orEmpty())
+            return Library(entries, json.optString("selected").takeIf { it.isEmpty() || it in entries }.orEmpty())
         }
         val legacy = KV.get(legacyUrlKey, "")
         return Library(listOf(legacy).filter(String::isNotEmpty), legacy)
@@ -84,13 +84,6 @@ internal object MediaBadges {
         imported = rules
         library = value
         revision++
-    }
-
-    private val xinyue by lazy {
-        runCatching {
-            val context = requireNotNull(com.github.avbox.osc.util.AppContextHolder.context())
-            parsePack(context.assets.open("media-badges/xinyue.json").bufferedReader().use { it.readText() })
-        }.getOrDefault(emptyList())
     }
 
     private val builtIn = listOf(
@@ -112,10 +105,10 @@ internal object MediaBadges {
     )
 
     fun update(value: Display) {
-        KV.put(KVKeys.MEDIA_BADGES + "_enabled", value.enabled)
-        KV.put(KVKeys.MEDIA_BADGES + "_player", value.player)
-        KV.put(KVKeys.MEDIA_BADGES + "_controls", value.followControls)
-        KV.put(KVKeys.MEDIA_BADGES + "_cards", value.cards)
+        check(KV.put(KVKeys.MEDIA_BADGES + "_enabled", value.enabled))
+        check(KV.put(KVKeys.MEDIA_BADGES + "_player", value.player))
+        check(KV.put(KVKeys.MEDIA_BADGES + "_controls", value.followControls))
+        check(KV.put(KVKeys.MEDIA_BADGES + "_cards", value.cards))
         display = value
     }
 
@@ -151,25 +144,10 @@ internal object MediaBadges {
         }
     }
 
-    internal fun parsePack(json: String): List<MediaBadgeRule> {
-        require(json.length <= 2_000_000)
-        val filters = JSONObject(json).getJSONArray("filters")
-        return (0 until minOf(filters.length(), 3_000)).mapNotNull { index ->
-            val item = filters.optJSONObject(index) ?: return@mapNotNull null
-            if (!item.optBoolean("isEnabled", true)) return@mapNotNull null
-            val label = item.optString("name").trim().take(40)
-            val raw = item.optString("pattern")
-            if (label.isEmpty() || raw.length !in 1..2_000) return@mapNotNull null
-            val pattern = runCatching { Pattern.compile(raw, Pattern.CASE_INSENSITIVE) }.getOrNull() ?: return@mapNotNull null
-            val rawImage = item.optString("imageURL")
-            val image = if (rawImage.startsWith("file:///android_asset/media-badges/") && !rawImage.contains("..")) rawImage
-                else rawImage.toHttpUrlOrNull()?.takeIf { it.isHttps }?.toString()
-            MediaBadgeRule(label, pattern, image, item.optString("groupId").ifBlank { label })
-        }
-    }
+    internal fun parsePack(json: String): List<MediaBadgeRule> = MediaBadgePackParser.parse(json)
 
     fun match(value: String): List<MediaBadgeRule> =
-        imported.ifEmpty { xinyue.ifEmpty { builtIn } }.asSequence().filter { it.pattern.matcher(value.take(240)).find() }
+        imported.ifEmpty { builtIn }.asSequence().filter { it.pattern.matcher(value.take(240)).find() }
             .distinctBy { it.group }.take(7).toList()
 }
 
