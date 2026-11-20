@@ -682,4 +682,5 @@
 <string name="detail_short_music">Music</string>
 <string name="settings_background_playback">Background playback</string>
     <string name="player_notification_stop">Stop playback</string>
+    <string name="detail_rating_unavailable">Not rated</string>
 </resources>

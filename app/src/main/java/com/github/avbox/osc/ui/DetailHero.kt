@@ -487,7 +487,7 @@ private fun DetailHeroInfoBlock(
                 overflow = TextOverflow.Ellipsis,
             )
         }
-        DetailRatingBadges(ratings, captionColor)
+        DetailRatingBadges(ratings, captionColor, alwaysShowDouban = true)
         if (!descriptionText.isNullOrEmpty()) {
             DetailHeroDescription(
                 text = descriptionText,

@@ -49,9 +49,13 @@ private enum class RatingBadge(
 }
 
 @Composable
-internal fun DetailRatingBadges(ratings: Map<String, Double>, numberColor: Color) {
+internal fun DetailRatingBadges(ratings: Map<String, Double>, numberColor: Color, alwaysShowDouban: Boolean = false) {
+    val unavailable = stringResource(R.string.detail_rating_unavailable)
     val badges = RatingBadge.entries.mapNotNull { badge ->
-        ratings[badge.source]?.let(badge::formatted)?.let { badge to it }
+        val number = ratings[badge.source]?.let(badge::formatted)
+        if (number != null) badge to number
+        else if (alwaysShowDouban && badge == RatingBadge.Douban) badge to unavailable
+        else null
     }
     if (badges.isEmpty()) return
     FlowRow(

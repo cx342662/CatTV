@@ -109,7 +109,7 @@ internal fun DetailContent(
                         val date = detail?.releaseDate?.takeIf { it.isNotBlank() } ?: info.year.takeIf { it > 0 }?.toString()
                         val meta = listOfNotNull(date, info.type?.takeIf { it.isNotBlank() }).joinToString(" · ")
                         if (meta.isNotEmpty()) Text(meta, style = MaterialTheme.typography.labelMedium)
-                        DetailRatingBadges(inlineRatings, MaterialTheme.colorScheme.onSurface)
+                        DetailRatingBadges(inlineRatings, MaterialTheme.colorScheme.onSurface, alwaysShowDouban = true)
                         if (description.isNotBlank()) Text(description, maxLines = 3, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall)
                     }
                 }
