@@ -235,21 +235,6 @@ private fun PlayerActionRow(
             horizontalArrangement = Arrangement.spacedBy(playerDim(R.dimen.vs_12)),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(
-                modifier = Modifier
-                    .widthIn(min = 48.dp)
-                    .height(actionBox)
-                    .playerPressEffect(onTap = actions::onSpeedClicked),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = stringResource(R.string.player_params_speed),
-                    color = Color.White,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                    maxLines = 1,
-                )
-            }
             if (onPictureInPicture != null) {
                 PictureInPictureButton(actionBox, actionIcon, onPictureInPicture)
             }
@@ -259,6 +244,13 @@ private fun PlayerActionRow(
                 box = actionBox,
                 iconSize = actionIcon,
                 onClick = actions::onEpisodeClicked,
+            )
+            TransportButton(
+                iconRes = R.drawable.player_ic_speed,
+                contentDescription = stringResource(R.string.player_params_speed),
+                box = actionBox,
+                iconSize = actionIcon,
+                onClick = actions::onSpeedClicked,
             )
             TransportButton(
                 iconRes = R.drawable.player_ic_params,
