@@ -6,13 +6,15 @@ import android.os.Bundle
 import com.github.avbox.osc.ui.DetailActivity
 import com.github.avbox.osc.ui.SearchActivity
 
-fun Context.jumpToDetail(id: String?, sourceKey: String?, title: String?, picture: String?, collect: Boolean = false) {
+fun Context.jumpToDetail(id: String?, sourceKey: String?, title: String?, picture: String?, collect: Boolean = false, doubanScore: Double? = null, doubanId: String? = null) {
     val bundle = Bundle()
     bundle.putString("id", id.orEmpty())
     bundle.putString("sourceKey", sourceKey.orEmpty())
     bundle.putString("title", title)
     bundle.putString("picture", picture)
     bundle.putBoolean("collect", collect)
+    doubanScore?.takeIf { it > 0 && it <= 10 }?.let { bundle.putDouble("doubanScore", it) }
+    bundle.putString("doubanId", doubanId)
     startActivity(Intent(this, DetailActivity::class.java).putExtras(bundle))
 }
 

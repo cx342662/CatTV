@@ -95,12 +95,9 @@ internal fun DetailContent(
                 val detail = rememberTmdbDetail(vm, info.name, info.en, info.year)
                 val ratings by vm.mdbListRatings.collectAsState()
                 val douban by vm.doubanRating.collectAsState()
-                val lookupId = vm.doubanBinding(info.sourceKey ?: vm.firstsourceKey, info.id, info.name.orEmpty(), info.year)
-                    ?: info.doubanId
-                androidx.compose.runtime.LaunchedEffect(vm, lookupId) { vm.ensureDoubanRating(lookupId) }
                 val inlineRatings = ratings + listOfNotNull(
                     detail?.rating?.takeIf { it > 0 && it <= 10 }?.let { "tmdb" to it },
-                    (douban?.takeIf { it.first == lookupId }?.second ?: info.doubanScore)?.let { "douban" to it },
+                    douban?.let { "douban" to it },
                 )
                 Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                     AsyncImage(

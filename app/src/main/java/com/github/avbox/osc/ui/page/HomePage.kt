@@ -649,6 +649,7 @@ fun HomePullRefreshIndicator(
 }
 
 private fun handleCardClick(vm: HomeViewModel, video: Movie.Video, context: android.content.Context) {
+    vm.rememberCardDouban(video)
     context.dispatchVodCardClick(video, onAction = { vm.handleAction(it) })
 }
 

@@ -463,6 +463,7 @@ class DetailActivity : BaseActivity(), PageHost {
         if (isInPictureInPictureMode) return
         wasInPictureInPicture = false
         playContainer?.hostResume()
+        vm.refreshDoubanRating()
         syncEpisodeAfterMusicPage()
         val container = playContainer ?: return
         vm.applyPlaybackEntry(

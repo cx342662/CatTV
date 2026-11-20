@@ -64,8 +64,21 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
         onRatings(external.orEmpty() + tmdb)
     }
 
-    suspend fun heroDoubanRating(video: Movie.Video): Double? =
-        com.github.avbox.osc.api.DoubanRatings.rememberScore(video.name, video.year, resolveHeroDoubanRating(video))
+    fun rememberCardDouban(video: Movie.Video) {
+        val source = ApiConfig.get().getSource(video.sourceKey)
+        val score = com.github.avbox.osc.api.DoubanRatings.sourceScore(video,
+            com.github.avbox.osc.sourcedata.SourceHelper.isDoubanSource(source))
+        if (score != null) {
+            video.doubanScore = score
+            com.github.avbox.osc.api.DoubanRatings.rememberScore(video.name, video.year, score)
+        }
+    }
+
+    suspend fun heroDoubanRating(video: Movie.Video): Double? {
+        val score = com.github.avbox.osc.api.DoubanRatings.rememberScore(video.name, video.year, resolveHeroDoubanRating(video))
+        if (score != null) video.doubanScore = score
+        return score
+    }
 
     private suspend fun resolveHeroDoubanRating(video: Movie.Video): Double? {
         val ratings = com.github.avbox.osc.api.DoubanRatings

@@ -8,6 +8,8 @@ internal class DetailNavStack {
         val title: String,
         val picture: String,
         val fromCollect: Boolean,
+        val doubanScore: Double? = null,
+        val doubanId: String? = null,
     )
 
     private val stack = ArrayList<Target>()

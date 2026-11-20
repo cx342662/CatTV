@@ -71,6 +71,16 @@ class SourceViewModel : ViewModel() {
         requestScope.launch { listLoader.getList(sourceKey, sortData, page) }
     }
 
+    internal suspend fun lookupSearch(sourceKey: String, title: String): List<Movie.Video> {
+        val result = SourceChannel<AbsXml?>()
+        val detail = SourceChannel<AbsXml?>()
+        val parser = SourceResultParser(gson, result, detail, PushDetailResolver(gson, detail))
+        SearchLoader(gson, SourceRuntimeState.extendCache, result, parser).getSearch(sourceKey, title)
+        return kotlinx.coroutines.withTimeoutOrNull(1000) {
+            result.flow.first()?.movie?.videoList.orEmpty()
+        }.orEmpty()
+    }
+
     internal suspend fun lookupDetail(sourceKey: String, id: String): Movie.Video? {
         val result = SourceChannel<AbsXml?>()
         val parser = SourceResultParser(gson, SourceChannel(), result, PushDetailResolver(gson, result))

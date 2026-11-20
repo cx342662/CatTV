@@ -120,9 +120,23 @@ class DetailViewModel : ViewModel(), TmdbPosterCache {
     val tmdbDetail = _tmdbDetail.asStateFlow()
     private val _mdbListRatings = MutableStateFlow<Map<String, Double>>(emptyMap())
     val mdbListRatings = _mdbListRatings.asStateFlow()
-    private val _doubanRating = MutableStateFlow<Pair<String, Double>?>(null)
-    val doubanRating = _doubanRating.asStateFlow()
-    private var doubanRatingJob: Job? = null
+    private val doubanLoader = com.github.avbox.osc.api.DoubanRatingLoader(viewModelScope) { query ->
+        val resolver = com.github.avbox.osc.api.DoubanRatingResolver(
+            metadataSources = {
+                ApiConfig.get().getSourceBeanList()
+                    .filter(com.github.avbox.osc.sourcedata.SourceHelper::isDoubanSource)
+                    .mapNotNull { it.key }
+            },
+            search = sourceViewModel::lookupSearch,
+            detail = sourceViewModel::lookupDetail,
+            fetchScore = DoubanRatings::score,
+            cachedScore = { DoubanRatings.rememberedScore(it.title, it.year) },
+        )
+        resolver.resolve(query)?.also { DoubanRatings.rememberScore(query.title, query.year, it) }
+    }
+    val doubanRating = doubanLoader.rating
+    private var navigationDoubanScore: Double? = null
+    private var navigationDoubanId: String? = null
     private var detailRatingsJob: Job? = null
     private val _tmdbLogoPath = MutableStateFlow<String?>(null)
     val tmdbLogoPath = _tmdbLogoPath.asStateFlow()
@@ -148,15 +162,20 @@ class DetailViewModel : ViewModel(), TmdbPosterCache {
         return KV.get(legacyKey)
     }
 
-    fun ensureDoubanRating(id: String?) {
-        doubanRatingJob?.cancel()
-        if (id != null && _doubanRating.value?.first == id) return
-        _doubanRating.value = null
-        if (id == null) return
-        doubanRatingJob = viewModelScope.launch {
-            val score = DoubanRatings.score(id) ?: return@launch
-            _doubanRating.value = id to score
+    fun refreshDoubanRating() {
+        val info = vodInfo
+        if (info == null) {
+            doubanLoader.load(null)
+            return
         }
+        val source = info.sourceKey ?: firstsourceKey
+        doubanLoader.load(com.github.avbox.osc.api.DoubanRatingQuery(
+            title = info.name.orEmpty(), year = info.year, sourceKey = source, videoId = info.id,
+            subjectId = info.doubanId, sourceScore = info.doubanScore,
+            binding = doubanBinding(source, info.id, info.name.orEmpty(), info.year),
+            sourceIsDouban = com.github.avbox.osc.sourcedata.SourceHelper.isDoubanSource(ApiConfig.get().getSource(source)),
+            altTitle = info.en,
+        ))
     }
 
     fun ensureTmdbDetail(name: String?, altName: String?, year: Int) {
@@ -508,6 +527,8 @@ class DetailViewModel : ViewModel(), TmdbPosterCache {
             title = bundle.getString("title", "").orEmpty(),
             picture = bundle.getString("picture", "").orEmpty(),
             fromCollect = bundle.getBoolean("collect", false),
+            doubanScore = if (bundle.containsKey("doubanScore")) bundle.getDouble("doubanScore").takeIf { it > 0 && it <= 10 } else null,
+            doubanId = DoubanRatings.parseBinding(bundle.getString("doubanId").orEmpty()),
         )
     }
 
@@ -517,6 +538,8 @@ class DetailViewModel : ViewModel(), TmdbPosterCache {
         sendCommand(PlaybackCommand.StopForContentSwitch)
         sendCommand(PlaybackCommand.SetEpisodeSheetOpen(false))
         fromCollect = target.fromCollect
+        navigationDoubanScore = target.doubanScore
+        navigationDoubanId = target.doubanId
         vodName = target.title
         vodPicture = target.picture
         loadDetail(target.vodId, target.sourceKey)
@@ -589,11 +612,13 @@ class DetailViewModel : ViewModel(), TmdbPosterCache {
 
     private fun commitVodInfo(info: VodInfo) {
         vodInfo = info
+        refreshDoubanRating()
         _vodUi.update { it?.copy(info = info, rev = it.rev + 1) }
     }
 
     private fun publishVodInfo(info: VodInfo?) {
         vodInfo = info
+        refreshDoubanRating()
         _vodUi.value = info?.let { VodUiSnapshot(0, it) }
     }
 
@@ -769,13 +794,15 @@ class DetailViewModel : ViewModel(), TmdbPosterCache {
             val keepIndex = keep?.playIndex
             val source = ApiConfig.get().getSource(detailVideo.sourceKey ?: sourceKey)
             val isDouban = com.github.avbox.osc.sourcedata.SourceHelper.isDoubanSource(source)
+            val matchesNavigation = com.github.avbox.osc.api.DoubanRatingResolver.sameTitle(detailVideo.name, vodName)
             val sourceScore = DoubanRatings.sourceScore(detailVideo, isDouban)
+                ?: navigationDoubanScore.takeIf { matchesNavigation }
             val sourceSubject = DoubanRatings.parseBinding(detailVideo.doubanId.orEmpty())
                 ?: DoubanRatings.parseBinding(detailVideo.id.orEmpty()).takeIf { isDouban }
             var info = VodInfo.fromVideo(detailVideo).copy(
                 doubanScore = DoubanRatings.rememberScore(detailVideo.name, detailVideo.year, sourceScore)
                     ?: DoubanRatings.rememberedScore(detailVideo.name, detailVideo.year),
-                doubanId = sourceSubject,
+                doubanId = sourceSubject ?: navigationDoubanId.takeIf { matchesNavigation },
             )
             info = info.copy(sourceKey = detailVideo.sourceKey)
             sourceKey = detailVideo.sourceKey ?: sourceKey

@@ -47,6 +47,8 @@ fun Context.dispatchVodCardClick(video: Movie.Video, onAction: (Movie.Video) -> 
             target.video.sourceKey,
             target.video.name,
             target.video.pic,
+            doubanScore = target.video.doubanScore,
+            doubanId = target.video.doubanId,
         )
     }
 }
@@ -56,7 +58,7 @@ fun Context.openVodCardOrDetail(video: Movie.Video) {
         openVodFolder(video)
         return
     }
-    jumpToDetail(video.id, video.sourceKey, video.name, video.pic)
+    jumpToDetail(video.id, video.sourceKey, video.name, video.pic, doubanScore = video.doubanScore, doubanId = video.doubanId)
 }
 
 private fun Context.openVodFolder(video: Movie.Video) {
