@@ -5,9 +5,13 @@ import CatTVCore
 struct CatTVApp: App {
     @StateObject private var library = LibraryModel()
     @StateObject private var userLibrary = UserLibrary()
+    @StateObject private var playback = PlaybackModel()
+    @StateObject private var badges = BadgeStore()
     var body: some Scene {
         WindowGroup {
-            RootView().environmentObject(library).environmentObject(userLibrary)
+            RootView().environmentObject(library).environmentObject(userLibrary).environmentObject(playback).environmentObject(badges)
+                .onReceive(badges.$failure) { if let message = $0 { library.error = message } }
+                .onReceive(playback.$failure) { if let message = $0 { library.error = message } }
                 .alert("提示", isPresented: Binding(get: { library.error != nil }, set: { if !$0 { library.error = nil } })) {
                     Button("确定") { library.error = nil }
                 } message: { Text(library.error ?? "") }
@@ -60,6 +64,7 @@ struct RootView: View {
                                         } placeholder: { Rectangle().fill(Color.secondary.opacity(0.15)).overlay(Image(systemName: "film")) }
                                         .aspectRatio(2 / 3, contentMode: .fit).clipped().clipShape(RoundedRectangle(cornerRadius: 16))
                                         Text(video.name).font(.system(size: 13)).lineLimit(1)
+                                        MediaBadgeRow(text: video.name + " " + video.remarks)
                                         Text(video.remarks).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
                                     }
                                 }.buttonStyle(.plain)
@@ -83,6 +88,8 @@ struct ConfigurationView: View {
     @EnvironmentObject var library: LibraryModel
     @State private var editor: ConfigurationDocument?
     @State private var showEditor = false
+    @State private var showScanner = false
+    @State private var showQRCode = false
     var body: some View {
         Form {
             Section("配置中心") {
@@ -90,6 +97,8 @@ struct ConfigurationView: View {
                     .textInputAutocapitalization(.never).autocorrectionDisabled()
                 Button("导入配置") { Task { await library.importConfiguration() } }.disabled(library.importing)
                 Button("手动新增") { editor = nil; showEditor = true }
+                Button("扫描二维码") { showScanner = true }
+                if library.collection.active?.origin != nil { Button("配置二维码") { showQRCode = true } }
             }
             Section("已保存配置") {
                 ForEach(library.collection.documents) { document in
@@ -101,6 +110,7 @@ struct ConfigurationView: View {
                     }.swipeActions { Button("删除", role: .destructive) { library.removeConfiguration(document.id) } }
                 }
             }
+            Section("偏好设置") { NavigationLink("媒体徽章") { BadgeSettingsView() } }
             Section("影视源") {
                 ForEach(library.configuration?.sites ?? []) { site in
                     Button { library.select(site) } label: {
@@ -110,6 +120,8 @@ struct ConfigurationView: View {
             }
         }.navigationTitle("设置")
             .sheet(isPresented: $showEditor) { ConfigurationEditor(document: editor) }
+            .sheet(isPresented: $showScanner) { QRScannerSheet { library.configurationURL = $0 } }
+            .sheet(isPresented: $showQRCode) { ConfigurationQRCode(text: library.collection.active?.origin?.absoluteString ?? "") }
     }
 }
 struct DetailView: View {
@@ -117,16 +129,18 @@ struct DetailView: View {
     let source: SourceSite?
     @EnvironmentObject var userLibrary: UserLibrary
     @EnvironmentObject var library: LibraryModel
-    @StateObject private var playback = PlaybackModel()
+    @EnvironmentObject var playback: PlaybackModel
     @State private var video: Video?
     @State private var lineIndex = 0
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 PlayerHost(player: playback.player).frame(height: 220).background(.black)
+                if playback.resolving { ProgressView("正在解析播放地址") }
                 VStack(alignment: .leading, spacing: 8) {
                     Text((video ?? summary).name).font(.title3.bold())
                     Text((video ?? summary).remarks).foregroundStyle(.secondary)
+                    MediaBadgeRow(text: (video ?? summary).name + " " + (video ?? summary).remarks, player: true)
                     Text((video ?? summary).content).font(.subheadline).textSelection(.enabled)
                 }.padding(16).frame(maxWidth: .infinity, alignment: .leading).background(.thinMaterial, in: RoundedRectangle(cornerRadius: 16))
                 if let video {
@@ -145,16 +159,21 @@ struct DetailView: View {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 85))]) {
                         ForEach(video.lines.first(where: { $0.id == lineIndex })?.episodes ?? []) { episode in
                             Button(episode.name) {
-                                do {
-                                    if let source {
-                                        try playback.play(episode: episode, position: userLibrary.resumePosition(source: source, video: video, episode: episode)) { position in
-                                            userLibrary.record(source: source, video: video, episode: episode, position: position)
-                                        }
+                                if let source, let line = video.lines.first(where: { $0.id == lineIndex }) {
+                                    playback.start(video: video, source: source, line: line, episode: episode) { item in
+                                        userLibrary.resumePosition(source: source, video: video, episode: item)
+                                    } progress: { item, position in
+                                        userLibrary.record(source: source, video: video, episode: item, position: position)
                                     }
-                                } catch { library.error = error.localizedDescription }
+                                }
                             }.buttonStyle(.bordered)
                         }
                     }
+                    HStack {
+                        Button("上一集") { playback.advance(-1) }
+                        Button("下一集") { playback.advance(1) }
+                        Button("停止播放") { playback.stop() }
+                    }.buttonStyle(.bordered)
                     Menu("定时退出播放") {
                         ForEach([15, 30, 60, 90], id: \.self) { minutes in
                             Button("\(minutes) 分钟") { playback.setStopTimer(minutes: minutes) }
@@ -169,8 +188,7 @@ struct DetailView: View {
                 catch is CancellationError {} catch { library.error = error.localizedDescription }
             }
             .onReceive(userLibrary.$failure) { if let message = $0 { library.error = message } }
-            .onReceive(playback.$failure) { if let message = $0 { library.error = message } }
-            .onDisappear { playback.stop() }
+
     }
 }
 

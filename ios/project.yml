@@ -26,6 +26,7 @@ targets:
       path: App/Info.plist
       properties:
         CFBundleDisplayName: CatTV
+        NSCameraUsageDescription: 扫描用户提供的影视源配置二维码
         UILaunchScreen: {}
         UIBackgroundModes: [audio]
         NSAppTransportSecurity:
