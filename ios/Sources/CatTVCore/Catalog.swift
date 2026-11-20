@@ -60,28 +60,94 @@ public struct VideoCategory: Decodable, Identifiable, Sendable {
 public struct CatalogResponse: Decodable, Sendable {
     public let videos: [Video]
     public let categories: [VideoCategory]
-    enum CodingKeys: String, CodingKey { case videos = "list", categories = "class" }
+    public let filters: [String: [CatalogFilter]]
+    public let page: Int
+    public let pageCount: Int?
+    enum CodingKeys: String, CodingKey { case videos = "list", categories = "class", filters, page, pageCount = "pagecount" }
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         videos = try c.decodeIfPresent([Video].self, forKey: .videos) ?? []
         categories = try c.decodeIfPresent([VideoCategory].self, forKey: .categories) ?? []
+        if let values = try c.decodeIfPresent([String: JSONValue].self, forKey: .filters) {
+            filters = try values.mapValues { value in
+                let data = try JSONEncoder().encode(value)
+                if case .array = value { return try JSONDecoder().decode([CatalogFilter].self, from: data) }
+                return [try JSONDecoder().decode(CatalogFilter.self, from: data)]
+            }
+        } else { filters = [:] }
+        func number(_ key: CodingKeys) -> Int? {
+            if let n = try? c.decode(Int.self, forKey: key) { return n }
+            if let s = try? c.decode(String.self, forKey: key) { return Int(s) }
+            return nil
+        }
+        page = number(.page) ?? 1
+        pageCount = number(.pageCount)
     }
 }
 public actor CatalogRepository {
     private let session: URLSession
+    private var extensionCache: [String: String] = [:]
     public init(session: URLSession = .shared) { self.session = session }
     public func request(site: SourceSite, parameters: [String: String] = [:]) async throws -> CatalogResponse {
-        guard site.type == 1 else { throw SourceError.unsupportedSource(site.type) }
-        guard var components = URLComponents(string: site.api), ["https", "http"].contains(components.scheme?.lowercased() ?? "") else { throw SourceError.invalidURL }
-        var query = (components.queryItems ?? []).filter { parameters[$0.name] == nil }
-        query += parameters.sorted { $0.key < $1.key }.map { URLQueryItem(name: $0.key, value: $0.value) }
-        components.queryItems = query
+        let data = try await requestData(site: site, parameters: parameters)
+        return try decode(data, type: site.type)
+    }
+    public func request(site: SourceSite, query: CatalogQuery) async throws -> CatalogResponse {
+        try await request(site: site, parameters: query.parameters(type: site.type))
+    }
+    public func decode(_ data: Data, type: Int) throws -> CatalogResponse {
+        if type == 0 { return try XMLCatalogDecoder.decode(data) }
+        return try JSONDecoder().decode(CatalogResponse.self, from: data)
+    }
+    public func requestData(site: SourceSite, parameters: [String: String]) async throws -> Data {
+        guard [0, 1, 4].contains(site.type) else { throw SourceError.unsupportedSource(site.type) }
+        var parameters = parameters
+        if site.type == 4, let ext = site.ext {
+            var text = ext.serialized
+            if let url = URL(string: text), ["http", "https"].contains(url.scheme?.lowercased() ?? "") {
+                if let cached = extensionCache[text] { text = cached }
+                else {
+                    var extensionSite = site
+                    extensionSite.header = nil
+                    let fetched = try await transfer(Self.makeRequest(site: extensionSite, address: url.absoluteString, parameters: [:]))
+                    guard let value = String(data: fetched, encoding: .utf8) else { throw SourceError.invalidConfiguration("扩展配置不是 UTF-8") }
+                    if value.count <= 2500 {
+                        if let json = try? JSONSerialization.jsonObject(with: fetched), JSONSerialization.isValidJSONObject(json) {
+                            text = String(decoding: try JSONSerialization.data(withJSONObject: json, options: [.sortedKeys]), as: UTF8.self)
+                        } else { text = value }
+                    }
+                    extensionCache[ext.serialized] = text
+                }
+            }
+            if !text.isEmpty { parameters["extend"] = text }
+        }
+        return try await transfer(Self.makeRequest(site: site, address: site.api, parameters: parameters))
+    }
+    public static func makeRequest(site: SourceSite, address: String, parameters: [String: String]) throws -> URLRequest {
+        guard var components = URLComponents(string: address), ["https", "http"].contains(components.scheme?.lowercased() ?? ""), components.host != nil else { throw SourceError.invalidURL }
+        let usePost = site.type == 4 && (parameters["extend"]?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)?.count ?? 0) >= 1000
+        let parameters = parameters.sorted { $0.key < $1.key }.map { URLQueryItem(name: $0.key, value: $0.value) }
+        if !usePost {
+            let names = Set(parameters.map(\.name))
+            components.queryItems = (components.queryItems ?? []).filter { !names.contains($0.name) } + parameters
+        }
         guard let url = components.url else { throw SourceError.invalidURL }
         var request = URLRequest(url: url)
-        request.timeoutInterval = 30
+        request.timeoutInterval = TimeInterval(max(5, min(site.timeout ?? 30, 180)))
+        for (name, value) in site.headers { request.setValue(value, forHTTPHeaderField: name) }
+        if usePost {
+            request.httpMethod = "POST"
+            var body = URLComponents()
+            body.queryItems = parameters
+            request.httpBody = body.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B").data(using: .utf8)
+            request.setValue("application/x-www-form-urlencoded; charset=utf-8", forHTTPHeaderField: "Content-Type")
+        }
+        return request
+    }
+    private func transfer(_ request: URLRequest) async throws -> Data {
         let (data, response) = try await session.data(for: request)
         guard let http = response as? HTTPURLResponse else { throw SourceError.invalidURL }
         guard (200..<300).contains(http.statusCode) else { throw SourceError.httpStatus(http.statusCode) }
-        return try JSONDecoder().decode(CatalogResponse.self, from: data)
+        return data
     }
 }

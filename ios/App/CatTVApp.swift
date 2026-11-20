@@ -35,6 +35,16 @@ struct RootView: View {
                                 }
                             }.buttonStyle(.bordered).padding(.horizontal, 16)
                         }
+                        if let category = library.query.category {
+                            ForEach(library.filters[category] ?? []) { filter in
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack { Text(filter.name); ForEach(filter.value) { option in
+                                        Button(option.n) { library.selectFilter(key: filter.key, value: option.v) }
+                                            .buttonStyle(.bordered).tint(library.query.filters[filter.key] == option.v ? .accentColor : .secondary)
+                                    } }.padding(.horizontal, 16)
+                                }
+                            }
+                        }
                         if library.busy { ProgressView().padding() }
                         if library.configuration == nil {
                             Text("请在设置的配置中心导入你的影视源配置").foregroundStyle(.secondary).padding(24)
@@ -55,6 +65,7 @@ struct RootView: View {
                                 }.buttonStyle(.plain)
                             }
                         }.padding(.horizontal, 16)
+                        if library.canLoadMore { Button("加载更多") { library.loadMore() }.disabled(library.busy).padding() }
                     }
                 }.navigationTitle("CatTV").navigationBarTitleDisplayMode(.inline)
                     .searchable(text: $search, prompt: "搜索影视")
@@ -70,12 +81,25 @@ struct RootView: View {
 }
 struct ConfigurationView: View {
     @EnvironmentObject var library: LibraryModel
+    @State private var editor: ConfigurationDocument?
+    @State private var showEditor = false
     var body: some View {
         Form {
             Section("配置中心") {
                 TextField("配置地址", text: $library.configurationURL).keyboardType(.URL)
                     .textInputAutocapitalization(.never).autocorrectionDisabled()
-                Button("导入配置") { Task { await library.importConfiguration() } }.disabled(library.busy)
+                Button("导入配置") { Task { await library.importConfiguration() } }.disabled(library.importing)
+                Button("手动新增") { editor = nil; showEditor = true }
+            }
+            Section("已保存配置") {
+                ForEach(library.collection.documents) { document in
+                    HStack {
+                        Button(document.name) { library.activate(document.id) }
+                        if document.id == library.collection.activeID { Image(systemName: "checkmark") }
+                        Spacer()
+                        Button("编辑") { editor = document; showEditor = true }
+                    }.swipeActions { Button("删除", role: .destructive) { library.removeConfiguration(document.id) } }
+                }
             }
             Section("影视源") {
                 ForEach(library.configuration?.sites ?? []) { site in
@@ -85,6 +109,7 @@ struct ConfigurationView: View {
                 }
             }
         }.navigationTitle("设置")
+            .sheet(isPresented: $showEditor) { ConfigurationEditor(document: editor) }
     }
 }
 struct DetailView: View {
