@@ -4,3 +4,4 @@ CatTV.xcodeproj/
 App/Info.plist
 *.xcuserstate
 xcuserdata/
+App/Assets.xcassets/AppIcon.appiconset/AppIcon.png

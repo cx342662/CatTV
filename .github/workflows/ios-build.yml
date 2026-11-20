@@ -18,6 +18,8 @@ jobs:
         run: swift test
       - name: Install XcodeGen
         run: brew install xcodegen
+      - name: Prepare app icon from Android artwork
+        run: swift ios/scripts/prepare-app-icon.swift
       - name: Generate project
         working-directory: ios
         run: xcodegen generate

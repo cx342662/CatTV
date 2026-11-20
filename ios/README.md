@@ -7,6 +7,7 @@
 macOS 安装 Xcode 和 XcodeGen 后，在仓库根执行：
 
 ```sh
+swift ios/scripts/prepare-app-icon.swift
 cd ios
 swift test
 xcodegen generate
