@@ -50,6 +50,7 @@ jobs:
       - name: Run unit tests and assemble mobile debug APK
         run: |
           set -euo pipefail
+          echo "Validating commit: $GITHUB_SHA"
           chmod +x ./gradlew
           ./gradlew :app:testDebugUnitTest :app:assembleDebug --no-daemon --stacktrace
 
