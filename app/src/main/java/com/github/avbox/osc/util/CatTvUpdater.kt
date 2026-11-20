@@ -37,6 +37,13 @@ object CatTvUpdater {
     )
 
     suspend fun checkForUpdate(context: Context): UpdateInfo? = withContext(Dispatchers.IO) {
+        try {
+            return@withContext checkPublishedManifest(context)
+        } catch (error: kotlinx.coroutines.CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            AppLog.e("CatTvUpdater", error)
+        }
         val connection = (URL(RELEASE_API).openConnection() as HttpURLConnection).apply {
             connectTimeout = 12000
             readTimeout = 12000
@@ -68,6 +75,30 @@ object CatTvUpdater {
                 return@withContext UpdateInfo(version, url, digest.substringAfter(':'), size, json.optString("body"))
             }
             error("此版本没有带 SHA-256 校验的 APK，请联系维护者")
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+    private fun checkPublishedManifest(context: Context): UpdateInfo? {
+        val connection = (URL("https://github.com/cx342662/CatTV/releases/latest/download/mobile-update.json").openConnection() as HttpURLConnection).apply {
+            connectTimeout = 12000
+            readTimeout = 12000
+            setRequestProperty("User-Agent", "CatTV-Android")
+        }
+        try {
+            check(connection.responseCode == 200) { "Update manifest HTTP ${connection.responseCode}" }
+            val text = connection.inputStream.bufferedReader().use { it.readText() }
+            val json = JSONObject(text)
+            val version = json.getString("version")
+            if (!isNewerVersion(version, BuildConfig.VERSION_NAME)) return null
+            check(json.getString("packageName") == context.packageName) { "Update package mismatch" }
+            val url = json.getString("url")
+            val hash = json.getString("sha256")
+            val size = json.getLong("size")
+            check(url.startsWith("https://github.com/cx342662/CatTV/releases/download/") &&
+                Regex("[0-9a-fA-F]{64}").matches(hash) && size in 1..MAX_APK_BYTES) { "Invalid update manifest" }
+            return UpdateInfo(version, url, hash, size, json.optString("notes"))
         } finally {
             connection.disconnect()
         }

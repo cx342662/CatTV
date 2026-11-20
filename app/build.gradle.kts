@@ -13,12 +13,12 @@ android {
     ndkVersion = libs.versions.ndk.get()
 
     defaultConfig {
-        applicationId = providers.gradleProperty("CATTV_APPLICATION_ID").getOrElse("com.github.avbox.osc")
+        applicationId = providers.gradleProperty("CATTV_APPLICATION_ID").getOrElse("com.cattv.mobile")
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
         // Release workflow can override the packaged version.
-        versionCode = (project.findProperty("CATTV_VERSION_CODE") as String?)?.toIntOrNull() ?: 41
-        versionName = (project.findProperty("CATTV_VERSION_NAME") as String?) ?: "1.3.5"
+        versionCode = (project.findProperty("CATTV_VERSION_CODE") as String?)?.toIntOrNull() ?: 42
+        versionName = (project.findProperty("CATTV_VERSION_NAME") as String?) ?: "1.3.6"
         multiDexEnabled = true
         ndk {
             abiFilters += setOf("arm64-v8a")
