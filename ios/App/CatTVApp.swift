@@ -23,6 +23,7 @@ struct CatTVApp: App {
 struct RootView: View {
     @EnvironmentObject var library: LibraryModel
     @State private var search = ""
+    @State private var showSearch = false
     var body: some View {
         TabView {
             NavigationStack {
@@ -76,7 +77,8 @@ struct RootView: View {
                     }
                 }.navigationTitle("CatTV").navigationBarTitleDisplayMode(.inline)
                     .searchable(text: $search, prompt: "搜索影视")
-                    .onSubmit(of: .search) { library.load(search: search) }
+                    .onSubmit(of: .search) { showSearch = true }
+                    .sheet(isPresented: $showSearch) { GlobalSearchView(initialQuery: search, sites: library.configuration?.sites ?? []) }
                     .refreshable { library.load() }
                     .task { library.load() }
             }.tabItem { Label("首页", image: "ic_tab_home") }

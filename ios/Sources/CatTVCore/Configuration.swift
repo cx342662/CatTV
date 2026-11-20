@@ -67,8 +67,9 @@ public struct SourceSite: Codable, Equatable, Identifiable, Sendable {
     public var ext: JSONValue?
     public var playUrl: String?
     public var timeout: Int?
+    public var searchable: JSONValue?
     public var id: String { key }
-    enum CodingKeys: String, CodingKey { case key, name, type, api, header, ext, playUrl, timeout }
+    enum CodingKeys: String, CodingKey { case key, name, type, api, header, ext, playUrl, timeout, searchable }
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         key = try c.decode(String.self, forKey: .key)
@@ -81,6 +82,7 @@ public struct SourceSite: Codable, Equatable, Identifiable, Sendable {
         ext = try c.decodeIfPresent(JSONValue.self, forKey: .ext)
         playUrl = try c.decodeIfPresent(String.self, forKey: .playUrl)
         timeout = try c.decodeIfPresent(JSONValue.self, forKey: .timeout)?.text.flatMap(Int.init)
+        searchable = try c.decodeIfPresent(JSONValue.self, forKey: .searchable)
     }
     public var headers: [String: String] {
         (header ?? [:]).reduce(into: [:]) { result, pair in
