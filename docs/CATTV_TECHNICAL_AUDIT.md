@@ -71,6 +71,13 @@ TVBox 风格 JSON 已有实际字段解析能力；XML 原生分支已存在，�
 
 性能待测：多 jar fallback proxy 的遍历放大、JS 单执行器队列阻塞、配置刷新并发请求、WebView 重复建立/清理、缓存 header key 的分裂、长时播放内存增长。未采集 profiler/堆转储/流量统计，以上是观测项，不是性能数据。
 
+### 本轮实际检出的并发问题（阻止完整验收）
+
+最新PR运行 https://github.com/cx342662/CatTV/actions/runs/44749366687 中，已有 IsoResolverTest.resolve_singleFlightForConcurrentCallers 失败：expected 2 reads，actual 4；1444项测试，1失败、3跳过。手机编译、TV、3项报告生成器测试均通过，Lint执行完成。报告正确列出了失败名称和断言。
+P2：player/engine/iso/IsoResolver.kt 内 IsoVolumeCache.load 的 finally 先 inFlight.remove(key,running)，之后才 put(key,info)。其他线程可在结果缓存写入前观察到“无缓存、无进行中任务”，开始第二次解析；这与失败表现一致。可造成重复范围请求和额外解析，尚无证据表明导致崩溃或内容损坏。它是生产并发风险，不应改弱测试或仅重跑到绿来掩盖。
+本轮禁止改播放器业务，因此保留实现及失败测试，另立最小修复PR：缓存发布必须先于释放single-flight占位，并补可控同步的竞态回归测试。未修复前不声称完整验收通过。
+同提交push首次运行 https://github.com/cx342662/CatTV/actions/runs/44749354922 曾因Chaquopy 17.1.0解析失败而未进入编译，已仅重试失败任务；不得把首次失败计为单测通过。
+
 ## 5. 播放器底层和设备稳定性
 
 gradle/libs.versions.toml 声明 Media3 1.11.1，FFmpeg decoder 扩展独立版本 1.9.0+1，QuickJS wrapper 3.2.3；wrapper 版本不是 QuickJS C 内核版本。
@@ -161,8 +168,8 @@ Windows：先用同一fixture比较 Qt+libmpv/libVLC、Flutter+native bridge、T
 
 ## 11. 优先级和验收缺口
 
-下一步三个独立任务：
-1. 受控兼容性安全修复：TLS默认验证、动态代码加载前摘要核验和原子更新；先加失败注入测试，不静默破坏旧源。
+下一步三个独立任务（新增single-flight缺陷纳入第1项）：
+1. 最小播放器并发修复专项：先修复 IsoVolumeCache single-flight 发布竞态并稳定回归；随后受控兼容性安全修复：TLS默认验证、动态代码加载前摘要核验和原子更新；先加失败注入测试，不静默破坏旧源。
 2. 发布产物溯源 + 手机/TV真机矩阵：将v1.3.6/v70精确绑定源码；完成PiP/锁屏/后台/Surface专项，记录设备证据。
 3. 配置/收藏/历史端到端测试：MMKV配置CRUD/默认切换/完整重启、Repository重复收藏与磁盘故障。随后再定义JS协议fixture及资源限制实验。
 
