@@ -68,6 +68,11 @@ object PluginActivityBridge {
         snapshot.forEach { syncPluginActivity(it, activity) }
     }
 
+    @JvmStatic
+    fun clear() {
+        synchronized(pluginLoaders) { pluginLoaders.clear() }
+    }
+
     private fun isUsable(activity: Activity): Boolean =
         !activity.isFinishing && (android.os.Build.VERSION.SDK_INT < 17 || !activity.isDestroyed)
 
