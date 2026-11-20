@@ -23,6 +23,7 @@ internal class DoubanRatingResolver(
     private val detail: suspend (String, String) -> Movie.Video?,
     private val fetchScore: suspend (String) -> Double?,
     private val cachedScore: (DoubanRatingQuery) -> Double? = { null },
+    private val publicScore: suspend (DoubanRatingQuery) -> Double? = { null },
 ) {
     suspend fun resolve(query: DoubanRatingQuery): Double? {
         if (query.binding != null) {
@@ -35,6 +36,7 @@ internal class DoubanRatingResolver(
             ?: DoubanRatings.parseBinding(query.videoId.orEmpty()).takeIf { query.sourceIsDouban }
         if (subject != null) fetchScore(subject).validRating()?.let { return it }
         if (query.title.isBlank()) return null
+        publicScore(query).validRating()?.let { return it }
         for (source in metadataSources().distinct().take(3)) {
             val result = try {
                 withTimeoutOrNull(6500) {

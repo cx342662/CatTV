@@ -131,6 +131,7 @@ class DetailViewModel : ViewModel(), TmdbPosterCache {
             detail = sourceViewModel::lookupDetail,
             fetchScore = DoubanRatings::score,
             cachedScore = { DoubanRatings.rememberedScore(it.title, it.year) },
+            publicScore = com.github.avbox.osc.api.DoubanPublicRatings()::lookup,
         )
         resolver.resolve(query)?.also { DoubanRatings.rememberScore(query.title, query.year, it) }
     }

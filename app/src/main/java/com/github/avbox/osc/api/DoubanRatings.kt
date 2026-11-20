@@ -48,6 +48,7 @@ internal object DoubanRatings {
     suspend fun score(id: String): Double? {
         if (!subjectId.matches(id)) return null
         ratings.get(id)?.let { return it }
+        DoubanPublicRatings().score(id)?.let { ratings.put(id, it); return it }
         return try {
             val html = Http.get("https://movie.douban.com/subject/$id/")
             withContext(Dispatchers.Default) {
