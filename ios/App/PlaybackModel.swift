@@ -20,6 +20,7 @@ final class PlaybackModel: ObservableObject {
     private var resume: ((Episode) -> Double)?
     private var video: Video?
     private var source: SourceSite?
+    private var selectedParser: ParserEndpoint?
     private var line: PlaybackLine?
     private var task: Task<Void, Never>?
     private var token = UUID()
@@ -57,7 +58,7 @@ final class PlaybackModel: ObservableObject {
         }
         installRemoteCommands()
     }
-    func start(video: Video, source: SourceSite, line: PlaybackLine, episode: Episode, resume: @escaping (Episode) -> Double, progress: @escaping (Episode, Double) -> Void) {
+    func start(video: Video, source: SourceSite, line: PlaybackLine, episode: Episode, parser: ParserEndpoint? = nil, resume: @escaping (Episode) -> Double, progress: @escaping (Episode, Double) -> Void) {
         saveProgress()
         player.pause()
         if let timeObserver { player.removeTimeObserver(timeObserver); self.timeObserver = nil }
@@ -65,6 +66,7 @@ final class PlaybackModel: ObservableObject {
         observation = nil
         currentEpisode = nil
         self.video = video; self.source = source; self.line = line
+        selectedParser = parser
         self.resume = resume; onProgress = progress
         title = video.name
         activeLineID = line.id
@@ -81,7 +83,7 @@ final class PlaybackModel: ObservableObject {
         player.pause()
         task = Task {
             do {
-                var resource = try await resolver.resolveResource(site: source, episode: episode, line: line.name)
+                var resource = try await resolver.resolveResource(site: source, episode: episode, line: line.name, parser: selectedParser)
                 if resource.requiresWebParsing { resource = try await sniffer.sniff(resource, timeout: source.timeout ?? 30) }
                 guard !Task.isCancelled, token == expected else { return }
                 let nextProxy: MediaHTTPProxy?

@@ -23,11 +23,12 @@ public struct ResolvedPlayback: Sendable {
 }
 public actor PlaybackResolver {
     private let repository: CatalogRepository
+    private let parserRepository = ParserRepository()
     public init(repository: CatalogRepository = CatalogRepository()) { self.repository = repository }
     public func resolve(site: SourceSite, episode: Episode, line: String) async throws -> URL {
         try await resolveResource(site: site, episode: episode, line: line).url
     }
-    public func resolveResource(site: SourceSite, episode: Episode, line: String) async throws -> ResolvedPlayback {
+    public func resolveResource(site: SourceSite, episode: Episode, line: String, parser: ParserEndpoint? = nil) async throws -> ResolvedPlayback {
         var requiresWeb = false
         var headers = site.headers
         var address = episode.address
@@ -41,9 +42,13 @@ public actor PlaybackResolver {
             }
             address = descriptor.url
         } else if [0, 1].contains(site.type) {
-            if let prefix = site.playUrl, !prefix.isEmpty { address = prefix + address; requiresWeb = true }
+            if let prefix = site.playUrl, !prefix.isEmpty, parser == nil { address = prefix + address; requiresWeb = true }
 
         } else { throw SourceError.unsupportedSource(site.type) }
+        if let parser { return try await parserRepository.resolve(endpoint: parser, input: address, headers: headers) }
+        if requiresWeb, site.playUrl?.isEmpty != false, let parsers = site.parsers, !parsers.isEmpty {
+            return try await parserRepository.resolve(endpoints: parsers, input: address, headers: headers)
+        }
         guard let url = URL(string: address), ["http", "https"].contains(url.scheme?.lowercased() ?? ""), url.host != nil else { throw SourceError.invalidURL }
         return ResolvedPlayback(url: url, headers: headers, requiresWebParsing: requiresWeb)
     }

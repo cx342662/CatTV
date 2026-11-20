@@ -42,17 +42,27 @@ public enum JSONValue: Codable, Equatable, Sendable {
 public struct SourceConfiguration: Codable, Equatable, Sendable {
     public var sites: [SourceSite]
     public var spider: String?
+    public var parses: [ParserEndpoint]?
     public static func decode(_ data: Data, baseURL: URL? = nil) throws -> Self {
         var configuration = try JSONDecoder().decode(Self.self, from: data)
         guard !configuration.sites.isEmpty else { throw SourceError.invalidConfiguration("配置没有影视源") }
         guard configuration.sites.allSatisfy({ !$0.key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !$0.api.isEmpty }) else { throw SourceError.invalidConfiguration("影视源缺少 key 或 api") }
         guard Set(configuration.sites.map(\.key)).count == configuration.sites.count else { throw SourceError.invalidConfiguration("影视源 key 重复") }
         if let baseURL {
+            if var parsers = configuration.parses {
+                for index in parsers.indices {
+                    if let url = URL(string: parsers[index].url, relativeTo: baseURL)?.absoluteURL { parsers[index].url = url.absoluteString }
+                }
+                configuration.parses = parsers
+            }
             for index in configuration.sites.indices where [0, 1, 4].contains(configuration.sites[index].type) {
                 if let resolved = URL(string: configuration.sites[index].api, relativeTo: baseURL)?.absoluteURL {
                     configuration.sites[index].api = resolved.absoluteString
                 }
             }
+        }
+        for index in configuration.sites.indices {
+            if let parsers = configuration.parses { configuration.sites[index].parsers = parsers }
         }
         return configuration
     }
@@ -68,8 +78,9 @@ public struct SourceSite: Codable, Equatable, Identifiable, Sendable {
     public var playUrl: String?
     public var timeout: Int?
     public var searchable: JSONValue?
+    public var parsers: [ParserEndpoint]?
     public var id: String { key }
-    enum CodingKeys: String, CodingKey { case key, name, type, api, header, ext, playUrl, timeout, searchable }
+    enum CodingKeys: String, CodingKey { case key, name, type, api, header, ext, playUrl, timeout, searchable, parsers }
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         key = try c.decode(String.self, forKey: .key)
@@ -83,6 +94,7 @@ public struct SourceSite: Codable, Equatable, Identifiable, Sendable {
         playUrl = try c.decodeIfPresent(String.self, forKey: .playUrl)
         timeout = try c.decodeIfPresent(JSONValue.self, forKey: .timeout)?.text.flatMap(Int.init)
         searchable = try c.decodeIfPresent(JSONValue.self, forKey: .searchable)
+        parsers = try c.decodeIfPresent([ParserEndpoint].self, forKey: .parsers)
     }
     public var headers: [String: String] {
         (header ?? [:]).reduce(into: [:]) { result, pair in

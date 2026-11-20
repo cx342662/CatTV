@@ -139,6 +139,7 @@ struct DetailView: View {
     @EnvironmentObject var playback: PlaybackModel
     @State private var video: Video?
     @State private var lineIndex = 0
+    @State private var selectedParser: ParserEndpoint?
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
@@ -159,6 +160,12 @@ struct DetailView: View {
                     if let source {
                         Button(userLibrary.isFollowing(source: source, video: video) ? "取消追剧" : "追剧") { userLibrary.toggleFollowing(source: source, video: video) }
                     }
+                    if let parsers = source?.parsers, !parsers.isEmpty {
+                        Menu(selectedParser?.name ?? "自动解析") {
+                            Button("自动解析") { selectedParser = nil }
+                            ForEach(parsers) { parser in Button(parser.name) { selectedParser = parser } }
+                        }
+                    }
                     Text("线路").font(.headline)
                     ScrollView(.horizontal) {
                         HStack {
@@ -172,7 +179,7 @@ struct DetailView: View {
                         ForEach(video.lines.first(where: { $0.id == lineIndex })?.episodes ?? []) { episode in
                             Button(episode.name) {
                                 if let source, let line = video.lines.first(where: { $0.id == lineIndex }) {
-                                    playback.start(video: video, source: source, line: line, episode: episode) { item in
+                                    playback.start(video: video, source: source, line: line, episode: episode, parser: selectedParser) { item in
                                         userLibrary.resumePosition(source: source, video: video, episode: item)
                                     } progress: { item, position in
                                         userLibrary.record(source: source, video: video, episode: item, position: position)
