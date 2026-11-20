@@ -364,6 +364,13 @@ class DetailActivity : BaseActivity(), PageHost {
 
     private var stopTimer: kotlinx.coroutines.Job? = null
 
+    fun shareCurrentFeature() {
+        val info = vm.vodInfo ?: return
+        val text = listOfNotNull(info.name, info.year.takeIf { it > 0 }?.toString()).joinToString(" · ")
+        startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain")
+            .putExtra(Intent.EXTRA_TEXT, text), null))
+    }
+
     fun showPlaybackStopTimer() {
         androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle(R.string.detail_stop_timer)

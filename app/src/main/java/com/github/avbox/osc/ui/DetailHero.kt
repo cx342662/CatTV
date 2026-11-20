@@ -448,11 +448,7 @@ private fun DetailHeroTopActions(
             contentDescription = stringResource(R.string.detail_share),
             onClick = {
                 val host = shareContext as? DetailActivity
-                val title = host?.title?.toString()
-                val intent = android.content.Intent(android.content.Intent.ACTION_SEND)
-                    .setType("text/plain")
-                    .putExtra(android.content.Intent.EXTRA_TEXT, title.orEmpty())
-                shareContext.startActivity(android.content.Intent.createChooser(intent, null))
+                host?.shareCurrentFeature()
             },
             fallbackColor = fallbackColor,
         )
