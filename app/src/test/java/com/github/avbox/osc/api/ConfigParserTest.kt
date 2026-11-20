@@ -387,6 +387,18 @@ class ConfigParserTest {
         )
     }
 
+    @Test
+    fun parseSites_emptyArrayHasNoSources() {
+        assertTrue(ConfigParser.parseSites(json("""{"sites":[]}""")).isEmpty())
+    }
+
+    @Test
+    fun parseApiCollection_emptyAndTruncatedConfigsHaveNoEntries() {
+        for (text in listOf("", "   ", "{}", """{"urls":[]}""", """{"urls":[""")) {
+            assertTrue(text, ConfigParser.parseApiCollection(text).isEmpty())
+        }
+    }
+
     companion object {
         private val GSON = Gson()
 

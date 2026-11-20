@@ -48,6 +48,21 @@ jobs:
         run: |
           python -m pip install --disable-pip-version-check pillow
           python scripts/prepare_cattv_icons.py
+      - name: Run publication tests
+        id: publication_tests
+        continue-on-error: true
+        run: |
+          chmod +x ./gradlew
+          ./gradlew :app:testDebugUnitTest --no-daemon --stacktrace --console=plain
+      - name: Upload publication test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: signed-release-test-reports
+          path: |
+            app/build/reports/tests/
+            app/build/test-results/
+          if-no-files-found: warn
       - name: Validate requested version and private signing secrets
         env:
           VERSION_NAME: ${{ inputs.versionName }}
@@ -84,7 +99,17 @@ jobs:
             "-PRELEASE_KEY_ALIAS=$CATTV_KEY_ALIAS" \
             "-PRELEASE_STORE_PASSWORD=$CATTV_STORE_PASSWORD" \
             "-PRELEASE_KEY_PASSWORD=$CATTV_KEY_PASSWORD"
+      - name: Upload manually built APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: signed-manual-release-apk
+          path: app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+      - name: Report publication test failure
+        if: steps.publication_tests.outcome != 'success'
+        run: echo "::warning::Tests failed; APK remains available as an artifact. Release publication is blocked."
       - name: Verify signed APK and publish
+        if: steps.publication_tests.outcome == 'success'
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION_NAME: ${{ inputs.versionName }}
