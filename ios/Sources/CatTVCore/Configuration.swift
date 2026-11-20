@@ -79,7 +79,7 @@ public enum HeaderPolicy {
     public static func isSendable(name: String, value: String) -> Bool {
         let separators = "()<>@,;:\\\"/[]?={} \t"
         return !name.isEmpty && name.unicodeScalars.allSatisfy { $0.value > 32 && $0.value < 127 && !separators.unicodeScalars.contains($0) }
-            && !value.contains("\r") && !value.contains("\n") && !value.contains("\0")
+            && value.unicodeScalars.allSatisfy { $0.value == 9 || ($0.value >= 32 && $0.value <= 126) }
     }
 }
 
