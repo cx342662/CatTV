@@ -90,6 +90,7 @@ struct RootView: View {
 }
 struct ConfigurationView: View {
     @EnvironmentObject var library: LibraryModel
+    @EnvironmentObject var playback: PlaybackModel
     @State private var editor: ConfigurationDocument?
     @State private var showEditor = false
     @State private var showScanner = false
@@ -114,6 +115,10 @@ struct ConfigurationView: View {
                         Button("编辑") { editor = document; showEditor = true }
                     }.swipeActions { Button("删除", role: .destructive) { library.removeConfiguration(document.id) } }
                 }
+            }
+            Section("AirPlay") {
+                Toggle("允许局域网媒体代理", isOn: Binding(get: { playback.allowLANProxy }, set: { playback.setLANProxy($0) }))
+                Text("用于让同一网络的 AirPlay 设备访问需请求头的媒体。开启后重新播放生效；关闭会停止当前局域网代理播放。").font(.caption).foregroundStyle(.secondary)
             }
             Section("偏好设置") {
                 NavigationLink("媒体徽章") { BadgeSettingsView() }

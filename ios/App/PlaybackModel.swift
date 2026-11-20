@@ -11,6 +11,8 @@ final class PlaybackModel: ObservableObject {
     @Published private(set) var title = ""
     @Published private(set) var episodeName = ""
     @Published private(set) var isPlaying = false
+    @Published private(set) var allowLANProxy = UserDefaults.standard.bool(forKey: "CatTV.allowLANProxy")
+    @Published private(set) var usingLANProxy = false
     @Published private(set) var elapsedSeconds = 0.0
     private var lastProgressSave = 0.0
     @Published private(set) var resolving = false
@@ -83,6 +85,7 @@ final class PlaybackModel: ObservableObject {
         guard let source, let line else { resolving = false; return }
         saveProgress()
         player.pause()
+        let useLANProxy = allowLANProxy
         task = Task {
             do {
                 var resource = try await resolver.resolveResource(site: source, episode: episode, line: line.name, parser: selectedParser)
@@ -92,15 +95,17 @@ final class PlaybackModel: ObservableObject {
                 let url: URL
                 if resource.headers.isEmpty { nextProxy = nil; url = resource.url }
                 else {
-                    let created = MediaHTTPProxy(origin: resource.url, headers: resource.headers)
+                    let created = MediaHTTPProxy(origin: resource.url, headers: resource.headers, exposure: useLANProxy ? .localNetwork : .loopback)
                     do { url = try await created.start() }
                     catch { await created.stop(); throw error }
                     nextProxy = created
                 }
                 guard !Task.isCancelled, token == expected else { await nextProxy?.stop(); return }
+                if nextProxy != nil && useLANProxy && !allowLANProxy { await nextProxy?.stop(); throw CancellationError() }
                 do { try play(url: url, episode: episode, position: resume?(episode) ?? 0) }
                 catch { await nextProxy?.stop(); throw error }
-                player.allowsExternalPlayback = nextProxy == nil
+                usingLANProxy = nextProxy != nil && useLANProxy
+                player.allowsExternalPlayback = nextProxy == nil || useLANProxy
                 let previous = proxy
                 proxy = nextProxy
                 await previous?.stop()
@@ -166,7 +171,13 @@ final class PlaybackModel: ObservableObject {
         let seconds = player.currentTime().seconds
         if let currentEpisode, player.currentItem != nil, seconds.isFinite { onProgress?(currentEpisode, seconds) }
     }
+    func setLANProxy(_ enabled: Bool) {
+        allowLANProxy = enabled
+        UserDefaults.standard.set(enabled, forKey: "CatTV.allowLANProxy")
+        if !enabled && usingLANProxy { stop() }
+    }
     func stop() {
+        usingLANProxy = false
         saveProgress()
         task?.cancel(); token = UUID(); resolving = false
         sniffer.cancel()

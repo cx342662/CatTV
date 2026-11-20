@@ -20,7 +20,7 @@
 | 后台音频、锁屏 | PlaybackService、MusicSessionDelegate | 应用级 PlaybackModel、MPRemoteCommandCenter | 播放会话、锁屏命令、打断/耳机拔出处理；无真机验收 |
 | 画中画 | Android PiP 逻辑 | AVPlayerViewController | 已启用系统 PiP；返回页面恢复及系统回收待真机测试 |
 | 全屏、旋转 | DetailActivity、VideoOrientation、ui/player | AVKit 系统全屏、声明横竖屏 | 未完成安卓按钮位置、方向策略及自定义手势逐项对齐 |
-| AirPlay | Android 投屏为 DLNA 路径，不是 AirPlay | AVPlayer 外部播放 | 直接地址开关已启用；需要本地请求头代理时关闭，接收端不可访问手机 loopback |
+| AirPlay | Android 投屏为 DLNA 路径，不是 AirPlay | AVPlayer 外部播放 | 直接地址开关已启用；默认 loopback 代理关闭外部播放；另有用户主动开启的局域网 IPv4 代理路径，权限/接收端待真机验收 |
 | 定时退出 | PlaybackStopTimerState、PlaybackStopTimerSheet | PlaybackModel timer | 定时停止并释放音频会话；后台长时间运行待验收 |
 | 媒体徽章 | MediaBadges、MediaBadgePackParser、MediaBadgeSettings | MediaBadgeMatcher、BadgeStore | 内置规则及 HDR 分组优先级有测试；包导入/持久化接线；SVG 图片回退文字，RE2 与 ICU 规则差异待对照 |
 | 二维码 | Android ZXing、配置中心 | VisionKit、CoreImage | 配置 URL 扫描、展示、分享及相机错误处理；没有真机相机验证 |
@@ -32,12 +32,12 @@
 - **JAR 爬虫**：SpiderLoader/JarLoader 通过 Android/JVM 动态加载类，并依赖 Android Context、宿主 Java 类型和字节码签名。Swift/AVKit 无此 ABI，不能打包 JAR 后直接运行。可行替代是逐源原生适配，或用户自控兼容服务输出 type=4；本分支尚未提供该服务，不能声称已兼容。
 - **QuickJS 爬虫**：现有 JsLoader 不只是执行一段 JavaScript，还提供模块、网络、HTML 解析和原生桥。WebMediaSniffer 是网页解析器，不能替代 QuickJS 爬虫。需要移植运行时及桥接契约并验证依赖许可证，目前未完成。
 - **Python 爬虫**：pyramid/Chaquopy 与 Android 宿主及 Java 桥相连。没有将 CPython 与对应桥移植到 iOS，不能把原 py 文件视作已支持。
-- **解析器集合**：root parses 的并行 JSON 解析、解析器切换、扩展 cat_ext、特定站点点击脚本/规则尚未完全移植。当前 playUrl 与 type=4 parse/jx 可路由至 WKWebView，但并非完整解析器实现。
+- **解析器集合**：root parses 已实现 type=1 并发 JSON 解析、type=0 网页回退/选择与 cat_ext 请求头。type=2/3 聚合解析、特定站点点击脚本/规则尚未完成；当前实现不是完整解析器兼容。
 - **播放器其他内核/协议**：Media3/FFmpeg、IJK、RTMP/RTSP、DASH、蓝光 ISO/m2ts、软件解码和平台特有画面效果没有由 AVPlayer 完整替代。若引入额外内核，需要单独审计其版本、构建链与许可；当前没有把未经审计的二进制加进 IPA。
 - **其他入口**：直播/EPG、音乐/歌词、弹幕、独立字幕管理、TMDB/Douban 衍生信息、WebDAV/SMB、电视遥控/局域网配置服务、预加载、画面增强和完整主题设置尚未逐项移植，不能省略后宣称 Android 等价完整版。
 
 ## 平台限制与替代方案
 
-代理媒体的 AirPlay 需要接收器可达且经过授权的网络端点，不能传入 127.0.0.1。后续方案需要用户选择的局域网代理或服务端中继，并验证请求头、密钥和令牌的作用域。当前保持关闭，避免显示成功后实际无法播放。
+代理媒体默认只监听 127.0.0.1。现有可选局域网模式要求用户主动开启，监听局域网接口、选取 Wi-Fi/有线 IPv4、使用不透明随机路由，并在关闭时停止相关播放。此模式尚未验证真实 AirPlay 接收器，IPv6-only 网络和热点接口尚未支持。
 
 没有苹果设备不影响云端编译和模拟器测试，但相机、后台系统策略、锁屏、AirPlay、PiP 与 IPA 重签安装仍需后续真机验收。

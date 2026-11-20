@@ -3,6 +3,8 @@ import Network
 
 public actor MediaHTTPProxy {
     private let origin: URL
+    public nonisolated let exposure: MediaProxyExposure
+    private var advertisedHost = "127.0.0.1"
     private let headers: [String: String]
     private let session: URLSession
     private let queue = DispatchQueue(label: "com.cattv.ios.media-proxy", qos: .userInitiated)
@@ -12,16 +14,19 @@ public actor MediaHTTPProxy {
     private var reverseRoutes: [URL: String] = [:]
     private var connections: [UUID: NWConnection] = [:]
     private var tasks: [UUID: Task<Void, Never>] = [:]
-    public init(origin: URL, headers: [String: String], session: URLSession? = nil) {
+    public init(origin: URL, headers: [String: String], session: URLSession? = nil, exposure: MediaProxyExposure = .loopback) {
         self.origin = origin
+        self.exposure = exposure
         self.headers = headers
         let configuration = URLSessionConfiguration.ephemeral
         configuration.timeoutIntervalForRequest = 30
         self.session = session ?? URLSession(configuration: configuration)
     }
     public func start() async throws -> URL {
+        if exposure == .loopback { advertisedHost = "127.0.0.1" }
+        else { advertisedHost = try LocalNetworkAddress.ipv4() }
         let parameters = NWParameters.tcp
-        parameters.requiredLocalEndpoint = .hostPort(host: "127.0.0.1", port: .any)
+        parameters.requiredLocalEndpoint = .hostPort(host: NWEndpoint.Host(exposure == .loopback ? "127.0.0.1" : "0.0.0.0"), port: .any)
         let server = try NWListener(using: parameters, on: .any)
         listener = server
         server.newConnectionHandler = { [weak self] connection in
@@ -61,7 +66,7 @@ public actor MediaHTTPProxy {
             routes[path] = url
             reverseRoutes[url] = path
         }
-        guard let local = URL(string: "http://127.0.0.1:\(port)/\(path)") else { throw SourceError.invalidURL }
+        guard let local = URL(string: "http://\(advertisedHost):\(port)/\(path)") else { throw SourceError.invalidURL }
         return local
     }
     private func accept(_ connection: NWConnection) {
