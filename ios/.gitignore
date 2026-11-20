@@ -1,0 +1,6 @@
+.build/
+build/
+CatTV.xcodeproj/
+App/Info.plist
+*.xcuserstate
+xcuserdata/

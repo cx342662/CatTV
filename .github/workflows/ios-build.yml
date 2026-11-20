@@ -1,0 +1,43 @@
+name: iOS build and unsigned package
+on:
+  push:
+    branches: [ios/native-port]
+    paths: ['ios/**', '.github/workflows/ios-build.yml']
+  workflow_dispatch:
+  pull_request:
+    paths: ['ios/**', '.github/workflows/ios-build.yml']
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test core
+        working-directory: ios
+        run: swift test
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate project
+        working-directory: ios
+        run: xcodegen generate
+      - name: Compile simulator
+        run: xcodebuild -project ios/CatTV.xcodeproj -scheme CatTV -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath ios/build/simulator CODE_SIGNING_ALLOWED=NO build
+      - name: Compile unsigned device Release
+        run: xcodebuild -project ios/CatTV.xcodeproj -scheme CatTV -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath ios/build/device CODE_SIGNING_ALLOWED=NO build
+      - name: Package unsigned IPA
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ios/build/package/Payload
+          cp -R ios/build/device/Build/Products/Release-iphoneos/CatTV.app ios/build/package/Payload/
+          cd ios/build/package
+          /usr/bin/ditto -c -k --keepParent Payload ../CatTV-unsigned.ipa
+          shasum -a 256 ../CatTV-unsigned.ipa > ../CatTV-unsigned.ipa.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CatTV-iOS-unsigned
+          path: |
+            ios/build/CatTV-unsigned.ipa
+            ios/build/CatTV-unsigned.ipa.sha256
+          if-no-files-found: error

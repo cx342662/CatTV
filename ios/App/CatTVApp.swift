@@ -1,0 +1,176 @@
+import SwiftUI
+import CatTVCore
+
+@main
+struct CatTVApp: App {
+    @StateObject private var library = LibraryModel()
+    @StateObject private var userLibrary = UserLibrary()
+    var body: some Scene {
+        WindowGroup {
+            RootView().environmentObject(library).environmentObject(userLibrary)
+                .alert("提示", isPresented: Binding(get: { library.error != nil }, set: { if !$0 { library.error = nil } })) {
+                    Button("确定") { library.error = nil }
+                } message: { Text(library.error ?? "") }
+        }
+    }
+}
+struct RootView: View {
+    @EnvironmentObject var library: LibraryModel
+    @State private var search = ""
+    var body: some View {
+        TabView {
+            NavigationStack {
+                ScrollView {
+                    VStack(spacing: 12) {
+                        if let config = library.configuration {
+                            Menu {
+                                ForEach(config.sites) { site in Button(site.name) { library.select(site) } }
+                            } label: { Label(library.site?.name ?? "选择影视源", systemImage: "chevron.down") }
+                        }
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack {
+                                Button("首页") { library.load() }
+                                ForEach(library.categories) { category in
+                                    Button(category.name) { library.load(category: category.id) }
+                                }
+                            }.buttonStyle(.bordered).padding(.horizontal, 16)
+                        }
+                        if library.busy { ProgressView().padding() }
+                        if library.configuration == nil {
+                            Text("请在设置的配置中心导入你的影视源配置").foregroundStyle(.secondary).padding(24)
+                        } else if !library.busy && library.videos.isEmpty {
+                            Text("暂无内容，请切换分类或影视源").foregroundStyle(.secondary).padding(24)
+                        }
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 16) {
+                            ForEach(library.videos) { video in
+                                NavigationLink { DetailView(summary: video, source: library.site) } label: {
+                                    VStack(alignment: .leading, spacing: 5) {
+                                        AsyncImage(url: URL(string: video.poster)) { image in
+                                            image.resizable().scaledToFill()
+                                        } placeholder: { Rectangle().fill(Color.secondary.opacity(0.15)).overlay(Image(systemName: "film")) }
+                                        .aspectRatio(2 / 3, contentMode: .fit).clipped().clipShape(RoundedRectangle(cornerRadius: 16))
+                                        Text(video.name).font(.system(size: 13)).lineLimit(1)
+                                        Text(video.remarks).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                                    }
+                                }.buttonStyle(.plain)
+                            }
+                        }.padding(.horizontal, 16)
+                    }
+                }.navigationTitle("CatTV").navigationBarTitleDisplayMode(.inline)
+                    .searchable(text: $search, prompt: "搜索影视")
+                    .onSubmit(of: .search) { library.load(search: search) }
+                    .refreshable { library.load() }
+                    .task { library.load() }
+            }.tabItem { Label("首页", image: "ic_tab_home") }
+            NavigationStack { SavedLibraryView(following: false) }.tabItem { Label("记录", image: "ic_tab_records") }
+            NavigationStack { SavedLibraryView(following: true) }.tabItem { Label("追剧", image: "ic_tab_following") }
+            NavigationStack { ConfigurationView() }.tabItem { Label("我的", image: "ic_tab_mine") }
+        }
+    }
+}
+struct ConfigurationView: View {
+    @EnvironmentObject var library: LibraryModel
+    var body: some View {
+        Form {
+            Section("配置中心") {
+                TextField("配置地址", text: $library.configurationURL).keyboardType(.URL)
+                    .textInputAutocapitalization(.never).autocorrectionDisabled()
+                Button("导入配置") { Task { await library.importConfiguration() } }.disabled(library.busy)
+            }
+            Section("影视源") {
+                ForEach(library.configuration?.sites ?? []) { site in
+                    Button { library.select(site) } label: {
+                        HStack { Text(site.name); Spacer(); if site.id == library.site?.id { Image(systemName: "checkmark") } }
+                    }
+                }
+            }
+        }.navigationTitle("设置")
+    }
+}
+struct DetailView: View {
+    let summary: Video
+    let source: SourceSite?
+    @EnvironmentObject var userLibrary: UserLibrary
+    @EnvironmentObject var library: LibraryModel
+    @StateObject private var playback = PlaybackModel()
+    @State private var video: Video?
+    @State private var lineIndex = 0
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                PlayerHost(player: playback.player).frame(height: 220).background(.black)
+                VStack(alignment: .leading, spacing: 8) {
+                    Text((video ?? summary).name).font(.title3.bold())
+                    Text((video ?? summary).remarks).foregroundStyle(.secondary)
+                    Text((video ?? summary).content).font(.subheadline).textSelection(.enabled)
+                }.padding(16).frame(maxWidth: .infinity, alignment: .leading).background(.thinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                if let video {
+                    if let source {
+                        Button(userLibrary.isFollowing(source: source, video: video) ? "取消追剧" : "追剧") { userLibrary.toggleFollowing(source: source, video: video) }
+                    }
+                    Text("线路").font(.headline)
+                    ScrollView(.horizontal) {
+                        HStack {
+                            ForEach(video.lines) { line in
+                                Button(line.name) { lineIndex = line.id }.buttonStyle(.bordered)
+                            }
+                        }
+                    }
+                    Text("选集").font(.headline)
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 85))]) {
+                        ForEach(video.lines.first(where: { $0.id == lineIndex })?.episodes ?? []) { episode in
+                            Button(episode.name) {
+                                do {
+                                    if let source {
+                                        try playback.play(episode: episode, position: userLibrary.resumePosition(source: source, video: video, episode: episode)) { position in
+                                            userLibrary.record(source: source, video: video, episode: episode, position: position)
+                                        }
+                                    }
+                                } catch { library.error = error.localizedDescription }
+                            }.buttonStyle(.bordered)
+                        }
+                    }
+                    Menu("定时退出播放") {
+                        ForEach([15, 30, 60, 90], id: \.self) { minutes in
+                            Button("\(minutes) 分钟") { playback.setStopTimer(minutes: minutes) }
+                        }
+                        Button("取消定时") { playback.setStopTimer(minutes: nil) }
+                    }
+                }
+            }.padding(6)
+        }.navigationBarTitleDisplayMode(.inline)
+            .task {
+                do { video = try await library.detail(summary, source: source) }
+                catch is CancellationError {} catch { library.error = error.localizedDescription }
+            }
+            .onReceive(userLibrary.$failure) { if let message = $0 { library.error = message } }
+            .onReceive(playback.$failure) { if let message = $0 { library.error = message } }
+            .onDisappear { playback.stop() }
+    }
+}
+
+struct SavedLibraryView: View {
+    let following: Bool
+    @EnvironmentObject var userLibrary: UserLibrary
+    var body: some View {
+        List {
+            let entries = following ? userLibrary.following : userLibrary.history
+            if entries.isEmpty { Text(following ? "暂无追剧" : "暂无播放记录").foregroundStyle(.secondary) }
+            ForEach(entries) { entry in
+                NavigationLink {
+                    DetailView(summary: entry.video, source: entry.source)
+                } label: {
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text(entry.video.name)
+                        Text(entry.source.name).font(.caption).foregroundStyle(.secondary)
+                        if !following { Text("播放至 \(Int(entry.position)) 秒").font(.caption).foregroundStyle(.secondary) }
+                    }
+                }
+            }.onDelete { offsets in
+                if following {
+                    for offset in offsets { let entry = entries[offset]; userLibrary.toggleFollowing(source: entry.source, video: entry.video) }
+                } else { userLibrary.removeHistory(at: offsets) }
+            }
+        }.navigationTitle(following ? "追剧" : "记录")
+    }
+}

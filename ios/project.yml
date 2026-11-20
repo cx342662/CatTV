@@ -1,0 +1,45 @@
+name: CatTV
+options:
+  deploymentTarget:
+    iOS: '16.0'
+packages:
+  CatTVCore:
+    path: .
+settings:
+  base:
+    SWIFT_VERSION: '5.0'
+    MARKETING_VERSION: '0.1.0'
+    CURRENT_PROJECT_VERSION: '1'
+targets:
+  CatTV:
+    type: application
+    platform: iOS
+    sources: [App]
+    dependencies:
+      - package: CatTVCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.cattv.ios
+        TARGETED_DEVICE_FAMILY: '1,2'
+        GENERATE_INFOPLIST_FILE: NO
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: CatTV
+        UILaunchScreen: {}
+        UIBackgroundModes: [audio]
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+schemes:
+  CatTV:
+    build:
+      targets:
+        CatTV: all
