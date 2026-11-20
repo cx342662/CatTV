@@ -47,7 +47,28 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Restore existing CatTV release signing key
+        env:
+          CATTV_KEYSTORE_BASE64: ${{ secrets.CATTV_KEYSTORE_BASE64 }}
+          CATTV_KEY_ALIAS: ${{ secrets.CATTV_KEY_ALIAS }}
+          CATTV_STORE_PASSWORD: ${{ secrets.CATTV_STORE_PASSWORD }}
+          CATTV_KEY_PASSWORD: ${{ secrets.CATTV_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$CATTV_KEYSTORE_BASE64"
+          test -n "$CATTV_KEY_ALIAS"
+          test -n "$CATTV_STORE_PASSWORD"
+          test -n "$CATTV_KEY_PASSWORD"
+          printf '%s' "$CATTV_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/cattv-release.jks"
+          chmod 600 "$RUNNER_TEMP/cattv-release.jks"
+          keytool -list -keystore "$RUNNER_TEMP/cattv-release.jks" -storepass "$CATTV_STORE_PASSWORD" -alias "$CATTV_KEY_ALIAS" >/dev/null
+
       - name: Run unit tests and assemble mobile debug and Release APKs
+        env:
+          ORG_GRADLE_PROJECT_RELEASE_STORE_FILE: ${{ runner.temp }}/cattv-release.jks
+          ORG_GRADLE_PROJECT_RELEASE_STORE_PASSWORD: ${{ secrets.CATTV_STORE_PASSWORD }}
+          ORG_GRADLE_PROJECT_RELEASE_KEY_ALIAS: ${{ secrets.CATTV_KEY_ALIAS }}
+          ORG_GRADLE_PROJECT_RELEASE_KEY_PASSWORD: ${{ secrets.CATTV_KEY_PASSWORD }}
         run: |
           set -euo pipefail
           echo "Validating commit: $GITHUB_SHA"
@@ -55,6 +76,9 @@ jobs:
           ./gradlew :app:testDebugUnitTest :app:assembleDebug :app:assembleRelease --no-daemon --stacktrace
 
       - name: Verify APK package and ABI
+        env:
+          CATTV_KEY_ALIAS: ${{ secrets.CATTV_KEY_ALIAS }}
+          CATTV_STORE_PASSWORD: ${{ secrets.CATTV_STORE_PASSWORD }}
         run: |
           set -euo pipefail
           APK="$(find app/build/outputs/apk/debug -type f -name '*.apk' | head -n1)"
@@ -67,6 +91,18 @@ jobs:
           "$APKSIGNER" verify --verbose --print-certs "$APK" | tee "$RUNNER_TEMP/apk-signature.txt"
           cp "$RUNNER_TEMP/apk-signature.txt" app/build/outputs/apk/
           cp "$RUNNER_TEMP/badging.txt" app/build/outputs/apk/
+          RELEASE_APK="app/build/outputs/apk/release/AVBox_release.apk"
+          test -s "$RELEASE_APK"
+          "$AAPT" dump badging "$RELEASE_APK" > app/build/outputs/apk/release-badging.txt
+          grep -q "name='com.cattv.mobile'" app/build/outputs/apk/release-badging.txt
+          "$APKSIGNER" verify --verbose --print-certs "$RELEASE_APK" | tee app/build/outputs/apk/release-signature.txt
+          KEY_CERT_SHA="$(keytool -exportcert -keystore "$RUNNER_TEMP/cattv-release.jks" -alias "$CATTV_KEY_ALIAS" -storepass "$CATTV_STORE_PASSWORD" 2>/dev/null | sha256sum | awk '{print $1}')"
+          APK_CERT_SHA="$(sed -n 's/.*Signer #1 certificate SHA-256 digest: //p' app/build/outputs/apk/release-signature.txt | head -n1 | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          test "$KEY_CERT_SHA" = "$APK_CERT_SHA"
+          unzip -Z1 "$RELEASE_APK" > "$RUNNER_TEMP/release-files.txt"
+          grep -q '^lib/arm64-v8a/' "$RUNNER_TEMP/release-files.txt"
+          if grep -E '^lib/(armeabi-v7a|x86|x86_64)/' "$RUNNER_TEMP/release-files.txt"; then exit 1; fi
+          if grep -q '^assets/media-badges/' "$RUNNER_TEMP/release-files.txt"; then echo "Unexpected embedded badge images"; exit 1; fi
           echo "APK=$APK" >> "$GITHUB_ENV"
 
       - name: Upload test APK
@@ -76,7 +112,8 @@ jobs:
           path: |
             app/build/outputs/apk/debug/*.apk
             app/build/outputs/apk/release/*.apk
-            app/build/outputs/apk/apk-signature.txt
+            app/build/outputs/apk/*-signature.txt
+            app/build/outputs/apk/release-badging.txt
             app/build/outputs/apk/badging.txt
             app/build/test-results/testDebugUnitTest/*.xml
           if-no-files-found: error
