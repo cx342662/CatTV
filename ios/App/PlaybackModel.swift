@@ -6,6 +6,7 @@ import CatTVCore
 @MainActor
 final class PlaybackModel: ObservableObject {
     let player = AVPlayer()
+    let sniffer = WebMediaSniffer()
     @Published private(set) var failure: String?
     @Published private(set) var title = ""
     @Published private(set) var episodeName = ""
@@ -80,7 +81,8 @@ final class PlaybackModel: ObservableObject {
         player.pause()
         task = Task {
             do {
-                let resource = try await resolver.resolveResource(site: source, episode: episode, line: line.name)
+                var resource = try await resolver.resolveResource(site: source, episode: episode, line: line.name)
+                if resource.requiresWebParsing { resource = try await sniffer.sniff(resource, timeout: source.timeout ?? 30) }
                 guard !Task.isCancelled, token == expected else { return }
                 let nextProxy: MediaHTTPProxy?
                 let url: URL
@@ -157,6 +159,7 @@ final class PlaybackModel: ObservableObject {
     func stop() {
         saveProgress()
         task?.cancel(); token = UUID(); resolving = false
+        sniffer.cancel()
         let previousProxy = proxy; proxy = nil
         Task { await previousProxy?.stop() }
         if let timeObserver { player.removeTimeObserver(timeObserver); self.timeObserver = nil }

@@ -11,6 +11,7 @@ struct CatTVApp: App {
         WindowGroup {
             RootView().environmentObject(library).environmentObject(userLibrary).environmentObject(playback).environmentObject(badges)
                 .onReceive(badges.$failure) { if let message = $0 { library.error = message } }
+                .background(WebSnifferHost(sniffer: playback.sniffer).frame(width: 1, height: 1).opacity(0.001).allowsHitTesting(false).accessibilityHidden(true))
                 .onReceive(playback.$failure) { if let message = $0 { library.error = message } }
                 .alert("提示", isPresented: Binding(get: { library.error != nil }, set: { if !$0 { library.error = nil } })) {
                     Button("确定") { library.error = nil }
