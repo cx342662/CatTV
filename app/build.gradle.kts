@@ -13,7 +13,7 @@ android {
     ndkVersion = libs.versions.ndk.get()
 
     defaultConfig {
-        applicationId = providers.gradleProperty("CATTV_APPLICATION_ID").getOrElse("com.cattv.mobile")
+        applicationId = providers.gradleProperty("CATTV_APPLICATION_ID").getOrElse("com.github.avbox.osc")
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
         // Release workflow can override the packaged version.
