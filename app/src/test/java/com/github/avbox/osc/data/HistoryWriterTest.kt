@@ -7,6 +7,17 @@ import org.junit.Test
 class HistoryWriterTest {
 
     @Test
+    fun resolveWriteKey_keepsExplicitSourceWhenVodHasNoSource() {
+        assertEquals("session", HistoryWriter.resolveWriteKey("session", VodInfo()))
+    }
+
+    @Test
+    fun resolveWriteKey_missingSourcesReturnEmptyKey() {
+        assertEquals("", HistoryWriter.resolveWriteKey("", VodInfo()))
+    }
+
+
+    @Test
     fun resolveWriteKey_prefersSessionKeyOverVodSource() {
         val info = VodInfo(sourceKey = "剧圈99")
         assertEquals("当前源", HistoryWriter.resolveWriteKey("当前源", info))

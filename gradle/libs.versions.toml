@@ -53,6 +53,7 @@ shapes = "1.2.1"
 capsule = "2.1.3"
 
 [libraries]
+androidx-sqlite-framework = { group = "androidx.sqlite", name = "sqlite-framework", version.ref = "androidxSqlite" }
 nanohttpd = { group = "org.nanohttpd", name = "nanohttpd", version.ref = "nanohttpd" }
 cling-core = { group = "org.fourthline.cling", name = "cling-core", version.ref = "cling" }
 cling-support = { group = "org.fourthline.cling", name = "cling-support", version.ref = "cling" }
