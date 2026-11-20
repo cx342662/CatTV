@@ -1,22 +1,27 @@
-import AppKit
+import CoreGraphics
+import ImageIO
 import Foundation
+import UniformTypeIdentifiers
 
 let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
 let source = root.appendingPathComponent("app/src/main/res/drawable/cattv_launcher_foreground.png")
 let destination = root.appendingPathComponent("ios/App/Assets.xcassets/AppIcon.appiconset/AppIcon.png")
-guard let image = NSImage(contentsOf: source),
-      let bitmap = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 1024, pixelsHigh: 1024, bitsPerSample: 8, samplesPerPixel: 3, hasAlpha: false, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0),
-      let context = NSGraphicsContext(bitmapImageRep: bitmap) else {
-    fatalError("Cannot load Android artwork or create iOS app icon")
+guard let sourceImage = CGImageSourceCreateWithURL(source as CFURL, nil),
+      let image = CGImageSourceCreateImageAtIndex(sourceImage, 0, nil) else {
+    fatalError("Cannot read Android artwork: \(source.path)")
 }
-NSGraphicsContext.saveGraphicsState()
-NSGraphicsContext.current = context
-NSColor.white.setFill()
-let rect = NSRect(x: 0, y: 0, width: 1024, height: 1024)
-rect.fill()
-image.draw(in: rect, from: .zero, operation: .sourceOver, fraction: 1)
-NSGraphicsContext.restoreGraphicsState()
-guard let png = bitmap.representation(using: .png, properties: [:]) else {
-    fatalError("Cannot encode iOS app icon")
+guard let colorSpace = CGColorSpace(name: CGColorSpace.sRGB),
+      let context = CGContext(data: nil, width: 1024, height: 1024, bitsPerComponent: 8, bytesPerRow: 0, space: colorSpace, bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue) else {
+    fatalError("Cannot create opaque RGB icon context")
 }
-try png.write(to: destination, options: .atomic)
+let rect = CGRect(x: 0, y: 0, width: 1024, height: 1024)
+context.setFillColor(CGColor(gray: 1, alpha: 1))
+context.fill(rect)
+context.interpolationQuality = .high
+context.draw(image, in: rect)
+guard let output = context.makeImage(),
+      let encoder = CGImageDestinationCreateWithURL(destination as CFURL, UTType.png.identifier as CFString, 1, nil) else {
+    fatalError("Cannot create PNG output")
+}
+CGImageDestinationAddImage(encoder, output, nil)
+guard CGImageDestinationFinalize(encoder) else { fatalError("Cannot write iOS app icon") }
