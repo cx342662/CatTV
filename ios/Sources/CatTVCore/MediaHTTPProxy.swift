@@ -1,8 +1,7 @@
 import Foundation
 import Network
-import CatTVCore
 
-actor MediaHTTPProxy {
+public actor MediaHTTPProxy {
     private let origin: URL
     private let headers: [String: String]
     private let session: URLSession
@@ -13,14 +12,14 @@ actor MediaHTTPProxy {
     private var reverseRoutes: [URL: String] = [:]
     private var connections: [UUID: NWConnection] = [:]
     private var tasks: [UUID: Task<Void, Never>] = [:]
-    init(origin: URL, headers: [String: String]) {
+    public init(origin: URL, headers: [String: String], session: URLSession? = nil) {
         self.origin = origin
         self.headers = headers
         let configuration = URLSessionConfiguration.ephemeral
         configuration.timeoutIntervalForRequest = 30
-        session = URLSession(configuration: configuration)
+        self.session = session ?? URLSession(configuration: configuration)
     }
-    func start() async throws -> URL {
+    public func start() async throws -> URL {
         let parameters = NWParameters.tcp
         parameters.requiredLocalEndpoint = .hostPort(host: "127.0.0.1", port: .any)
         let server = try NWListener(using: parameters, on: .any)
@@ -45,7 +44,7 @@ actor MediaHTTPProxy {
         port = assigned
         return try address(for: origin)
     }
-    func stop() {
+    public func stop() {
         listener?.cancel(); listener = nil
         for task in tasks.values { task.cancel() }
         for connection in connections.values { connection.cancel() }
@@ -70,7 +69,10 @@ actor MediaHTTPProxy {
         let id = UUID()
         connection.start(queue: queue)
         connections[id] = connection
-        tasks[id] = Task { [weak self] in await self?.serve(connection, id: id) }
+        tasks[id] = Task { [weak self] in
+            guard let self else { return }
+            await self.serve(connection, id: id)
+        }
     }
     private func serve(_ connection: NWConnection, id: UUID) async {
         defer { connection.cancel(); connections.removeValue(forKey: id); tasks.removeValue(forKey: id) }
@@ -91,6 +93,7 @@ actor MediaHTTPProxy {
                 if ["authorization", "cookie"].contains(name.lowercased()), url.host != origin.host { continue }
                 if HeaderPolicy.isSendable(name: name, value: value) { request.setValue(value, forHTTPHeaderField: name) }
             }
+            request.setValue("identity", forHTTPHeaderField: "Accept-Encoding")
             if url.pathExtension.lowercased() != "m3u8" {
                 for line in lines.dropFirst() {
                     let pair = line.split(separator: ":", maxSplits: 1)
