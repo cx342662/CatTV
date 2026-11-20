@@ -33,3 +33,5 @@ if not tests:
     lines.append("- No JUnit results found; inspect the build log.")
 with open(os.environ.get("GITHUB_STEP_SUMMARY", "quality-summary.md"), "a", encoding="utf-8") as output:
     output.write("\n".join(lines) + "\n")
+
+print("\n".join(lines))

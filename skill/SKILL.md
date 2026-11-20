@@ -95,3 +95,4 @@ Select-String -Path skill\history\features.md -Pattern '配置管理页' -Contex
 - **崩溃标记只由"可能与源有关"的崩溃写入**（`BootGuard.looksSourceRelated` 的白名单 `IGNORABLE_FRAME_PREFIXES` 是唯一旋钮；无帧/判不出按"有关"）：平台层 + 宿主全包（`com.github.avbox.osc.`）算无关，`com.github.catvod.` 一律算有关；放宽到 catvod 等于让坏源重新把应用锁进启动崩溃。**标记为空时不再清零 `BOOT_LOADING_COUNT`**（2026-10-21 推翻旧口径），改为保留计数 + 读 `ApplicationExitInfo` 的 `REASON_CRASH_NATIVE`（8 秒窗口，只认 native，Java 崩溃仍走白名单）；停用粒度是 jar 不是订阅（spec §6.13）。
 - **契约层（`com.github.catvod.**`）迁移后签名必须逐成员不变**：`open`/`@JvmStatic`/`@JvmField`/`@JvmOverloads` 只是手段，判据是 `javap -p -s` 输出等价；漏一处表现为"启动正常、点开该类源才崩"（细则见 `skill/avbox-kotlin-migration-spec.md` §3.2）。
 - **交给爬虫的 proxy 参数值必须全 ASCII**（`JarLoader.proxyInvoke` 调 jar 前从副本剔除客户端专用参数 `siteKey`）：`/proxy` 的 params 会把播放器请求头并进来，第三方 jar 会把它**当 header 原样透传给上游**，值里有中文（如中文站点 key）即被 OkHttp 以 `Unexpected char` 拒绝、最终兜底成 HTTP 500，表现为"网盘源播放出错"且 logcat 无任何 App 日志（spec §6.12）。
+技术审计与协议设计：`../docs/CATTV_TECHNICAL_AUDIT.md`（证据、风险、验证边界与后续任务）。
