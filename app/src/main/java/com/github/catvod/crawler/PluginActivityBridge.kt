@@ -7,10 +7,8 @@ import android.os.Looper
 import com.github.avbox.osc.util.AppLog
 import com.github.avbox.osc.ui.MainActivity
 import java.lang.ref.WeakReference
-import java.lang.reflect.Field
 import java.lang.reflect.Modifier
 import java.util.LinkedHashSet
-import java.util.concurrent.CopyOnWriteArrayList
 
 /**
  * Keeps CatVod extensions bound to the currently visible host Activity.
@@ -31,11 +29,7 @@ object PluginActivityBridge {
             val field = Application::class.java.getDeclaredField("mActivityLifecycleCallbacks")
             field.isAccessible = true
             val value = field.get(application)
-            when (value) {
-                is List<*> -> synchronized(value) { value.filterNotNull().toList() }
-                is CopyOnWriteArrayList<*> -> value.filterNotNull().toList()
-                else -> null
-            }
+            if (value is List<*>) synchronized(value) { value.filterNotNull().toList() } else null
         } catch (error: Throwable) {
             AppLog.e("PluginActivityBridge", "snapshot lifecycle callbacks failed", error)
             null
@@ -271,7 +265,7 @@ object PluginActivityBridge {
                 invoke("onActivityDestroyed") { delegate.onActivityDestroyed(activity) }
             }
 
-            private inline fun invoke(label: String, block: () -> Unit) {
+            private fun invoke(label: String, block: () -> Unit) {
                 try {
                     block()
                 } catch (error: Throwable) {
