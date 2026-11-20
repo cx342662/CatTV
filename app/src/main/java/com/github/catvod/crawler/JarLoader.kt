@@ -72,6 +72,7 @@ class JarLoader {
 
     fun clear() {
         clearGeneration.incrementAndGet()
+        PluginActivityBridge.clear()
         val stale = ArrayList(spiders.values)
         loaders.clear()
         proxyMethods.clear()
