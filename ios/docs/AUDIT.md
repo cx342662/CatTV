@@ -34,3 +34,13 @@
 - 外层 artifact ZIP SHA256：dd9853d6e6771458a1e4d7aca5116404e12e034fadf9fb4c81ba8300480edf41。内层 IPA 的 SHA256 文件随包提供，两者不能混淆。
 
 此结果未覆盖模拟器启动、界面截图、真实影视源连通性、重签或真机安装。无签名 IPA 不能直接安装。无正式 Release 发布，无 Android/TV 修改。
+
+## 扩展移植批次的验证记录
+
+功能状态以 FEATURE_MATRIX.md 为准。代码不再限于初始 JSON 直连子集，已加入 XML/type=4、完整多配置基础管理、筛选分页、应用级播放会话、二维码、徽章、媒体请求头代理及网页媒体发现。
+
+- c434a15baf0ba47e9f663885cb544bb1b9f1c90f 对应 https://github.com/cx342662/CatTV/actions/runs/44801206103：核心测试、模拟器编译、模拟器导航/无效 JSON 保存 UI 测试、设备 Release、IPA 打包及产物上传均成功。
+- 此后 c42fccd0cf6f7df407708939d569a77c14f2865a 增加真实回环代理测试；核心测试步骤成功，编译/界面测试以其独立工作流为准。
+- 498d1cd6c32b217e1a42f79efdfe56d6ddcb5687 增加 WKWebView 网页媒体发现；对应 https://github.com/cx342662/CatTV/actions/runs/44802055465 的核心测试与模拟器编译已成功，记录本条时 UI 测试仍进行中。
+
+以上都不构成 JAR/JS/Python 爬虫兼容、真实影视源播放、安卓视觉一致性或真机系统功能验收。

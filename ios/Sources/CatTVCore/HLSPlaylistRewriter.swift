@@ -2,7 +2,11 @@ import Foundation
 
 public enum HLSPlaylistRewriter {
     public static func rewrite(_ data: Data, baseURL: URL, map: (URL) throws -> String) throws -> Data {
-        guard data.count <= 2_000_000, let text = String(data: data, encoding: .utf8), text.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("#EXTM3U") else {
+        guard data.count <= 2_000_000, let decoded = String(data: data, encoding: .utf8) else {
+            throw SourceError.invalidConfiguration("HLS 播放列表无效或超过 2 MB")
+        }
+        let text = decoded.hasPrefix("\u{FEFF}") ? String(decoded.dropFirst()) : decoded
+        guard text.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("#EXTM3U") else {
             throw SourceError.invalidConfiguration("HLS 播放列表无效或超过 2 MB")
         }
         let regex = try NSRegularExpression(pattern: #"URI="([^"]+)""#)

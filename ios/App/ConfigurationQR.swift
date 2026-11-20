@@ -11,7 +11,7 @@ struct QRScannerSheet: View {
     var body: some View {
         NavigationStack {
             Group {
-                if authorized && DataScannerViewController.isSupported && DataScannerViewController.isAvailable {
+                if authorized && message == nil && DataScannerViewController.isSupported && DataScannerViewController.isAvailable {
                     QRScanner { result in onResult(result); dismiss() } onFailure: { message = $0 }
                 } else {
                     Text(message ?? "正在检查相机权限").padding()

@@ -23,4 +23,9 @@ final class HLSRewriterTests: XCTestCase {
     func testRejectsHTMLDisguisedAsPlaylist() {
         XCTAssertThrowsError(try HLSPlaylistRewriter.rewrite(Data("<html>error</html>".utf8), baseURL: XCTUnwrap(URL(string: "https://example.invalid/a"))) { $0.absoluteString })
     }
+    func testRemovesUTF8BOMBeforeClassifyingPlaylistLines() throws {
+        let input = Data("\u{FEFF}#EXTM3U\nsegment.ts".utf8)
+        let output = try HLSPlaylistRewriter.rewrite(input, baseURL: XCTUnwrap(URL(string: "https://example.invalid/a/master.m3u8"))) { $0.absoluteString }
+        XCTAssertEqual(String(decoding: output, as: UTF8.self), "#EXTM3U\nhttps://example.invalid/a/segment.ts")
+    }
 }
