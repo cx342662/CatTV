@@ -49,6 +49,7 @@ class MainActivity : BaseActivity() {
     }
 
     override fun onDestroy() {
+        PluginActivityBridge.onActivityDestroyed(this)
         if (activeActivity === this) activeActivity = null
         super.onDestroy()
     }
@@ -118,3 +119,4 @@ class MainActivity : BaseActivity() {
         var activeActivity: MainActivity? = null
     }
 }
+
