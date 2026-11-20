@@ -195,11 +195,13 @@ fun PlaySettingsScreen(onNavigateBack: () -> Unit) {
                 SettingsCard(SettingsCardPosition.MIDDLE) {
                     SettingsSwitchRow(
                         title = stringResource(R.string.settings_background_playback),
+                        leadingIconRes = R.drawable.ic_background_music_cute,
                         checked = PlaybackSettingsState.config.backgroundPlayback,
                         onCheckedChange = { PlaybackSettingsState.backgroundPlayback = it },
                     )
                     SettingsSwitchRow(
                         title = stringResource(R.string.settings_auto_exit_pip),
+                        leadingIconRes = R.drawable.ic_auto_pip_cute,
                         checked = config.autoExitPip,
                         onCheckedChange = { PlaybackSettingsState.autoExitPip = it },
                     )
