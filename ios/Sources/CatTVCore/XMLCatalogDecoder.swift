@@ -41,7 +41,7 @@ private final class XMLCatalogDelegate: NSObject, XMLParserDelegate {
         let value = text.trimmingCharacters(in: .whitespacesAndNewlines)
         if name == "ty", let id = categoryID { categories.append(["type_id": id, "type_name": value]); categoryID = nil }
         if video != nil {
-            let mapping = ["id": "vod_id", "name": "vod_name", "pic": "vod_pic", "note": "vod_remarks", "des": "vod_content"]
+            let mapping = ["id": "vod_id", "name": "vod_name", "pic": "vod_pic", "note": "vod_remarks", "des": "vod_content", "year": "vod_year", "area": "vod_area", "lang": "vod_lang", "type": "type_name", "actor": "vod_actor", "director": "vod_director"]
             if let field = mapping[name] { video?[field] = value }
             if name == "dd" { lines.append((flag, value)) }
             if name == "video" {

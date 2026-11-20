@@ -146,9 +146,14 @@ struct DetailView: View {
                 if playback.resolving { ProgressView("正在解析播放地址") }
                 VStack(alignment: .leading, spacing: 8) {
                     Text((video ?? summary).name).font(.title3.bold())
-                    Text((video ?? summary).remarks).foregroundStyle(.secondary)
+                    let item = video ?? summary
+                    Text([item.year, item.area, item.language, item.genre].filter { !$0.isEmpty && $0 != "0" }.joined(separator: " · ")).font(.subheadline).foregroundStyle(.secondary)
+                    if let source { Text(source.name).font(.caption).padding(.horizontal, 10).padding(.vertical, 4).background(Color.secondary.opacity(0.15), in: Capsule()) }
+                    Text(item.remarks).foregroundStyle(.secondary)
+                    if !item.director.isEmpty { Text("导演：" + item.director).font(.subheadline) }
+                    if !item.actors.isEmpty { Text("演员：" + item.actors).font(.subheadline) }
                     MediaBadgeRow(text: (video ?? summary).name + " " + (video ?? summary).remarks, player: true)
-                    Text((video ?? summary).content).font(.subheadline).textSelection(.enabled)
+                    Text(HTMLSummary.plainText((video ?? summary).content)).font(.subheadline).textSelection(.enabled)
                 }.padding(16).frame(maxWidth: .infinity, alignment: .leading).background(.thinMaterial, in: RoundedRectangle(cornerRadius: 16))
                 if let video {
                     if let source {

@@ -3,11 +3,15 @@ import XCTest
 
 final class CatalogTests: XCTestCase {
     func testNumericIDsAndSeparatedEpisodes() throws {
-        let data = Data(#"{"class":[{"type_id":2,"type_name":"剧集"}],"list":[{"vod_id":123,"vod_name":"测试","vod_play_from":"一线$$$二线","vod_play_url":"第一集$https://example.invalid/1.m3u8#第二集$https://example.invalid/2.m3u8$$$https://example.invalid/3.mp4"}]}"#.utf8)
+        let data = Data(#"{"class":[{"type_id":2,"type_name":"剧集"}],"list":[{"vod_id":123,"vod_name":"测试","vod_year":2026,"vod_area":"中国","vod_actor":"演员甲","vod_director":"导演乙","vod_play_from":"一线$$$二线","vod_play_url":"第一集$https://example.invalid/1.m3u8#第二集$https://example.invalid/2.m3u8$$$https://example.invalid/3.mp4"}]}"#.utf8)
         let response = try JSONDecoder().decode(CatalogResponse.self, from: data)
         XCTAssertEqual(response.categories.first?.id, "2")
         let video = try XCTUnwrap(response.videos.first)
         XCTAssertEqual(video.id, "123")
+        XCTAssertEqual(video.year, "2026")
+        XCTAssertEqual(video.area, "中国")
+        XCTAssertEqual(video.actors, "演员甲")
+        XCTAssertEqual(video.director, "导演乙")
         XCTAssertEqual(video.lines.count, 2)
         XCTAssertEqual(video.lines[0].episodes.map(\.name), ["第一集", "第二集"])
         XCTAssertEqual(video.lines[1].episodes.first?.address, "https://example.invalid/3.mp4")
@@ -26,5 +30,9 @@ final class CatalogTests: XCTestCase {
         } catch SourceError.unsupportedSource(let type) {
             XCTAssertEqual(type, 3)
         } catch { XCTFail("Unexpected error: \(error)") }
+    }
+    func testHTMLSummaryIsTextAndRemovesScriptContents() {
+        let html = "<p>第一行&nbsp;&amp;内容</p><script>privateScript()</script><div>第二行<br>第&#x4E09;行&#33;</div>"
+        XCTAssertEqual(HTMLSummary.plainText(html), "第一行 &内容\n第二行\n第三行!")
     }
 }

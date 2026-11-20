@@ -8,9 +8,16 @@ public struct Video: Codable, Identifiable, Equatable, Sendable {
     public let content: String
     public let playFrom: String
     public let playURL: String
+    public let year: String
+    public let area: String
+    public let language: String
+    public let genre: String
+    public let actors: String
+    public let director: String
     enum CodingKeys: String, CodingKey {
         case id = "vod_id", name = "vod_name", poster = "vod_pic", remarks = "vod_remarks"
         case content = "vod_content", playFrom = "vod_play_from", playURL = "vod_play_url"
+        case year = "vod_year", area = "vod_area", language = "vod_lang", genre = "type_name", actors = "vod_actor", director = "vod_director"
     }
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -22,6 +29,9 @@ public struct Video: Codable, Identifiable, Equatable, Sendable {
         content = try c.decodeIfPresent(String.self, forKey: .content) ?? ""
         playFrom = try c.decodeIfPresent(String.self, forKey: .playFrom) ?? ""
         playURL = try c.decodeIfPresent(String.self, forKey: .playURL) ?? ""
+        func scalar(_ key: CodingKeys) -> String { (try? c.decode(JSONValue.self, forKey: key))?.text ?? "" }
+        year = scalar(.year); area = scalar(.area); language = scalar(.language)
+        genre = scalar(.genre); actors = scalar(.actors); director = scalar(.director)
     }
     public var lines: [PlaybackLine] {
         let names = playFrom.components(separatedBy: "$$$")
