@@ -116,8 +116,26 @@ jobs:
         run: chmod +x gradlew
 
 
-      - name: Compile Android app and run unit tests
-        run: ./gradlew :app:assembleDebug :app:testDebugUnitTest --no-daemon --stacktrace --console=plain
+      - name: Start quality timer
+        run: echo "QUALITY_START=$(date +%s)" >> "$GITHUB_ENV"
+      - name: Compile Android app
+        id: compile
+        run: ./gradlew :app:assembleDebug --no-daemon --stacktrace --console=plain
+      - name: Run unit tests
+        id: tests
+        if: success() || failure()
+        run: ./gradlew :app:testDebugUnitTest --no-daemon --stacktrace --console=plain
+      - name: Android Lint
+        id: lint
+        if: success() || failure()
+        run: ./gradlew :app:lintDebug --no-daemon --stacktrace --console=plain
+      - name: Summarize quality results
+        if: always()
+        env:
+          COMPILE_RESULT: ${{ steps.compile.outcome }}
+        run: |
+          export QUALITY_SECONDS=$(( $(date +%s) - QUALITY_START ))
+          python scripts/quality_report.py
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -126,6 +144,7 @@ jobs:
           path: |
             app/build/reports/tests/
             app/build/test-results/
+            app/build/reports/lint-results-debug.*
           if-no-files-found: warn
   build:
     if: github.event_name == 'workflow_dispatch'
