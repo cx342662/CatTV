@@ -1,6 +1,7 @@
 package com.github.catvod.crawler
 
 import android.content.Context
+import android.app.Application
 import android.os.Environment
 import android.text.TextUtils
 import android.util.Log
@@ -11,6 +12,7 @@ import com.github.avbox.osc.io.FileUtils
 import com.github.avbox.osc.server.ControlManager
 import com.github.avbox.osc.server.RemoteServer
 import com.github.avbox.osc.util.AppContextHolder
+import com.github.catvod.crawler.PluginActivityBridge
 import com.github.avbox.osc.boot.BootGuard
 import com.github.avbox.osc.util.AppLog
 import com.github.avbox.osc.util.MD5
@@ -101,7 +103,10 @@ class JarLoader {
             file.setReadOnly()
             val cachePath = jarDir().absolutePath
             val loader = DexClassLoader(file.absolutePath, cachePath, cachePath, requireNotNull(AppContextHolder.context()) { "app context not ready" }.classLoader)
+            val application = AppContextHolder.context()?.applicationContext as? Application
+            val lifecycleBefore = PluginActivityBridge.snapshotCallbacks(application)
             invokeInit(loader)
+            PluginActivityBridge.onPluginInitialized(loader, application, lifecycleBefore)
             invokeProxy(key, loader)
             invokeDanmaku(key, loader)
             injectProxyPort(loader)
