@@ -286,7 +286,7 @@ internal fun DetailHero(
                         end = HeroContentHorizontalPadding,
                         bottom = HeroFlatBottomPadding,
                     ),
-                horizontalAlignment = Alignment.Start,
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 DetailHeroTitle(
                     vm = vm,
@@ -374,7 +374,7 @@ internal fun DetailHero(
                         end = HeroContentHorizontalPadding,
                         bottom = HeroLogoBottomPadding,
                     ),
-                horizontalAlignment = Alignment.Start,
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 DetailHeroTitle(
                     vm = vm,
@@ -473,7 +473,7 @@ private fun DetailHeroInfoBlock(
             .fillMaxWidth()
             .animateContentSize()
             .clipToBounds(),
-        horizontalAlignment = Alignment.Start,
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         if (metaTail.isNotEmpty()) {
             Text(
@@ -482,12 +482,12 @@ private fun DetailHeroInfoBlock(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 5.dp),
-                textAlign = TextAlign.Start,
+                textAlign = TextAlign.Center,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
         }
-        DetailRatingBadges(ratings, captionColor, alwaysShowDouban = true)
+        DetailRatingBadges(ratings, captionColor, alwaysShowDouban = false)
         if (!descriptionText.isNullOrEmpty()) {
             DetailHeroDescription(
                 text = descriptionText,
@@ -505,7 +505,7 @@ private fun DetailHeroInfoBlock(
                 .then(if (flat) Modifier.widthIn(min = HeroPlayCapsuleMinWidth) else Modifier.fillMaxWidth())
                 .height(HeroPlayCapsuleHeight)
                 .pressScale(playInteraction, PLAYER_PRESS_SCALE)
-                .detailGlass(CircleShape),
+                .detailFrostedSurface(CircleShape),
             colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent, contentColor = captionColor),
             elevation = ButtonDefaults.buttonElevation(),
             shapes = PressMorphButtonShapes,
@@ -556,17 +556,17 @@ internal fun DetailActionRow(
         labels.forEachIndexed { index, label ->
             Column(
                 Modifier.weight(1f).playerPressEffect(onTap = actions[index]),
-                horizontalAlignment = Alignment.Start,
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Box(
                     Modifier.fillMaxWidth().height(44.dp)
-                        .detailGlass(RoundedCornerShape(16.dp)),
+                        .detailFrostedSurface(RoundedCornerShape(16.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(painterResource(icons[index]), null, tint = Color.White, modifier = Modifier.size(24.dp))
                 }
                 Text(stringResource(if (label == R.string.detail_stop_timer && timerDeadline > 0L) R.string.stop_timer_active else label), color = MaterialTheme.colorScheme.onSurface, fontSize = 10.sp,
-                    textAlign = TextAlign.Start, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center, maxLines = 1, overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.padding(top = 5.dp))
             }
         }
@@ -612,7 +612,7 @@ private fun HeroCircleButton(
         modifier = Modifier
             .size(HeroCircleButtonSize)
             .playerPressEffect(onTap = onClick)
-            .detailGlass(CircleShape),
+            .detailFrostedSurface(CircleShape),
         contentAlignment = Alignment.Center,
     ) {
         Icon(
@@ -650,13 +650,12 @@ private fun DetailHeroTitle(vm: DetailViewModel, title: String, altTitle: String
             modifier = Modifier
                 .fillMaxWidth(widthFraction)
                 .height(HeroLogoHeight),
-            contentAlignment = Alignment.CenterStart,
+            contentAlignment = Alignment.Center,
         ) {
             AsyncImage(
                 model = TmdbImages.logoUrl(logo),
                 contentDescription = title,
                 contentScale = ContentScale.Fit,
-                alignment = Alignment.CenterStart,
                 modifier = Modifier.fillMaxSize(),
             )
         }
@@ -667,10 +666,10 @@ private fun DetailHeroTitle(vm: DetailViewModel, title: String, altTitle: String
 private fun DetailHeroTitleText(title: String, color: Color) {
     Text(
         text = title,
-        style = MaterialTheme.typography.headlineLarge,
+        style = MaterialTheme.typography.headlineSmall,
         fontWeight = FontWeight(800),
         color = color,
-        textAlign = TextAlign.Start,
+        textAlign = TextAlign.Center,
         maxLines = 2,
         overflow = TextOverflow.Ellipsis,
         modifier = Modifier.fillMaxWidth(),

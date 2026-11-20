@@ -148,6 +148,15 @@ class DetailActivity : BaseActivity(), PageHost {
             AVBoxTheme(manageStatusBarIcons = false) {
                 SheetHostScaffold {
                     DetailScreen(activity = this, vm = vm)
+                    if (timerSheetOpen.value) {
+                        PlaybackStopTimerSheet(
+                            onDismiss = { timerSheetOpen.value = false },
+                            onApply = { minutes ->
+                                PlaybackService.engine(this).setStopTimer(minutes)
+                                timerSheetOpen.value = false
+                            },
+                        )
+                    }
                 }
             }
         }
@@ -370,59 +379,10 @@ class DetailActivity : BaseActivity(), PageHost {
             .putExtra(Intent.EXTRA_TEXT, text), null))
     }
 
+    private val timerSheetOpen = androidx.compose.runtime.mutableStateOf(false)
+
     fun showPlaybackStopTimer() {
-        val engine = PlaybackService.engine(this)
-        val column = android.widget.LinearLayout(this).apply {
-            orientation = android.widget.LinearLayout.VERTICAL
-            val inset = (24 * resources.displayMetrics.density).toInt()
-            setPadding(inset, inset / 2, inset, inset / 2)
-        }
-        val status = android.widget.TextView(this)
-        val input = android.widget.EditText(this).apply {
-            inputType = android.text.InputType.TYPE_CLASS_NUMBER
-            hint = getString(R.string.stop_timer_minutes)
-            setSingleLine(true)
-        }
-        column.addView(status)
-        column.addView(input)
-        val presets = android.widget.LinearLayout(this)
-        for (minutes in listOf(15, 30, 60, 90)) {
-            presets.addView(android.widget.Button(this).apply {
-                text = minutes.toString()
-                setOnClickListener { input.setText(minutes.toString()) }
-            }, android.widget.LinearLayout.LayoutParams(0, android.view.ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-        }
-        column.addView(presets)
-        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle(R.string.detail_stop_timer).setView(column)
-            .setPositiveButton(R.string.stop_timer_apply, null)
-            .setNeutralButton(R.string.stop_timer_cancel) { _, _ -> engine.setStopTimer(null) }
-            .setNegativeButton(android.R.string.cancel, null).create()
-        dialog.setOnShowListener {
-            dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                val minutes = input.text.toString().toLongOrNull()
-                if (minutes == null || minutes !in 1..1440) {
-                    input.error = getString(R.string.stop_timer_minutes)
-                } else {
-                    engine.setStopTimer(minutes)
-                    dialog.dismiss()
-                }
-            }
-        }
-        val countdown = lifecycleScope.launch {
-            while (true) {
-                val deadline = com.github.avbox.osc.player.PlaybackStopTimerState.deadline.value
-                val remaining = (deadline - android.os.SystemClock.elapsedRealtime()).coerceAtLeast(0L)
-                status.text = if (deadline == 0L) getString(R.string.stop_timer_off) else {
-                    val time = java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT)
-                        .format(java.util.Date(System.currentTimeMillis() + remaining))
-                    getString(R.string.stop_timer_status, remaining / 60000, remaining / 1000 % 60, time)
-                }
-                kotlinx.coroutines.delay(1000)
-            }
-        }
-        dialog.setOnDismissListener { countdown.cancel() }
-        dialog.show()
+        timerSheetOpen.value = true
     }
 
     fun requestDetailPip() {
