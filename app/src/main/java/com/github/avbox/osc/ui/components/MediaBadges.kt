@@ -64,7 +64,9 @@ internal object MediaBadges {
         ?: KV.get(legacyPackKey, "").takeIf { url == KV.get(legacyUrlKey, "") }
         ?: ""
 
-    private fun readLibrary(): Library {
+    private fun readLibrary(): Library = runCatching { readSavedLibrary() }.getOrElse { Library(emptyList(), "") }
+
+    private fun readSavedLibrary(): Library {
         val saved = KV.get<String>(libraryKey)
         if (saved != null) {
             val json = JSONObject(saved)
@@ -82,6 +84,13 @@ internal object MediaBadges {
         imported = rules
         library = value
         revision++
+    }
+
+    private val xinyue by lazy {
+        runCatching {
+            val context = requireNotNull(com.github.avbox.osc.util.AppContextHolder.context())
+            parsePack(context.assets.open("media-badges/xinyue.json").bufferedReader().use { it.readText() })
+        }.getOrDefault(emptyList())
     }
 
     private val builtIn = listOf(
@@ -152,13 +161,15 @@ internal object MediaBadges {
             val raw = item.optString("pattern")
             if (label.isEmpty() || raw.length !in 1..2_000) return@mapNotNull null
             val pattern = runCatching { Pattern.compile(raw, Pattern.CASE_INSENSITIVE) }.getOrNull() ?: return@mapNotNull null
-            val image = item.optString("imageURL").toHttpUrlOrNull()?.takeIf { it.isHttps }?.toString()
+            val rawImage = item.optString("imageURL")
+            val image = if (rawImage.startsWith("file:///android_asset/media-badges/") && !rawImage.contains("..")) rawImage
+                else rawImage.toHttpUrlOrNull()?.takeIf { it.isHttps }?.toString()
             MediaBadgeRule(label, pattern, image, item.optString("groupId").ifBlank { label })
         }
     }
 
     fun match(value: String): List<MediaBadgeRule> =
-        imported.ifEmpty { builtIn }.asSequence().filter { it.pattern.matcher(value.take(240)).find() }
+        imported.ifEmpty { xinyue.ifEmpty { builtIn } }.asSequence().filter { it.pattern.matcher(value.take(240)).find() }
             .distinctBy { it.group }.take(7).toList()
 }
 

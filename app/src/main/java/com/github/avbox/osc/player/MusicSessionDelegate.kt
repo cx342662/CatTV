@@ -213,7 +213,7 @@ class MusicSessionDelegate(private val host: Host) {
         } else {
             trackInfo.video.isEmpty()
         }
-        if (java.lang.Boolean.TRUE == hasAudio) {
+        if (java.lang.Boolean.TRUE == hasAudio || com.github.avbox.osc.player.state.PlaybackSettingsState.config.backgroundPlayback) {
             audioSessionActive = true
             if (java.lang.Boolean.TRUE == audioOnly) audioOnlyConfirmed = true
         }

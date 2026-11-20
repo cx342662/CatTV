@@ -266,7 +266,7 @@ internal fun DetailHero(
         configuration.screenWidthDp,
         configuration.screenHeightDp,
     )
-    val captionColor = Color.White
+    val captionColor = if (flat) Color.White else heroCaptionColor()
     if (flat) {
         Box(
             modifier = modifier
@@ -319,7 +319,7 @@ internal fun DetailHero(
         }
         return
     }
-    Column(modifier = modifier.fillMaxWidth().background(Color(0xFF1C2C43))) {
+    Column(modifier = modifier.fillMaxWidth()) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -441,7 +441,7 @@ private fun DetailHeroTopActions(
             ),
             onClick = onCollect,
             fallbackColor = fallbackColor,
-            tint = Color.White,
+            tint = MaterialTheme.colorScheme.onSurface,
         )
         TopBarActionBox(
             iconRes = R.drawable.ic_detail_share,
@@ -549,7 +549,7 @@ internal fun DetailActionRow(
     modifier: Modifier = Modifier,
 ) {
     val host = androidx.compose.ui.platform.LocalContext.current as? DetailActivity
-    val labels = listOf(R.string.detail_music_player, R.string.common_cast, R.string.tab_following,
+    val labels = listOf(R.string.detail_short_music, R.string.common_cast, R.string.tab_following,
         R.string.detail_stop_timer, R.string.player_picture_in_picture)
     val icons = listOf(R.drawable.ic_detail_music_player, R.drawable.ic_detail_cast,
         R.drawable.ic_tab_following, R.drawable.ic_detail_timer, R.drawable.ic_detail_pip)
@@ -568,8 +568,8 @@ internal fun DetailActionRow(
                 ) {
                     Icon(painterResource(icons[index]), null, tint = Color.White, modifier = Modifier.size(24.dp))
                 }
-                Text(stringResource(label), color = Color.White, fontSize = 10.sp,
-                    textAlign = TextAlign.Center, maxLines = 2,
+                Text(stringResource(label), color = MaterialTheme.colorScheme.onSurface, fontSize = 10.sp,
+                    textAlign = TextAlign.Center, maxLines = 1, overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.padding(top = 5.dp))
             }
         }

@@ -167,6 +167,7 @@ class PlaybackEngine(context: Context) : PlaybackHostApi, VideoCodecObserver {
                 activeView().hideTipOnUiThread()
             }
         }
+        if (com.github.avbox.osc.player.state.PlaybackSettingsState.config.backgroundPlayback) controller.updateMusicSession()
         if (controller.handlePlayStateForMusicSession(playState)) {
             return
         }
@@ -239,6 +240,7 @@ class PlaybackEngine(context: Context) : PlaybackHostApi, VideoCodecObserver {
     private fun scheduleIdleRelease() {
         main.removeCallbacks(idleRelease)
         if (released) return
+        if (com.github.avbox.osc.player.state.PlaybackSettingsState.config.backgroundPlayback && videoView.isPlaying) return
         if (PrewarmPolicy.idleReleaseDelayMs(prewarmEnabled(), IDLE_RELEASE_DELAY_MS) == PrewarmPolicy.NO_IDLE_RELEASE) {
             AppLog.i(TAG + " idle release suppressed: kernel prewarm on")
             return
@@ -304,7 +306,7 @@ class PlaybackEngine(context: Context) : PlaybackHostApi, VideoCodecObserver {
         val cur = attachedPage()
         if (cur != null && cur !== page) return
         pageRef = null
-        if (!keepPlayback) {
+        if (!keepPlayback && !com.github.avbox.osc.player.state.PlaybackSettingsState.config.backgroundPlayback) {
             videoView.pause()
             videoView.stopPlaybackKeepPlayer()
             controller.stopPlaybackForPageExit()
@@ -495,7 +497,7 @@ class PlaybackEngine(context: Context) : PlaybackHostApi, VideoCodecObserver {
     }
 
     override fun hostPause() {
-        if (!controller.isConfirmedAudioOnly()) videoView.pause()
+        if (!controller.isConfirmedAudioOnly() && !com.github.avbox.osc.player.state.PlaybackSettingsState.config.backgroundPlayback) videoView.pause()
     }
 
     override fun hostDestroy() {

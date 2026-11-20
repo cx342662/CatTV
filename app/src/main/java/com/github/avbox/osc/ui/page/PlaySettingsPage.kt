@@ -194,6 +194,11 @@ fun PlaySettingsScreen(onNavigateBack: () -> Unit) {
                 }
                 SettingsCard(SettingsCardPosition.MIDDLE) {
                     SettingsSwitchRow(
+                        title = stringResource(R.string.settings_background_playback),
+                        checked = PlaybackSettingsState.config.backgroundPlayback,
+                        onCheckedChange = { PlaybackSettingsState.backgroundPlayback = it },
+                    )
+                    SettingsSwitchRow(
                         title = stringResource(R.string.settings_auto_exit_pip),
                         checked = config.autoExitPip,
                         onCheckedChange = { PlaybackSettingsState.autoExitPip = it },

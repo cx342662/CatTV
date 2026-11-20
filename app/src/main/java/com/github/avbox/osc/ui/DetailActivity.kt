@@ -362,8 +362,6 @@ class DetailActivity : BaseActivity(), PageHost {
         vm.syncEpisodeAfterMusicReturn()
     }
 
-    private var stopTimer: kotlinx.coroutines.Job? = null
-
     fun shareCurrentFeature() {
         val info = vm.vodInfo ?: return
         val text = listOfNotNull(info.name, info.year.takeIf { it > 0 }?.toString()).joinToString(" · ")
@@ -375,13 +373,7 @@ class DetailActivity : BaseActivity(), PageHost {
         androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle(R.string.detail_stop_timer)
             .setItems(arrayOf("15 min", "30 min", "60 min", getString(android.R.string.cancel))) { _, index ->
-                stopTimer?.cancel()
-                if (index < 3) {
-                    stopTimer = lifecycleScope.launch {
-                        kotlinx.coroutines.delay(listOf(15L, 30L, 60L)[index] * 60_000)
-                        playContainer?.stopForExitFullscreen()
-                    }
-                }
+                PlaybackService.peek()?.setStopTimer(if (index < 3) listOf(15L, 30L, 60L)[index] else null)
             }.show()
     }
 

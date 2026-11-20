@@ -119,4 +119,3 @@ class MainActivity : BaseActivity() {
         var activeActivity: MainActivity? = null
     }
 }
-

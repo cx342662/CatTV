@@ -442,7 +442,19 @@ class PlaybackService : Service() {
 
     private fun getOwner(): PlaybackHostApi? = owner?.get()
 
+    private val stopHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val timedStop = Runnable {
+        getOwner()?.stopFromMediaSession()
+        stopPlaybackSession()
+    }
+
+    fun setStopTimer(minutes: Long?) {
+        stopHandler.removeCallbacks(timedStop)
+        if (minutes != null) stopHandler.postDelayed(timedStop, minutes * 60_000L)
+    }
+
     private fun stopPlaybackSession() {
+        stopHandler.removeCallbacks(timedStop)
         AppLog.i(TAG + " stopPlaybackSession (notification 1001 removed, playing=" + playing + ")")
         playing = false
         foregroundDenied = false

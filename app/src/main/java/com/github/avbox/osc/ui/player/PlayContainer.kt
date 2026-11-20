@@ -229,7 +229,7 @@ class PlayContainer(
         )
         hostSuspended = true
         val view = kernelView
-        if (view != null && !previewExiting && !scheduler.isConfirmedAudioOnly()) {
+        if (view != null && !previewExiting && !scheduler.isConfirmedAudioOnly() && !com.github.avbox.osc.player.state.PlaybackSettingsState.config.backgroundPlayback) {
             if (playerController != null) playerController.setLifecyclePaused(view.isPlaying)
             view.pause()
         }

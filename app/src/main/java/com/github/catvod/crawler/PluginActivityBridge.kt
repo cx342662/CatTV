@@ -298,4 +298,3 @@ object PluginActivityBridge {
             }
         }
 }
-
