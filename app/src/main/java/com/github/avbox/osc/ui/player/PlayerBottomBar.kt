@@ -32,6 +32,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -234,6 +235,21 @@ private fun PlayerActionRow(
             horizontalArrangement = Arrangement.spacedBy(playerDim(R.dimen.vs_12)),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            Box(
+                modifier = Modifier
+                    .widthIn(min = 48.dp)
+                    .height(actionBox)
+                    .playerPressEffect(onTap = actions::onSpeedClicked),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = stringResource(R.string.player_params_speed),
+                    color = Color.White,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                )
+            }
             if (onPictureInPicture != null) {
                 PictureInPictureButton(actionBox, actionIcon, onPictureInPicture)
             }
