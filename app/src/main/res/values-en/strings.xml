@@ -683,4 +683,10 @@
 <string name="settings_background_playback">Background playback</string>
     <string name="player_notification_stop">Stop playback</string>
     <string name="detail_rating_unavailable">Not rated</string>
+    <string name="stop_timer_minutes">Minutes (1–1440)</string>
+    <string name="stop_timer_apply">Start / Update</string>
+    <string name="stop_timer_cancel">Cancel timer</string>
+    <string name="stop_timer_off">Timer off</string>
+    <string name="stop_timer_status">%1$dm %2$02ds left · Stop at %3$s</string>
+    <string name="stop_timer_active">Timer active</string>
 </resources>

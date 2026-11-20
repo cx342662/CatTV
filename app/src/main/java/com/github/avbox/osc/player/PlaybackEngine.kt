@@ -387,6 +387,7 @@ class PlaybackEngine(context: Context) : PlaybackHostApi, VideoCodecObserver {
     }
 
     fun release() {
+        PlaybackStopTimerState.update(0L)
         if (released) return
         released = true
         serviceLostKept = false
@@ -522,10 +523,13 @@ class PlaybackEngine(context: Context) : PlaybackHostApi, VideoCodecObserver {
 
     fun setStopTimer(minutes: Long?) {
         main.removeCallbacks(timedStop)
+        require(minutes == null || minutes in 1..1440)
+        PlaybackStopTimerState.update(if (minutes == null) 0L else android.os.SystemClock.elapsedRealtime() + minutes * 60_000L)
         if (minutes != null) main.postDelayed(timedStop, minutes * 60_000L)
     }
 
     override fun stopFromMediaSession() {
+        PlaybackStopTimerState.update(0L)
         main.removeCallbacks(timedStop)
         videoView.saveCurrentProgress()
         videoView.pause()

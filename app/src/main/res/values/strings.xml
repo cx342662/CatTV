@@ -684,4 +684,10 @@
 <string name="settings_background_playback">后台播放</string>
     <string name="player_notification_stop">停止播放</string>
     <string name="detail_rating_unavailable">暂无评分</string>
+    <string name="stop_timer_minutes">自定义分钟（1–1440）</string>
+    <string name="stop_timer_apply">开启 / 修改</string>
+    <string name="stop_timer_cancel">取消定时</string>
+    <string name="stop_timer_off">定时未开启</string>
+    <string name="stop_timer_status">剩余 %1$d分%2$02d秒 · %3$s 停止播放</string>
+    <string name="stop_timer_active">定时已开启</string>
 </resources>

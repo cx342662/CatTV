@@ -545,6 +545,7 @@ internal fun DetailActionRow(
     modifier: Modifier = Modifier,
 ) {
     val host = androidx.compose.ui.platform.LocalContext.current as? DetailActivity
+    val timerDeadline by com.github.avbox.osc.player.PlaybackStopTimerState.deadline.collectAsState()
     val labels = listOf(R.string.detail_short_music, R.string.common_cast, R.string.tab_following,
         R.string.detail_stop_timer, R.string.player_picture_in_picture)
     val icons = listOf(R.drawable.ic_detail_music_player, R.drawable.ic_detail_cast,
@@ -564,7 +565,7 @@ internal fun DetailActionRow(
                 ) {
                     Icon(painterResource(icons[index]), null, tint = Color.White, modifier = Modifier.size(24.dp))
                 }
-                Text(stringResource(label), color = MaterialTheme.colorScheme.onSurface, fontSize = 10.sp,
+                Text(stringResource(if (label == R.string.detail_stop_timer && timerDeadline > 0L) R.string.stop_timer_active else label), color = MaterialTheme.colorScheme.onSurface, fontSize = 10.sp,
                     textAlign = TextAlign.Start, maxLines = 1, overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.padding(top = 5.dp))
             }
