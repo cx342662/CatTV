@@ -67,6 +67,30 @@ object PluginActivityBridge {
         synchronized(pluginLoaders) { pluginLoaders.clear() }
     }
 
+    @JvmStatic
+    fun onActivityDestroyed(activity: Activity) {
+        val loaders = synchronized(pluginLoaders) { pluginLoaders.toList() }
+        for (loader in loaders) {
+            for (name in arrayOf("com.github.catvod.spider.Init", "com.github.catvod.spider.InitOrigin", "com.github.catvod.spider.AwInit")) {
+                runCatching {
+                    val type = Class.forName(name, false, loader)
+                    val instances = type.declaredFields.filter {
+                        Modifier.isStatic(it.modifiers) && type.isAssignableFrom(it.type)
+                    }.mapNotNull { field -> field.isAccessible = true; field.get(null) }
+                    for (target in listOf(null) + instances) {
+                        for (field in type.declaredFields) {
+                            if (Modifier.isStatic(field.modifiers) != (target == null)) continue
+                            field.isAccessible = true
+                            val value = field.get(target)
+                            if (value === activity) field.set(target, null)
+                            if (value is WeakReference<*> && value.get() === activity) value.clear()
+                        }
+                    }
+                }.onFailure { AppLog.e("PluginActivityBridge", "release Activity binding failed", it) }
+            }
+        }
+    }
+
     private fun isUsable(activity: Activity): Boolean =
         !activity.isFinishing && (android.os.Build.VERSION.SDK_INT < 17 || !activity.isDestroyed)
 
@@ -193,7 +217,7 @@ object PluginActivityBridge {
                     WeakReference::class.java.isAssignableFrom(field.type) -> {
                         val old = field.get(target) as? WeakReference<*>
                         val value = old?.get()
-                        if (value == null || value is Activity ||
+                        if (value is Activity ||
                             field.name.contains("activity", ignoreCase = true)
                         ) field.set(target, WeakReference(activity))
                     }
@@ -274,3 +298,4 @@ object PluginActivityBridge {
             }
         }
 }
+
