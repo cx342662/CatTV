@@ -165,10 +165,13 @@ fun PlayerBottomBar(
                 )
             }
             if (state.previewMode && onPictureInPicture != null) {
-                PictureInPictureButton(
-                    box = PreviewPlayPauseBox,
-                    iconSize = 20.dp,
-                    onClick = onPictureInPicture,
+                val host = androidx.compose.ui.platform.LocalContext.current as? com.github.avbox.osc.ui.DetailActivity
+                Icon(
+                    painter = painterResource(R.drawable.ic_detail_fullscreen),
+                    contentDescription = stringResource(R.string.detail_inline_fullscreen),
+                    tint = Color.White,
+                    modifier = Modifier.size(40.dp).padding(9.dp)
+                        .playerPressEffect(onTap = { host?.expandInlinePlayer() }),
                 )
             }
         }

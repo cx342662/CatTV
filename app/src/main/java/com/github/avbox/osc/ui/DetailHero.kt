@@ -73,6 +73,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
@@ -265,7 +266,7 @@ internal fun DetailHero(
         configuration.screenWidthDp,
         configuration.screenHeightDp,
     )
-    val captionColor = if (flat) Color.White else heroCaptionColor()
+    val captionColor = Color.White
     if (flat) {
         Box(
             modifier = modifier
@@ -318,7 +319,7 @@ internal fun DetailHero(
         }
         return
     }
-    Column(modifier = modifier.fillMaxWidth()) {
+    Column(modifier = modifier.fillMaxWidth().background(Color(0xFF1C2C43))) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -418,6 +419,7 @@ private fun DetailHeroTopActions(
     onCollect: () -> Unit,
     fallbackColor: Color,
 ) {
+    val shareContext = androidx.compose.ui.platform.LocalContext.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -439,11 +441,20 @@ private fun DetailHeroTopActions(
             ),
             onClick = onCollect,
             fallbackColor = fallbackColor,
-            tint = if (collected) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                MaterialTheme.colorScheme.onSurface
+            tint = Color.White,
+        )
+        TopBarActionBox(
+            iconRes = R.drawable.ic_detail_share,
+            contentDescription = stringResource(R.string.detail_share),
+            onClick = {
+                val host = shareContext as? DetailActivity
+                val title = host?.title?.toString()
+                val intent = android.content.Intent(android.content.Intent.ACTION_SEND)
+                    .setType("text/plain")
+                    .putExtra(android.content.Intent.EXTRA_TEXT, title.orEmpty())
+                shareContext.startActivity(android.content.Intent.createChooser(intent, null))
             },
+            fallbackColor = fallbackColor,
         )
     }
 }
@@ -541,29 +552,59 @@ internal fun DetailActionRow(
     onFollow: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(HeroCircleButtonSpacing),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        HeroCircleButton(
-            iconRes = R.drawable.ic_detail_music_player,
-            contentDescription = stringResource(R.string.detail_music_player),
-            selected = false,
-            onClick = onMusic,
-        )
-        HeroCircleButton(
-            iconRes = R.drawable.ic_detail_cast,
-            contentDescription = stringResource(R.string.common_cast),
-            selected = false,
-            onClick = onCast,
-        )
-        HeroCircleButton(
-            iconRes = R.drawable.ic_tab_following,
-            contentDescription = stringResource(R.string.tab_following),
-            selected = followed,
-            onClick = onFollow,
-        )
+    val host = androidx.compose.ui.platform.LocalContext.current as? DetailActivity
+    val labels = listOf(R.string.detail_music_player, R.string.common_cast, R.string.tab_following,
+        R.string.detail_stop_timer, R.string.player_picture_in_picture)
+    val icons = listOf(R.drawable.ic_detail_music_player, R.drawable.ic_detail_cast,
+        R.drawable.ic_tab_following, R.drawable.ic_detail_timer, R.drawable.ic_detail_pip)
+    val actions: List<() -> Unit> = listOf(onMusic, onCast, onFollow,
+        { host?.showPlaybackStopTimer() }, { host?.requestDetailPip() })
+    Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        labels.forEachIndexed { index, label ->
+            Column(
+                Modifier.weight(1f).playerPressEffect(onTap = actions[index]),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Box(
+                    Modifier.fillMaxWidth().height(44.dp)
+                        .background(Color.Black.copy(alpha = 0.32f), RoundedCornerShape(16.dp)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(painterResource(icons[index]), null, tint = Color.White, modifier = Modifier.size(24.dp))
+                }
+                Text(stringResource(label), color = Color.White, fontSize = 10.sp,
+                    textAlign = TextAlign.Center, maxLines = 2,
+                    modifier = Modifier.padding(top = 5.dp))
+            }
+        }
+    }
+}
+
+@Composable
+internal fun DetailPlaybackShortcuts(
+    collected: Boolean,
+    onCollect: () -> Unit,
+    onPip: () -> Unit,
+    onCast: () -> Unit,
+) {
+    val labels = listOf(if (collected) R.string.detail_uncollect else R.string.detail_collect,
+        R.string.player_picture_in_picture, R.string.common_cast)
+    val icons = listOf(if (collected) R.drawable.ic_tab_collect_filled else R.drawable.ic_tab_collect,
+        R.drawable.ic_detail_pip, R.drawable.ic_detail_cast)
+    val actions = listOf(onCollect, onPip, onCast)
+    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        labels.forEachIndexed { index, label ->
+            Row(Modifier.weight(1f).height(40.dp)
+                .background(Color.Gray.copy(alpha = 0.12f), CircleShape)
+                .playerPressEffect(onTap = actions[index]),
+                horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                Icon(painterResource(icons[index]), null,
+                    tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
+                Text(stringResource(label), color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 12.sp, maxLines = 1, modifier = Modifier.padding(start = 5.dp))
+            }
+        }
     }
 }
 

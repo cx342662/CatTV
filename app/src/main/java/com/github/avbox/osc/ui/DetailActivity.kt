@@ -1,6 +1,7 @@
 package com.github.avbox.osc.ui
 
 import android.content.Context
+import androidx.lifecycle.lifecycleScope
 import android.content.Intent
 import com.github.avbox.osc.ui.WindowSize
 import android.content.pm.ActivityInfo
@@ -361,6 +362,27 @@ class DetailActivity : BaseActivity(), PageHost {
         vm.syncEpisodeAfterMusicReturn()
     }
 
+    private var stopTimer: kotlinx.coroutines.Job? = null
+
+    fun showPlaybackStopTimer() {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle(R.string.detail_stop_timer)
+            .setItems(arrayOf("15 min", "30 min", "60 min", getString(android.R.string.cancel))) { _, index ->
+                stopTimer?.cancel()
+                if (index < 3) {
+                    stopTimer = lifecycleScope.launch {
+                        kotlinx.coroutines.delay(listOf(15L, 30L, 60L)[index] * 60_000)
+                        playContainer?.stopForExitFullscreen()
+                    }
+                }
+            }.show()
+    }
+
+    fun requestDetailPip() {
+        ensurePlaying()
+        enterVodPictureInPicture()
+    }
+
     fun expandInlinePlayer() {
         vm.onFullScreenToggleRequested(true, playbackFacts())
     }
@@ -493,7 +515,7 @@ class DetailActivity : BaseActivity(), PageHost {
         return playing && requestPictureInPicture(moveToHome, automatic = true)
     }
 
-    private fun enterVodPictureInPicture() {
+    fun enterVodPictureInPicture() {
         requestPictureInPicture(moveToHome = true, automatic = false)
     }
 

@@ -677,4 +677,6 @@
     <string name="detail_inline_favorite">Favorite</string>
     <string name="detail_inline_unfavorite">Unfavorite</string>
     <string name="detail_inline_fullscreen">Fullscreen</string>
+<string name="detail_stop_timer">Stop timer</string>
+<string name="detail_share">Share</string>
 </resources>

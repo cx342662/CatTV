@@ -116,10 +116,12 @@ internal fun DetailContent(
                         if (description.isNotBlank()) Text(description, maxLines = 3, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall)
                     }
                 }
-                Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                    TextButton(onClick = vm::toggleCollect) { Text(stringResource(if (collected) R.string.detail_inline_unfavorite else R.string.detail_inline_favorite)) }
-                    TextButton(onClick = activity::expandInlinePlayer) { Text(stringResource(R.string.detail_inline_fullscreen)) }
-                }
+                DetailPlaybackShortcuts(
+                    collected = collected,
+                    onCollect = vm::toggleCollect,
+                    onPip = activity::requestDetailPip,
+                    onCast = activity::openCast,
+                )
             } else DetailHero(
                 title = info.name ?: "TVBox",
                 altTitle = info.en,
