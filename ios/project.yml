@@ -39,8 +39,20 @@ targets:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
+  CatTVUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [UITests]
+    dependencies:
+      - target: CatTV
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.cattv.ios.uitests
+        GENERATE_INFOPLIST_FILE: YES
 schemes:
   CatTV:
     build:
       targets:
         CatTV: all
+    test:
+      targets: [CatTVUITests]

@@ -68,6 +68,20 @@ public struct SourceSite: Codable, Equatable, Identifiable, Sendable {
     public var playUrl: String?
     public var timeout: Int?
     public var id: String { key }
+    enum CodingKeys: String, CodingKey { case key, name, type, api, header, ext, playUrl, timeout }
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        key = try c.decode(String.self, forKey: .key)
+        name = try c.decode(String.self, forKey: .name)
+        api = try c.decode(String.self, forKey: .api)
+        let rawType = try c.decode(JSONValue.self, forKey: .type)
+        guard let raw = rawType.text, let value = Int(raw) else { throw SourceError.invalidConfiguration("影视源 type 必须为整数") }
+        type = value
+        header = try c.decodeIfPresent([String: JSONValue].self, forKey: .header)
+        ext = try c.decodeIfPresent(JSONValue.self, forKey: .ext)
+        playUrl = try c.decodeIfPresent(String.self, forKey: .playUrl)
+        timeout = try c.decodeIfPresent(JSONValue.self, forKey: .timeout)?.text.flatMap(Int.init)
+    }
     public var headers: [String: String] {
         (header ?? [:]).reduce(into: [:]) { result, pair in
             if let value = pair.value.text, HeaderPolicy.isSendable(name: pair.key, value: value) { result[pair.key] = value }

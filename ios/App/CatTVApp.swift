@@ -59,7 +59,7 @@ struct RootView: View {
                             ForEach(library.videos) { video in
                                 NavigationLink { DetailView(summary: video, source: library.site) } label: {
                                     VStack(alignment: .leading, spacing: 5) {
-                                        AsyncImage(url: URL(string: video.poster)) { image in
+                                        AsyncImage(url: URL(string: video.poster, relativeTo: library.site.flatMap { URL(string: $0.api) })?.absoluteURL) { image in
                                             image.resizable().scaledToFill()
                                         } placeholder: { Rectangle().fill(Color.secondary.opacity(0.15)).overlay(Image(systemName: "film")) }
                                         .aspectRatio(2 / 3, contentMode: .fit).clipped().clipShape(RoundedRectangle(cornerRadius: 16))
@@ -110,7 +110,10 @@ struct ConfigurationView: View {
                     }.swipeActions { Button("删除", role: .destructive) { library.removeConfiguration(document.id) } }
                 }
             }
-            Section("偏好设置") { NavigationLink("媒体徽章") { BadgeSettingsView() } }
+            Section("偏好设置") {
+                NavigationLink("媒体徽章") { BadgeSettingsView() }
+                NavigationLink("缓存管理") { CacheSettingsView() }
+            }
             Section("影视源") {
                 ForEach(library.configuration?.sites ?? []) { site in
                     Button { library.select(site) } label: {

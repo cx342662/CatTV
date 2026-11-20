@@ -68,7 +68,7 @@ public struct CatalogResponse: Decodable, Sendable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         videos = try c.decodeIfPresent([Video].self, forKey: .videos) ?? []
         categories = try c.decodeIfPresent([VideoCategory].self, forKey: .categories) ?? []
-        if let values = try c.decodeIfPresent([String: JSONValue].self, forKey: .filters) {
+        if let values = try? c.decode([String: JSONValue].self, forKey: .filters) {
             filters = try values.mapValues { value in
                 let data = try JSONEncoder().encode(value)
                 if case .array = value { return try JSONDecoder().decode([CatalogFilter].self, from: data) }
@@ -130,6 +130,7 @@ public actor CatalogRepository {
         if !usePost {
             let names = Set(parameters.map(\.name))
             components.queryItems = (components.queryItems ?? []).filter { !names.contains($0.name) } + parameters
+            components.percentEncodedQuery = components.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
         }
         guard let url = components.url else { throw SourceError.invalidURL }
         var request = URLRequest(url: url)

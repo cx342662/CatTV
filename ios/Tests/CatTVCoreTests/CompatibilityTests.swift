@@ -87,4 +87,15 @@ final class CompatibilityTests: XCTestCase {
         XCTAssertThrowsError(try collection.upsert(document))
         XCTAssertEqual(collection, before)
     }
+    func testStringTypeAndTimeoutCompatibility() throws {
+        let data = Data(#"{"sites":[{"key":"s","name":"S","type":"4","timeout":"45","api":"https://example.invalid"}]}"#.utf8)
+        let site = try XCTUnwrap(SourceConfiguration.decode(data).sites.first)
+        XCTAssertEqual(site.type, 4)
+        XCTAssertEqual(site.timeout, 45)
+    }
+    func testGETEscapesLiteralPlusForFormDecodingServers() throws {
+        let source = try site()
+        let request = try CatalogRepository.makeRequest(site: source, address: source.api, parameters: ["ext": "a+b="])
+        XCTAssertTrue(try XCTUnwrap(request.url?.absoluteString).contains("a%2Bb"))
+    }
 }
