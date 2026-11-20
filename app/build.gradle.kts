@@ -17,8 +17,8 @@ android {
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
         // Release workflow can override the packaged version.
-        versionCode = (project.findProperty("CATTV_VERSION_CODE") as String?)?.toIntOrNull() ?: 40
-        versionName = (project.findProperty("CATTV_VERSION_NAME") as String?) ?: "1.3.4"
+        versionCode = (project.findProperty("CATTV_VERSION_CODE") as String?)?.toIntOrNull() ?: 41
+        versionName = (project.findProperty("CATTV_VERSION_NAME") as String?) ?: "1.3.5"
         multiDexEnabled = true
         ndk {
             abiFilters += setOf("arm64-v8a")

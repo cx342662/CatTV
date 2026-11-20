@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -418,19 +419,29 @@ fun SettingsPage(
             dismissible = progress == null,
             title = { Text("发现 CatTV 新版本 ${update.versionName}") },
             text = {
-                if (progress == null) {
-                    Text("是否下载并安装此版本？下载完成后需要你确认安装。")
-                } else {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(
+                    modifier = Modifier.heightIn(max = 400.dp).verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    if (progress == null) {
+                        Text(stringResource(R.string.settings_update_notes), style = MaterialTheme.typography.titleSmall)
+                        Text(update.releaseNotes.ifBlank { stringResource(R.string.settings_update_notes_fallback) }, style = MaterialTheme.typography.bodyMedium)
+                    } else {
                         Text(
                             if (progress == 100) stringResource(R.string.settings_update_verifying)
                             else stringResource(R.string.settings_update_download_progress, progress),
                         )
-                        LinearProgressIndicator(
-                            progress = { progress / 100f },
-                            modifier = Modifier.fillMaxWidth(),
-                        )
+                        LinearProgressIndicator(progress = { progress / 100f }, modifier = Modifier.fillMaxWidth())
                     }
+                    Text(stringResource(R.string.settings_update_source), style = MaterialTheme.typography.labelLarge)
+                    androidx.compose.foundation.text.selection.SelectionContainer {
+                        Text(update.assetUrl, style = MaterialTheme.typography.bodySmall)
+                    }
+                    TextButton(onClick = {
+                        val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                        clipboard.setPrimaryClip(android.content.ClipData.newPlainText("CatTV", update.assetUrl))
+                        Toast.makeText(context, context.getString(R.string.settings_update_copied), Toast.LENGTH_SHORT).show()
+                    }) { Text(stringResource(R.string.settings_update_copy_url)) }
                 }
             },
             dismissButton = {

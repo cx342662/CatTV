@@ -24,7 +24,7 @@ import java.security.MessageDigest
  * certificate. Install is always confirmed by Android's system package installer.
  */
 object CatTvUpdater {
-    private const val RELEASE_API = "https://api.github.com/repos/cx342662/CatTV/releases/latest"
+    private const val RELEASE_API = "https://api.github.com/repos/cx342662/CatTV/releases?per_page=100"
     private const val MAX_APK_BYTES = 250L * 1024 * 1024
     private val downloadLock = Mutex()
 
@@ -33,6 +33,7 @@ object CatTvUpdater {
         val assetUrl: String,
         val expectedSha256: String,
         val assetSize: Long,
+        val releaseNotes: String = "",
     )
 
     suspend fun checkForUpdate(context: Context): UpdateInfo? = withContext(Dispatchers.IO) {
@@ -45,7 +46,8 @@ object CatTvUpdater {
         try {
             if (connection.responseCode == 404) return@withContext null
             check(connection.responseCode == 200) { "GitHub 返回状态 ${connection.responseCode}" }
-            val json = JSONObject(connection.inputStream.bufferedReader().use { it.readText() })
+            val releases = org.json.JSONArray(connection.inputStream.bufferedReader().use { it.readText() })
+            val json = selectMobileRelease(releases) ?: return@withContext null
             if (json.optBoolean("draft") || json.optBoolean("prerelease")) return@withContext null
             val version = json.optString("tag_name").trimStart('v', 'V')
             if (!isNewerVersion(version, BuildConfig.VERSION_NAME)) return@withContext null
@@ -63,7 +65,7 @@ object CatTvUpdater {
                 val size = asset.optLong("size", 0L)
                 if (!url.startsWith("https://github.com/cx342662/CatTV/releases/download/") ||
                     size !in 1..MAX_APK_BYTES) continue
-                return@withContext UpdateInfo(version, url, digest.substringAfter(':'), size)
+                return@withContext UpdateInfo(version, url, digest.substringAfter(':'), size, json.optString("body"))
             }
             error("此版本没有带 SHA-256 校验的 APK，请联系维护者")
         } finally {
@@ -154,6 +156,14 @@ object CatTvUpdater {
                           else installed.versionCode.toLong()
         check(incomingCode > currentCode) { "安装包版本号没有提高" }
     }
+
+    internal fun selectMobileRelease(releases: org.json.JSONArray): JSONObject? =
+        (0 until releases.length()).map { releases.getJSONObject(it) }
+            .filter { !it.optBoolean("draft") && !it.optBoolean("prerelease") &&
+                Regex("v?[0-9]+\\.[0-9]+\\.[0-9]+", RegexOption.IGNORE_CASE).matches(it.optString("tag_name")) }
+            .reduceOrNull { best, item ->
+                if (isNewerVersion(item.optString("tag_name").trimStart('v', 'V'), best.optString("tag_name").trimStart('v', 'V'))) item else best
+            }
 
     private fun isNewerVersion(candidate: String, current: String): Boolean {
         fun parts(v: String): List<Int> {

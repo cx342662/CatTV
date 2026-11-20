@@ -689,4 +689,9 @@
     <string name="stop_timer_off">Timer off</string>
     <string name="stop_timer_status">%1$dm %2$02ds left · Stop at %3$s</string>
     <string name="stop_timer_active">Timer active</string>
+    <string name="settings_update_notes">Changes and improvements</string>
+    <string name="settings_update_notes_fallback">Bug fixes and improvements.</string>
+    <string name="settings_update_source">Download source: CatTV GitHub repository</string>
+    <string name="settings_update_copy_url">Copy download URL</string>
+    <string name="settings_update_copied">Download URL copied</string>
 </resources>

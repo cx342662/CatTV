@@ -690,4 +690,9 @@
     <string name="stop_timer_off">定时未开启</string>
     <string name="stop_timer_status">剩余 %1$d分%2$02d秒 · %3$s 停止播放</string>
     <string name="stop_timer_active">定时已开启</string>
+    <string name="settings_update_notes">更新内容与优化</string>
+    <string name="settings_update_notes_fallback">修复已知问题，提升使用体验。</string>
+    <string name="settings_update_source">下载来源：CatTV GitHub 仓库</string>
+    <string name="settings_update_copy_url">复制下载地址</string>
+    <string name="settings_update_copied">下载地址已复制</string>
 </resources>
