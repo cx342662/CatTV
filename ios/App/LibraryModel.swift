@@ -48,6 +48,20 @@ final class LibraryModel: ObservableObject {
             try save(document)
         } catch is CancellationError {} catch { self.error = error.localizedDescription }
     }
+    func importFile(_ url: URL) async {
+        guard !importing else { return }
+        importing = true
+        defer { importing = false }
+        do {
+            let data = try await Task.detached(priority: .userInitiated) {
+                let scoped = url.startAccessingSecurityScopedResource()
+                defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+                return try Data(contentsOf: url)
+            }.value
+            let document = try ConfigurationDocument(name: url.deletingPathExtension().lastPathComponent, origin: nil, data: data)
+            try save(document)
+        } catch { self.error = error.localizedDescription }
+    }
     func save(_ document: ConfigurationDocument) throws {
         var next = collection
         try next.upsert(document)

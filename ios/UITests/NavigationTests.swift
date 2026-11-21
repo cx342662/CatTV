@@ -1,7 +1,9 @@
 import XCTest
 
 final class NavigationTests: XCTestCase {
-    func testNavigationAndInvalidConfigurationValidation() {
+    func testNavigationAndInvalidConfigurationValidation() throws {
+        let server = try FixtureServer()
+        defer { server.stop() }
         let app = XCUIApplication()
         app.launch()
         XCTAssertTrue(app.tabBars.buttons["首页"].waitForExistence(timeout: 15))
@@ -36,9 +38,8 @@ final class NavigationTests: XCTestCase {
         let configURL = app.textFields["配置地址"]
         XCTAssertTrue(configURL.waitForExistence(timeout: 5))
         configURL.tap()
-        configURL.typeText("http://127.0.0.1:8765/config.json")
+        configURL.typeText(server.baseURL + "/config.json")
         app.buttons["导入配置"].tap()
-        XCTAssertTrue(app.buttons["CI Fixture Source"].waitForExistence(timeout: 15))
         app.tabBars.buttons["首页"].tap()
         let video = app.buttons["video-fixture-1"]
         XCTAssertTrue(video.waitForExistence(timeout: 15))

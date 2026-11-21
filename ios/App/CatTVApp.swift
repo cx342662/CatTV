@@ -1,5 +1,6 @@
 import SwiftUI
 import CatTVCore
+import UniformTypeIdentifiers
 
 @main
 struct CatTVApp: App {
@@ -95,6 +96,7 @@ struct ConfigurationView: View {
     @State private var showEditor = false
     @State private var showScanner = false
     @State private var showQRCode = false
+    @State private var showFileImporter = false
     @FocusState private var addressFocused: Bool
     var body: some View {
         Form {
@@ -103,6 +105,7 @@ struct ConfigurationView: View {
                     .textInputAutocapitalization(.never).autocorrectionDisabled()
                 Button("导入配置") { addressFocused = false; Task { await library.importConfiguration() } }.disabled(library.importing)
                 Button("手动新增") { editor = nil; showEditor = true }
+                Button("导入配置文件") { addressFocused = false; showFileImporter = true }
                 Button("扫描二维码") { showScanner = true }
                 if library.collection.active?.origin != nil { Button("配置二维码") { showQRCode = true } }
             }
@@ -123,6 +126,7 @@ struct ConfigurationView: View {
             Section("偏好设置") {
                 NavigationLink("媒体徽章") { BadgeSettingsView() }
                 NavigationLink("缓存管理") { CacheSettingsView() }
+                NavigationLink("关于 CatTV") { AboutView() }
             }
             Section("影视源") {
                 ForEach(library.configuration?.sites ?? []) { site in
@@ -132,6 +136,12 @@ struct ConfigurationView: View {
                 }
             }
         }.navigationTitle("设置")
+            .fileImporter(isPresented: $showFileImporter, allowedContentTypes: [.json, .plainText, .data]) { result in
+                switch result {
+                case .success(let url): Task { await library.importFile(url) }
+                case .failure(let error): library.error = error.localizedDescription
+                }
+            }
             .sheet(isPresented: $showEditor) { ConfigurationEditor(document: editor) }
             .sheet(isPresented: $showScanner) { QRScannerSheet { library.configurationURL = $0 } }
             .sheet(isPresented: $showQRCode) { ConfigurationQRCode(text: library.collection.active?.origin?.absoluteString ?? "") }
