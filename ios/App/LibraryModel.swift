@@ -90,7 +90,7 @@ final class LibraryModel: ObservableObject {
         restoreSource()
     }
     private func restoreSource() {
-        let key = collection.active.flatMap { collection.sourceKeys[$0.id.uuidString] }
+        let key = collection.active.flatMap { collection.sourceKeys[$0.id.uuidString] }?.trimmingCharacters(in: .whitespacesAndNewlines)
         site = configuration?.sites.first(where: { $0.key == key }) ?? configuration?.sites.first
     }
     private func resetAndLoad() { categories = []; filters = [:]; query = CatalogQuery(); load() }

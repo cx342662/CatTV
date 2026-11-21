@@ -92,8 +92,11 @@ public struct SourceSite: Codable, Equatable, Identifiable, Sendable {
     enum CodingKeys: String, CodingKey { case key, name, type, api, header, ext, playUrl, timeout, searchable, parsers }
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        key = try c.decode(String.self, forKey: .key)
-        name = try c.decode(String.self, forKey: .name)
+        key = try c.decode(String.self, forKey: .key).trimmingCharacters(in: .whitespacesAndNewlines)
+        if c.contains(.name) {
+            guard let text = try c.decode(JSONValue.self, forKey: .name).text else { throw SourceError.invalidConfiguration("影视源 name 必须为文本值") }
+            name = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        } else { name = key }
         api = try c.decode(String.self, forKey: .api).trimmingCharacters(in: .whitespacesAndNewlines)
         let rawType = try c.decode(JSONValue.self, forKey: .type)
         guard let raw = rawType.text, let value = Int(raw) else { throw SourceError.invalidConfiguration("影视源 type 必须为整数") }

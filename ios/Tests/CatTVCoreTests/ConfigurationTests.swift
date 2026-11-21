@@ -1,6 +1,13 @@
 import XCTest
 @testable import CatTVCore
 final class ConfigurationTests: XCTestCase {
+    func testSourceNameFallbackAndWhitespaceNormalizationMatchAndroid() throws {
+        let configuration = try SourceConfiguration.decode(Data(#"{"sites":[{"key":" a ","type":1,"api":"https://example.invalid"},{"key":"b","name":"  Name  ","type":1,"api":"https://example.invalid"}]}"#.utf8))
+        XCTAssertEqual(configuration.sites.first?.key, "a")
+        XCTAssertEqual(configuration.sites.first?.name, "a")
+        XCTAssertEqual(configuration.sites.last?.name, "Name")
+        XCTAssertThrowsError(try SourceConfiguration.decode(Data(#"{"sites":[{"key":" a ","type":1,"api":"https://example.invalid"},{"key":"a","type":1,"api":"https://example.invalid"}]}"#.utf8)))
+    }
     func testNonObjectHeadersAreIgnoredAndAPIWhitespaceIsTrimmed() throws {
         for value in [JSONValue.string("ignored"), .array([]), .number(7), .bool(false), .null] {
             let source: JSONValue = .object(["sites": .array([.object(["key": .string("a"), "name": .string("A"), "type": .number(1), "api": .string(" \nhttps://example.invalid/api\t"), "header": value])])])
