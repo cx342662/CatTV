@@ -28,7 +28,9 @@ final class WebMediaSniffer: NSObject, WKScriptMessageHandler, WKNavigationDeleg
             performance.getEntriesByType('resource').forEach(v => emit(v.name));
           };
           new PerformanceObserver(items => items.getEntries().forEach(v => emit(v.name))).observe({entryTypes:['resource']});
+          document.addEventListener('DOMContentLoaded', scan, true);
           document.addEventListener('loadedmetadata', scan, true);
+          new MutationObserver(scan).observe(document, {childList: true, subtree: true, attributes: true, attributeFilter: ['src']});
           setInterval(scan, 500);
           scan();
         })();
@@ -91,6 +93,9 @@ final class WebMediaSniffer: NSObject, WKScriptMessageHandler, WKNavigationDeleg
                 self.finish(.success(ResolvedPlayback(url: url, headers: result)))
             }
         }
+    }
+    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        finish(.failure(SourceError.invalidConfiguration("网页解析进程已退出，请重新播放或切换解析器")))
     }
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation?, withError error: Error) {
         guard navigation === activeNavigation, (error as NSError).code != NSURLErrorCancelled else { return }

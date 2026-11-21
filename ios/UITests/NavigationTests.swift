@@ -62,7 +62,7 @@ final class NavigationTests: XCTestCase {
         let advances = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label MATCHES %@", "播放进度：[1-9][0-9]*秒"), object: progress)
         let playbackResult = XCTWaiter.wait(for: [advances], timeout: 30)
         capture(app, name: "web-parser-proxy-native-playback-ci-fixture")
-        XCTAssertEqual(playbackResult, .completed)
+        XCTAssertEqual(playbackResult, .completed, "Playback state: \(app.debugDescription)")
         app.buttons["停止播放"].tap()
         app.navigationBars.buttons.element(boundBy: 0).tap()
         XCTAssertTrue(app.buttons["nav-records"].waitForExistence(timeout: 5))
