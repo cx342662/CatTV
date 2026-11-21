@@ -99,6 +99,7 @@ private struct LivePlayerView: View {
             VStack(spacing: 16) {
                 PlayerHost(player: playback.player).frame(height: 240).background(.black)
                 Text(channel.name).font(.title3.bold())
+                Text("播放进度：\(Int(playback.elapsedSeconds))秒").font(.caption).foregroundStyle(.secondary).accessibilityIdentifier("live-playback-progress")
                 Menu("线路 \(stream + 1)") {
                     ForEach(channel.streams.indices, id: \.self) { index in Button("线路 \(index + 1)") { stream = index; play() } }
                 }

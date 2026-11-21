@@ -8,9 +8,10 @@ struct CatTVApp: App {
     @StateObject private var userLibrary = UserLibrary()
     @StateObject private var playback = PlaybackModel()
     @StateObject private var badges = BadgeStore()
+    @StateObject private var chrome = NavigationChrome()
     var body: some Scene {
         WindowGroup {
-            RootView().environmentObject(library).environmentObject(userLibrary).environmentObject(playback).environmentObject(badges)
+            RootView().environmentObject(library).environmentObject(userLibrary).environmentObject(playback).environmentObject(badges).environmentObject(chrome)
                 .onReceive(badges.$failure) { if let message = $0 { library.error = message } }
                 .onReceive(userLibrary.$failure) { if let message = $0 { library.error = message } }
                 .background(WebSnifferHost(sniffer: playback.sniffer).frame(width: 1, height: 1).opacity(0.001).allowsHitTesting(false).accessibilityHidden(true))
@@ -23,26 +24,23 @@ struct CatTVApp: App {
 }
 struct RootView: View {
     @EnvironmentObject var library: LibraryModel
+    @EnvironmentObject var chrome: NavigationChrome
+    @State private var selectedTab = 0
     @State private var search = ""
     @State private var showSearch = false
     @State private var showLive = false
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             NavigationStack {
                 ScrollView {
                     VStack(spacing: 12) {
-                        if let config = library.configuration, !config.sites.isEmpty {
-                            Menu {
-                                ForEach(config.sites) { site in Button(site.name) { library.select(site) } }
-                            } label: { Label(library.site?.name ?? "选择影视源", systemImage: "chevron.down") }
-                        }
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack {
-                                Button("首页") { library.load() }
+                                Button("首页") { library.load() }.buttonStyle(CatalogChipStyle(selected: library.query.category == nil))
                                 ForEach(library.categories) { category in
-                                    Button(category.name) { library.load(category: category.id) }
+                                    Button(category.name) { library.load(category: category.id) }.buttonStyle(CatalogChipStyle(selected: library.query.category == category.id))
                                 }
-                            }.buttonStyle(.bordered).padding(.horizontal, 16)
+                            }.padding(.horizontal, 16)
                         }
                         if let category = library.query.category {
                             ForEach(library.filters[category] ?? []) { filter in
@@ -62,7 +60,7 @@ struct RootView: View {
                         } else if !library.busy && library.videos.isEmpty {
                             Text("暂无内容，请切换分类或影视源").foregroundStyle(.secondary).padding(24)
                         }
-                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 16) {
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 3), spacing: 16) {
                             ForEach(library.videos) { video in
                                 NavigationLink { DetailView(summary: video, source: library.site) } label: {
                                     VStack(alignment: .leading, spacing: 5) {
@@ -70,7 +68,7 @@ struct RootView: View {
                                             image.resizable().scaledToFill()
                                         } placeholder: { Rectangle().fill(Color.secondary.opacity(0.15)).overlay(Image(systemName: "film")) }
                                         .aspectRatio(2 / 3, contentMode: .fit).clipped().clipShape(RoundedRectangle(cornerRadius: 16))
-                                        Text(video.name).font(.system(size: 13)).lineLimit(1)
+                                        Text(video.name).font(.system(size: 14, weight: .medium)).lineLimit(1).frame(maxWidth: .infinity).multilineTextAlignment(.center)
                                         MediaBadgeRow(text: video.name + " " + video.remarks)
                                         Text(video.remarks).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
                                     }
@@ -79,19 +77,37 @@ struct RootView: View {
                         }.padding(.horizontal, 16)
                         if library.canLoadMore { Button("加载更多") { library.loadMore() }.disabled(library.busy).padding() }
                     }
-                }.navigationTitle("CatTV").navigationBarTitleDisplayMode(.inline)
-                    .toolbar { ToolbarItem(placement: .navigationBarTrailing) { Button("直播") { showLive = true } } }
-                    .sheet(isPresented: $showLive) { LiveView() }
-                    .searchable(text: $search, prompt: "搜索影视")
-                    .onSubmit(of: .search) { showSearch = true }
+                }.navigationTitle("").navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarLeading) { sourceSelector }
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Button { search = ""; showSearch = true } label: { Image(systemName: "magnifyingglass").font(.system(size: 20)) }.accessibilityLabel("搜索")
+                        }
+                    }
                     .sheet(isPresented: $showSearch) { GlobalSearchView(initialQuery: search, sites: library.configuration?.sites ?? []) }
                     .refreshable { library.load() }
                     .task { library.load() }
-            }.tabItem { Label("首页", image: "ic_tab_home") }
-            NavigationStack { SavedLibraryView(following: false) }.tabItem { Label("记录", image: "ic_tab_records") }
-            NavigationStack { SavedLibraryView(following: true) }.tabItem { Label("追剧", image: "ic_tab_following") }
-            NavigationStack { ConfigurationView() }.tabItem { Label("我的", image: "ic_tab_mine") }
+            }.tabItem { Label("首页", image: "ic_tab_home") }.tag(0).toolbar(.hidden, for: .tabBar)
+            NavigationStack { SavedLibraryView(following: false) }.tabItem { Label("记录", image: "ic_tab_records") }.tag(1).toolbar(.hidden, for: .tabBar)
+            NavigationStack { SavedLibraryView(following: true) }.tabItem { Label("追剧", image: "ic_tab_following") }.tag(2).toolbar(.hidden, for: .tabBar)
+            NavigationStack { ConfigurationView() }.tabItem { Label("我的", image: "ic_tab_mine") }.tag(3).toolbar(.hidden, for: .tabBar)
+        }.safeAreaInset(edge: .bottom, spacing: 0) {
+            if !chrome.detailVisible { FloatingNavigation(selection: $selectedTab) { showLive = true } }
+        }.sheet(isPresented: $showLive) { LiveView() }
+    }
+    private var sourceSelector: some View {
+        Group {
+            if let configuration = library.configuration, !configuration.sites.isEmpty {
+                Menu { ForEach(configuration.sites) { site in Button(site.name) { library.select(site) } } } label: { sourceLabel(library.site?.name ?? "选择影视源") }
+            } else { Button { selectedTab = 3 } label: { sourceLabel("配置中心") } }
         }
+    }
+    private func sourceLabel(_ name: String) -> some View {
+        HStack(spacing: 7) {
+            Image("cattv_home_logo").resizable().renderingMode(.original).scaledToFit().frame(width: 26, height: 26)
+            Text(name).font(.system(size: 14, weight: .medium)).lineLimit(1)
+            Image(systemName: "chevron.down").font(.system(size: 9, weight: .semibold))
+        }.padding(.horizontal, 10).padding(.vertical, 6).background(.thinMaterial, in: Capsule()).foregroundStyle(.primary)
     }
 }
 struct ConfigurationView: View {
@@ -140,7 +156,7 @@ struct ConfigurationView: View {
                     }
                 }
             }
-        }.navigationTitle("设置")
+        }.navigationTitle("设置").navigationBarTitleDisplayMode(.inline)
             .fileImporter(isPresented: $showFileImporter, allowedContentTypes: [.json, .plainText, .data]) { result in
                 switch result {
                 case .success(let url): Task { await library.importFile(url) }
@@ -161,6 +177,8 @@ struct DetailView: View {
     @State private var video: Video?
     @State private var lineIndex = 0
     @State private var selectedParser: ParserEndpoint?
+    @EnvironmentObject var chrome: NavigationChrome
+    @State private var navigationID = UUID()
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
@@ -224,6 +242,8 @@ struct DetailView: View {
                 }
             }.padding(6)
         }.navigationBarTitleDisplayMode(.inline)
+            .onAppear { chrome.enter(navigationID) }
+            .onDisappear { chrome.leave(navigationID) }
             .task {
                 do { video = try await library.detail(summary, source: source) }
                 catch is CancellationError {} catch { library.error = error.localizedDescription }
@@ -254,6 +274,6 @@ struct SavedLibraryView: View {
                     for offset in offsets { let entry = entries[offset]; userLibrary.toggleFollowing(source: entry.source, video: entry.video) }
                 } else { userLibrary.removeHistory(at: offsets) }
             }
-        }.navigationTitle(following ? "追剧" : "记录")
+        }.navigationTitle(following ? "追剧" : "记录").navigationBarTitleDisplayMode(.inline)
     }
 }

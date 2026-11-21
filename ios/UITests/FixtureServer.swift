@@ -72,7 +72,7 @@ final class FixtureServer: @unchecked Sendable {
         do {
             switch path {
             case "/config.json":
-                let config: [String: Any] = ["sites": [["key": "fixture", "name": "CI Fixture Source", "type": 1, "api": baseURL + "/api", "playUrl": baseURL + "/parser?url="]]]
+                let config: [String: Any] = ["sites": [["key": "fixture", "name": "CI Fixture Source", "type": 1, "api": baseURL + "/api", "playUrl": baseURL + "/parser?url="]], "lives": [["name": "CI Live", "channels": [["name": "CI Live Channel", "urls": [baseURL + "/test.mp4"]]]]]]
                 send(connection, data: try JSONSerialization.data(withJSONObject: config), mime: "application/json", headOnly: method == "HEAD")
             case "/api":
                 let item: [String: Any] = ["vod_id": "fixture-1", "vod_name": "CI Fixture Video", "vod_pic": baseURL + "/poster.png", "vod_remarks": "CI generated test media", "vod_year": 2026, "vod_content": "<p>CI-only generated media. Not bundled in the app.</p>", "vod_play_from": "Fixture Line", "vod_play_url": "Episode 1$fixture-video"]

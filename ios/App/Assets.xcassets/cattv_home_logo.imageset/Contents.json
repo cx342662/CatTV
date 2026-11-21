@@ -1,0 +1,16 @@
+{
+  "info": {
+    "author": "xcode",
+    "version": 1
+  },
+  "images": [
+    {
+      "filename": "cattv_home_logo.svg",
+      "idiom": "universal"
+    }
+  ],
+  "properties": {
+    "preserves-vector-representation": true,
+    "template-rendering-intent": "original"
+  }
+}
