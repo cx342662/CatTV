@@ -135,7 +135,7 @@ struct ConfigurationView: View {
                 ForEach(library.collection.documents) { document in
                     HStack {
                         Button(document.name) { library.activate(document.id) }
-                        if document.id == library.collection.activeID { Image(systemName: "checkmark") }
+                        if document.id == library.collection.activeID { Image(systemName: "checkmark").accessibilityLabel("当前配置").accessibilityIdentifier("active-configuration") }
                         Spacer()
                         Button("编辑") { editor = document; showEditor = true }
                     }.swipeActions { Button("删除", role: .destructive) { library.removeConfiguration(document.id) } }

@@ -5,6 +5,7 @@ final class NavigationTests: XCTestCase {
         let server = try FixtureServer()
         defer { server.stop() }
         let app = XCUIApplication()
+        continueAfterFailure = false
         app.launch()
         XCTAssertTrue(app.buttons["nav-home"].waitForExistence(timeout: 15))
         XCTAssertTrue(app.buttons["nav-records"].exists)
@@ -40,7 +41,10 @@ final class NavigationTests: XCTestCase {
         configURL.tap()
         configURL.typeText(server.baseURL + "/config.json")
         app.buttons["导入配置"].tap()
+        XCTAssertTrue(app.images["active-configuration"].waitForExistence(timeout: 15))
         app.buttons["nav-home"].tap()
+        let selectedHome = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "已选中"), object: app.buttons["nav-home"])
+        XCTAssertEqual(XCTWaiter.wait(for: [selectedHome], timeout: 5), .completed)
         let video = app.buttons["video-fixture-1"]
         XCTAssertTrue(video.waitForExistence(timeout: 15))
         capture(app, name: "catalog-from-ci-fixture-server")
