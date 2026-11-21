@@ -6,7 +6,93 @@ import CatTVCore
 @MainActor
 final class PlaybackModel: ObservableObject {
     @Published private(set) var subtitleCues: [SubtitleCue] = []
-    @Published private(set…1216 tokens truncated…ue: .main) { [weak self] notification in
+    @Published private(set) var subtitleName: String?
+    @Published var subtitleOffset = 0.0
+    func setSubtitles(_ cues: [SubtitleCue], name: String) { subtitleCues = cues; subtitleName = name; subtitleOffset = 0 }
+    func clearSubtitles() { subtitleCues = []; subtitleName = nil; subtitleOffset = 0 }
+    func importSubtitles(from url: URL) async throws {
+        let expected = token
+        guard player.currentItem != nil else { throw SourceError.invalidConfiguration("请先开始播放") }
+        let cues = try await Task.detached {
+            let scoped = url.startAccessingSecurityScopedResource()
+            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+            return try SubtitleDocument.decode(Data(contentsOf: url))
+        }.value
+        guard expected == token, player.currentItem != nil else { throw SourceError.invalidConfiguration("播放内容已经切换，请重新导入字幕") }
+        setSubtitles(cues, name: url.lastPathComponent)
+    }
+    let player = AVPlayer()
+    let sniffer = WebMediaSniffer()
+    @Published private(set) var failure: String?
+    @Published private(set) var title = ""
+    @Published private(set) var episodeName = ""
+    @Published private(set) var isPlaying = false
+    @Published private(set) var isLive = false
+    @Published private(set) var allowLANProxy = UserDefaults.standard.bool(forKey: "CatTV.allowLANProxy")
+    @Published private(set) var usingLANProxy = false
+    @Published private(set) var elapsedSeconds = 0.0
+    private var lastProgressSave = 0.0
+    @Published private(set) var resolving = false
+    @Published private(set) var activeEpisodeID: Int?
+    @Published private(set) var activeLineID: Int?
+    @Published private(set) var skipSettings = PlaybackSkipSettings()
+    private var resumeSeekPending = false
+    private var skipIntroApplied = false
+    private var skipEndApplied = false
+    private var skipKey: String? {
+        guard let source, let video, !isLive else { return nil }
+        return "CatTV.skip." + LibraryIdentity.video(source: source, videoID: video.id)
+    }
+    func setSkip(intro: Double, outro: Double) {
+        guard let skipKey else { return }
+        skipSettings = PlaybackSkipSettings(intro: intro, outro: outro)
+        do { UserDefaults.standard.set(try JSONEncoder().encode(skipSettings), forKey: skipKey) }
+        catch { failure = error.localizedDescription }
+    }
+    private func loadSkipSettings() {
+        skipSettings = PlaybackSkipSettings()
+        if let skipKey, let data = UserDefaults.standard.data(forKey: skipKey) {
+            do {
+                let saved = try JSONDecoder().decode(PlaybackSkipSettings.self, from: data)
+                skipSettings = PlaybackSkipSettings(intro: saved.intro, outro: saved.outro)
+            } catch { failure = "跳过设置读取失败：\(error.localizedDescription)" }
+        }
+    }
+    private let resolver = PlaybackResolver()
+    private var proxy: MediaHTTPProxy?
+    private var onProgress: ((Episode, Double) -> Void)?
+    private var resume: ((Episode) -> Double)?
+    private var video: Video?
+    private var source: SourceSite?
+    private var selectedParser: ParserEndpoint?
+    private var line: PlaybackLine?
+    private var task: Task<Void, Never>?
+    private var token = UUID()
+    private var timeObserver: Any?
+    private var observation: NSKeyValueObservation?
+    private var rateObservation: NSKeyValueObservation?
+    private var notifications: [NSObjectProtocol] = []
+    private var remoteTargets: [(MPRemoteCommand, Any)] = []
+    private var timer: Task<Void, Never>?
+    private var currentEpisode: Episode?
+    private var interruptedPlaying = false
+    init() {
+        let center = NotificationCenter.default
+        notifications.append(center.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: nil, queue: .main) { [weak self] notification in
+            guard let item = notification.object as? AVPlayerItem else { return }
+            Task { @MainActor [weak self] in
+                guard let self, item === self.player.currentItem else { return }
+                guard !self.skipEndApplied else { return }
+                self.skipEndApplied = true
+                self.advance(1)
+            }
+        })
+        notifications.append(center.addObserver(forName: AVAudioSession.interruptionNotification, object: nil, queue: .main) { [weak self] notification in
+            let type = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt
+            let options = notification.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0
+            Task { @MainActor [weak self] in self?.interruption(type: type, options: options) }
+        })
+        notifications.append(center.addObserver(forName: AVAudioSession.routeChangeNotification, object: nil, queue: .main) { [weak self] notification in
             let reason = notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt
             Task { @MainActor [weak self] in
                 if reason == AVAudioSession.RouteChangeReason.oldDeviceUnavailable.rawValue { self?.player.pause() }
@@ -93,13 +179,21 @@ final class PlaybackModel: ObservableObject {
         episodeName = episode.name
         player.allowsExternalPlayback = true
         player.replaceCurrentItem(with: item)
-        if position.isFinite && position > 0 { player.seek(to: CMTime(seconds: position, preferredTimescale: 600)) }
+        resumeSeekPending = position.isFinite && position > 0
+        if resumeSeekPending {
+            player.seek(to: CMTime(seconds: position, preferredTimescale: 600)) { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    guard let self, self.player.currentItem === item else { return }
+                    self.resumeSeekPending = false
+                }
+            }
+        }
         timeObserver = player.addPeriodicTimeObserver(forInterval: CMTime(seconds: 1, preferredTimescale: 1), queue: .main) { [weak self] time in
             Task { @MainActor [weak self] in
                 guard let self, self.player.currentItem === item else { return }
                 if time.seconds.isFinite {
                     self.elapsedSeconds = time.seconds
-                    if !self.isLive, !self.resolving, self.player.timeControlStatus == .playing {
+                    if !self.isLive, !self.resolving, !self.resumeSeekPending, self.player.timeControlStatus == .playing {
                         let duration = item.duration.seconds
                         if !self.skipIntroApplied, duration.isFinite, duration > 0 {
                             self.skipIntroApplied = true
