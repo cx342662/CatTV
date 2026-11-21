@@ -34,17 +34,21 @@ struct CatalogTile: View {
     var body: some View {
         NavigationLink { DetailView(summary: video, source: source) } label: {
             VStack(alignment: .leading, spacing: 5) {
-                Group {
-                    if let image = poster.image { Image(uiImage: image).resizable().scaledToFill() }
-                    else {
-                        Rectangle().fill(Color.secondary.opacity(0.15))
-                            .overlay(Image(systemName: poster.failure == nil ? "film" : "exclamationmark.triangle"))
+                Rectangle().fill(Color.secondary.opacity(0.15))
+                    .aspectRatio(2.0 / 3.0, contentMode: .fit)
+                    .overlay {
+                        GeometryReader { geometry in
+                            Group {
+                                if let image = poster.image { Image(uiImage: image).resizable().scaledToFill() }
+                                else { Image(systemName: poster.failure == nil ? "film" : "exclamationmark.triangle") }
+                            }.frame(width: geometry.size.width, height: geometry.size.height).clipped()
+                        }
                     }
-                }.aspectRatio(2 / 3, contentMode: .fit).clipped().clipShape(RoundedRectangle(cornerRadius: 16))
+                    .clipShape(RoundedRectangle(cornerRadius: 16)).contentShape(Rectangle())
                 Text(video.name).font(.system(size: 14, weight: .medium)).lineLimit(1).frame(maxWidth: .infinity).multilineTextAlignment(.center)
                 MediaBadgeRow(text: video.name + " " + video.remarks)
                 Text(video.remarks).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
-            }
+            }.frame(maxWidth: .infinity).contentShape(Rectangle())
         }.buttonStyle(.plain).accessibilityIdentifier("video-\(video.id)")
             .accessibilityValue(poster.image != nil ? "海报已加载" : (poster.failure.map { "海报加载失败：" + $0 } ?? "海报加载中"))
             .task(id: requestID) { await poster.load(address: video.poster, source: source) }
