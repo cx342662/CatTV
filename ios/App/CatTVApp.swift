@@ -62,17 +62,7 @@ struct RootView: View {
                         }
                         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 3), spacing: 16) {
                             ForEach(library.videos) { video in
-                                NavigationLink { DetailView(summary: video, source: library.site) } label: {
-                                    VStack(alignment: .leading, spacing: 5) {
-                                        AsyncImage(url: URL(string: video.poster, relativeTo: library.site.flatMap { URL(string: $0.api) })?.absoluteURL) { image in
-                                            image.resizable().scaledToFill()
-                                        } placeholder: { Rectangle().fill(Color.secondary.opacity(0.15)).overlay(Image(systemName: "film")) }
-                                        .aspectRatio(2 / 3, contentMode: .fit).clipped().clipShape(RoundedRectangle(cornerRadius: 16))
-                                        Text(video.name).font(.system(size: 14, weight: .medium)).lineLimit(1).frame(maxWidth: .infinity).multilineTextAlignment(.center)
-                                        MediaBadgeRow(text: video.name + " " + video.remarks)
-                                        Text(video.remarks).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
-                                    }
-                                }.buttonStyle(.plain).accessibilityIdentifier("video-\(video.id)")
+                                CatalogTile(video: video, source: library.site)
                             }
                         }.padding(.horizontal, 16)
                         if library.canLoadMore { Button("加载更多") { library.loadMore() }.disabled(library.busy).padding() }
