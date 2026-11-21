@@ -53,6 +53,7 @@ struct MediaTracksView: View {
             List {
                 if model.loading { ProgressView("正在读取媒体轨道") }
                 if let failure = model.failure { Text(failure).foregroundStyle(.secondary) }
+                PlaybackSkipView()
                 ExternalSubtitleSettings()
                 Section("音轨") {
                     if model.audio.isEmpty && !model.loading { Text("当前媒体没有可选音轨").foregroundStyle(.secondary) }
@@ -69,7 +70,7 @@ struct MediaTracksView: View {
                         option(model.subtitles[index], subtitle: true)
                     }
                 }
-            }.navigationTitle("音轨与字幕").navigationBarTitleDisplayMode(.inline)
+            }.navigationTitle("播放设置").navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .cancellationAction) { Button("关闭") { dismiss() } } }
                 .task(id: playback.player.currentItem.map(ObjectIdentifier.init)) { await model.load(playback.player.currentItem) }
         }

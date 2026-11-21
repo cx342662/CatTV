@@ -6,68 +6,7 @@ import CatTVCore
 @MainActor
 final class PlaybackModel: ObservableObject {
     @Published private(set) var subtitleCues: [SubtitleCue] = []
-    @Published private(set) var subtitleName: String?
-    @Published var subtitleOffset = 0.0
-    func setSubtitles(_ cues: [SubtitleCue], name: String) { subtitleCues = cues; subtitleName = name; subtitleOffset = 0 }
-    func clearSubtitles() { subtitleCues = []; subtitleName = nil; subtitleOffset = 0 }
-    func importSubtitles(from url: URL) async throws {
-        let expected = token
-        guard player.currentItem != nil else { throw SourceError.invalidConfiguration("请先开始播放") }
-        let cues = try await Task.detached {
-            let scoped = url.startAccessingSecurityScopedResource()
-            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
-            return try SubtitleDocument.decode(Data(contentsOf: url))
-        }.value
-        guard expected == token, player.currentItem != nil else { throw SourceError.invalidConfiguration("播放内容已经切换，请重新导入字幕") }
-        setSubtitles(cues, name: url.lastPathComponent)
-    }
-    let player = AVPlayer()
-    let sniffer = WebMediaSniffer()
-    @Published private(set) var failure: String?
-    @Published private(set) var title = ""
-    @Published private(set) var episodeName = ""
-    @Published private(set) var isPlaying = false
-    @Published private(set) var isLive = false
-    @Published private(set) var allowLANProxy = UserDefaults.standard.bool(forKey: "CatTV.allowLANProxy")
-    @Published private(set) var usingLANProxy = false
-    @Published private(set) var elapsedSeconds = 0.0
-    private var lastProgressSave = 0.0
-    @Published private(set) var resolving = false
-    @Published private(set) var activeEpisodeID: Int?
-    @Published private(set) var activeLineID: Int?
-    private let resolver = PlaybackResolver()
-    private var proxy: MediaHTTPProxy?
-    private var onProgress: ((Episode, Double) -> Void)?
-    private var resume: ((Episode) -> Double)?
-    private var video: Video?
-    private var source: SourceSite?
-    private var selectedParser: ParserEndpoint?
-    private var line: PlaybackLine?
-    private var task: Task<Void, Never>?
-    private var token = UUID()
-    private var timeObserver: Any?
-    private var observation: NSKeyValueObservation?
-    private var rateObservation: NSKeyValueObservation?
-    private var notifications: [NSObjectProtocol] = []
-    private var remoteTargets: [(MPRemoteCommand, Any)] = []
-    private var timer: Task<Void, Never>?
-    private var currentEpisode: Episode?
-    private var interruptedPlaying = false
-    init() {
-        let center = NotificationCenter.default
-        notifications.append(center.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: nil, queue: .main) { [weak self] notification in
-            guard let item = notification.object as? AVPlayerItem else { return }
-            Task { @MainActor [weak self] in
-                guard let self, item === self.player.currentItem else { return }
-                self.advance(1)
-            }
-        })
-        notifications.append(center.addObserver(forName: AVAudioSession.interruptionNotification, object: nil, queue: .main) { [weak self] notification in
-            let type = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt
-            let options = notification.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0
-            Task { @MainActor [weak self] in self?.interruption(type: type, options: options) }
-        })
-        notifications.append(center.addObserver(forName: AVAudioSession.routeChangeNotification, object: nil, queue: .main) { [weak self] notification in
+    @Published private(set…1216 tokens truncated…ue: .main) { [weak self] notification in
             let reason = notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt
             Task { @MainActor [weak self] in
                 if reason == AVAudioSession.RouteChangeReason.oldDeviceUnavailable.rawValue { self?.player.pause() }
@@ -89,6 +28,7 @@ final class PlaybackModel: ObservableObject {
         self.video = video; self.source = source; self.line = line
         selectedParser = parser
         self.isLive = isLive
+        loadSkipSettings()
         self.resume = resume; onProgress = progress
         title = video.name
         activeLineID = line.id
@@ -146,6 +86,7 @@ final class PlaybackModel: ObservableObject {
                 Task { @MainActor [weak self] in self?.failure = message }
             }
         }
+        skipIntroApplied = false; skipEndApplied = false
         elapsedSeconds = 0; lastProgressSave = 0
         currentEpisode = episode
         activeEpisodeID = episode.id
@@ -158,6 +99,20 @@ final class PlaybackModel: ObservableObject {
                 guard let self, self.player.currentItem === item else { return }
                 if time.seconds.isFinite {
                     self.elapsedSeconds = time.seconds
+                    if !self.isLive, !self.resolving, self.player.timeControlStatus == .playing {
+                        let duration = item.duration.seconds
+                        if !self.skipIntroApplied, duration.isFinite, duration > 0 {
+                            self.skipIntroApplied = true
+                            if let target = self.skipSettings.introTarget(position: time.seconds, duration: duration) {
+                                self.player.seek(to: CMTime(seconds: target, preferredTimescale: 600))
+                            }
+                        }
+                        if !self.skipEndApplied, self.skipSettings.shouldAdvance(position: time.seconds, duration: duration) {
+                            self.skipEndApplied = true
+                            self.advance(1)
+                            return
+                        }
+                    }
                     if abs(time.seconds - self.lastProgressSave) >= 5 {
                         self.onProgress?(episode, time.seconds); self.lastProgressSave = time.seconds
                     }

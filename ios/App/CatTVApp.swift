@@ -228,7 +228,7 @@ struct DetailView: View {
                         Button("下一集") { playback.advance(1) }
                         Button("停止播放") { playback.stop() }
                     }.buttonStyle(.bordered)
-                    Button("音轨与字幕") { showMediaTracks = true }
+                    Button("播放设置") { showMediaTracks = true }
                     Menu("定时退出播放") {
                         ForEach([15, 30, 60, 90], id: \.self) { minutes in
                             Button("\(minutes) 分钟") { playback.setStopTimer(minutes: minutes) }
