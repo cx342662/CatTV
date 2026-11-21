@@ -94,11 +94,12 @@ public struct SourceSite: Codable, Equatable, Identifiable, Sendable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         key = try c.decode(String.self, forKey: .key)
         name = try c.decode(String.self, forKey: .name)
-        api = try c.decode(String.self, forKey: .api)
+        api = try c.decode(String.self, forKey: .api).trimmingCharacters(in: .whitespacesAndNewlines)
         let rawType = try c.decode(JSONValue.self, forKey: .type)
         guard let raw = rawType.text, let value = Int(raw) else { throw SourceError.invalidConfiguration("影视源 type 必须为整数") }
         type = value
-        header = try c.decodeIfPresent([String: JSONValue].self, forKey: .header)
+        let rawHeader = try c.decodeIfPresent(JSONValue.self, forKey: .header)
+        if case .object(let fields)? = rawHeader { header = fields } else { header = nil }
         ext = try c.decodeIfPresent(JSONValue.self, forKey: .ext)
         playUrl = try c.decodeIfPresent(String.self, forKey: .playUrl)
         timeout = try c.decodeIfPresent(JSONValue.self, forKey: .timeout)?.text.flatMap(Int.init)
