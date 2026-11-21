@@ -50,7 +50,7 @@ final class NavigationTests: XCTestCase {
         let posterLoaded = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "海报已加载"), object: video)
         let posterResult = XCTWaiter.wait(for: [posterLoaded], timeout: 15)
         capture(app, name: "catalog-from-ci-fixture-server")
-        XCTAssertEqual(posterResult, .completed)
+        XCTAssertEqual(posterResult, .completed, "Poster state: \(String(describing: video.value))")
         video.tap()
         let episode = app.buttons["episode-0"]
         XCTAssertTrue(episode.waitForExistence(timeout: 15))
