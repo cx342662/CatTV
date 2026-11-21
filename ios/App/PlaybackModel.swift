@@ -11,6 +11,7 @@ final class PlaybackModel: ObservableObject {
     @Published private(set) var title = ""
     @Published private(set) var episodeName = ""
     @Published private(set) var isPlaying = false
+    @Published private(set) var isLive = false
     @Published private(set) var allowLANProxy = UserDefaults.standard.bool(forKey: "CatTV.allowLANProxy")
     @Published private(set) var usingLANProxy = false
     @Published private(set) var elapsedSeconds = 0.0
@@ -62,7 +63,7 @@ final class PlaybackModel: ObservableObject {
         }
         installRemoteCommands()
     }
-    func start(video: Video, source: SourceSite, line: PlaybackLine, episode: Episode, parser: ParserEndpoint? = nil, resume: @escaping (Episode) -> Double, progress: @escaping (Episode, Double) -> Void) {
+    func start(video: Video, source: SourceSite, line: PlaybackLine, episode: Episode, parser: ParserEndpoint? = nil, isLive: Bool = false, resume: @escaping (Episode) -> Double, progress: @escaping (Episode, Double) -> Void) {
         saveProgress()
         player.pause()
         if let timeObserver { player.removeTimeObserver(timeObserver); self.timeObserver = nil }
@@ -71,6 +72,7 @@ final class PlaybackModel: ObservableObject {
         currentEpisode = nil
         self.video = video; self.source = source; self.line = line
         selectedParser = parser
+        self.isLive = isLive
         self.resume = resume; onProgress = progress
         title = video.name
         activeLineID = line.id
@@ -149,6 +151,7 @@ final class PlaybackModel: ObservableObject {
         updateNowPlaying()
     }
     func advance(_ direction: Int) {
+        guard !isLive else { return }
         guard let line, let currentEpisode, let index = line.episodes.firstIndex(where: { $0.id == currentEpisode.id }) else { return }
         let next = index + direction
         guard line.episodes.indices.contains(next) else { player.pause(); saveProgress(); return }
@@ -201,6 +204,11 @@ final class PlaybackModel: ObservableObject {
         let duration = player.currentItem?.duration.seconds ?? .nan
         if elapsed.isFinite { info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = elapsed }
         if duration.isFinite { info[MPMediaItemPropertyPlaybackDuration] = duration }
+        info[MPNowPlayingInfoPropertyIsLiveStream] = isLive
+        let commands = MPRemoteCommandCenter.shared()
+        commands.nextTrackCommand.isEnabled = !isLive
+        commands.previousTrackCommand.isEnabled = !isLive
+        commands.changePlaybackPositionCommand.isEnabled = !isLive && duration.isFinite
         MPNowPlayingInfoCenter.default().nowPlayingInfo = info
     }
     private func interruption(type: UInt?, options: UInt) {

@@ -25,12 +25,13 @@ struct RootView: View {
     @EnvironmentObject var library: LibraryModel
     @State private var search = ""
     @State private var showSearch = false
+    @State private var showLive = false
     var body: some View {
         TabView {
             NavigationStack {
                 ScrollView {
                     VStack(spacing: 12) {
-                        if let config = library.configuration {
+                        if let config = library.configuration, !config.sites.isEmpty {
                             Menu {
                                 ForEach(config.sites) { site in Button(site.name) { library.select(site) } }
                             } label: { Label(library.site?.name ?? "选择影视源", systemImage: "chevron.down") }
@@ -56,6 +57,8 @@ struct RootView: View {
                         if library.busy { ProgressView().padding() }
                         if library.configuration == nil {
                             Text("请在设置的配置中心导入你的影视源配置").foregroundStyle(.secondary).padding(24)
+                        } else if library.configuration?.sites.isEmpty == true {
+                            Text("当前配置为直播源，请打开直播").foregroundStyle(.secondary).padding(24)
                         } else if !library.busy && library.videos.isEmpty {
                             Text("暂无内容，请切换分类或影视源").foregroundStyle(.secondary).padding(24)
                         }
@@ -77,6 +80,8 @@ struct RootView: View {
                         if library.canLoadMore { Button("加载更多") { library.loadMore() }.disabled(library.busy).padding() }
                     }
                 }.navigationTitle("CatTV").navigationBarTitleDisplayMode(.inline)
+                    .toolbar { ToolbarItem(placement: .navigationBarTrailing) { Button("直播") { showLive = true } } }
+                    .sheet(isPresented: $showLive) { LiveView() }
                     .searchable(text: $search, prompt: "搜索影视")
                     .onSubmit(of: .search) { showSearch = true }
                     .sheet(isPresented: $showSearch) { GlobalSearchView(initialQuery: search, sites: library.configuration?.sites ?? []) }

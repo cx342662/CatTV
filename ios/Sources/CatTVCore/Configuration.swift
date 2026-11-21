@@ -43,9 +43,18 @@ public struct SourceConfiguration: Codable, Equatable, Sendable {
     public var sites: [SourceSite]
     public var spider: String?
     public var parses: [ParserEndpoint]?
+    public var lives: [JSONValue]?
+    enum CodingKeys: String, CodingKey { case sites, spider, parses, lives }
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        sites = try c.decodeIfPresent([SourceSite].self, forKey: .sites) ?? []
+        spider = try c.decodeIfPresent(JSONValue.self, forKey: .spider)?.serialized
+        parses = try c.decodeIfPresent([ParserEndpoint].self, forKey: .parses)
+        lives = try c.decodeIfPresent([JSONValue].self, forKey: .lives)
+    }
     public static func decode(_ data: Data, baseURL: URL? = nil) throws -> Self {
         var configuration = try JSONDecoder().decode(Self.self, from: data)
-        guard !configuration.sites.isEmpty else { throw SourceError.invalidConfiguration("配置没有影视源") }
+        guard !configuration.sites.isEmpty || configuration.lives?.isEmpty == false else { throw SourceError.invalidConfiguration("配置没有影视源或直播源") }
         guard configuration.sites.allSatisfy({ !$0.key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !$0.api.isEmpty }) else { throw SourceError.invalidConfiguration("影视源缺少 key 或 api") }
         guard Set(configuration.sites.map(\.key)).count == configuration.sites.count else { throw SourceError.invalidConfiguration("影视源 key 重复") }
         if let baseURL {
