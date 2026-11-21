@@ -5,10 +5,10 @@
 ## 已核实
 
 - 默认 main 的 app/build.gradle.kts 仍为 1.3.0 / com.github.avbox.osc。
-- origin/fix/mobile-panconfig-lifecycle 的默认版本为 1.3.6 / com.cattv.mobile，本隔离分支以它为起点；仍需与已发布 APK 对照。
+- origin/fix/mobile-panconfig-lifecycle 的默认版本为 1.3.6 / com.cattv.mobile，本隔离分支以它为起点。已核实 v1.3.6 Release 的 target_commitish 正是 f2cb3cb021429460d9f8c2f3a1a13b64bbbd221a，与该起点一致；APK 运行画面的对照尚未完成。
 - app 为 Kotlin/Compose Android 应用；quickjs、pyramid、libs/backdrop 为独立模块。
 - SpiderLoader 依赖 Android Handler/Looper、JarLoader、JsLoader 和 Python loader。JAR 不能由 iOS 原生直接执行；需要独立适配或用户控制的兼容服务，不可声称与 Android 全兼容。
-- SourceResultParser 包含 JSON、XML 分类及 filters 解析；新 Swift 数据模型目前只覆盖配置基础字段，尚不支持完整配置语义。
+- SourceResultParser 包含 JSON、XML 分类及 filters 解析；iOS 已接 XML/JSON/type=4、headers、parses、lives 的主要路径，仍未覆盖完整扩展语义，逐项差异见 CONFIGURATION_PARITY.md。
 - Android 播放栈包含 Media3、FFmpeg 解码、DASH、HLS、RTSP、RTMP；AVPlayer 是否覆盖具体编码、封装和网络协议需逐项验证。
 - 存在 WebViewJs、JsonParallel、WebParseUseCase；WKWebView 不能未经验证替代 Android 请求拦截及桥接。
 - 已有 cattv-release.yml 为 Android 签名发布流程，引用 cattv-branding；不得复用其签名或修改它来构建 iOS。
@@ -58,3 +58,7 @@
 6aff275e0d3c6af6960f084202a7427701b8085d 对应 https://github.com/cx342662/CatTV/actions/runs/44850965328：48 项核心测试零失败；模拟器点播、直播频道播放、节目单网络读取 UI 测试通过；设备 Release 与无签名 IPA 成功。已打开直播和节目单截图，确认实际媒体画面和节目内容。这里的直播频道使用 CI 自产短视频，证明配置到播放链路，不能证明真实长时直播/HLS、回看或所有服务兼容。
 
 截图发现节目时间用了模拟器本地时区，后续改为显式 UTC+8 的 HH:mm 并增加 00:00/23:59 UI 断言；不能用修改前的成功记录替代修正后的回归结果。另见 WORKFLOWS.md 的隔离审计。
+
+cba3ea4b9c5bf2f498d5fdb5bd532f7d18040905 对应 https://github.com/cx342662/CatTV/actions/runs/44851694063 全部成功，覆盖导入完成标识、悬浮导航选中状态、详情隐藏底栏、点播/直播/节目单及设备 Release/IPA。导航修正不再只停留在推断。
+
+b3ec469ba962aa9ec1dcfec3cd8bd084b44e508c 对应 https://github.com/cx342662/CatTV/actions/runs/44854163818 全部成功，49 项核心测试零失败，包含非对象 header 忽略与 API 首尾空白处理；节目单 UTC+8 两个时间文本的严格 UI 断言、模拟器编译、设备 Release、IPA 打包/结构检查均成功。

@@ -10,6 +10,17 @@ final class PlaybackModel: ObservableObject {
     @Published var subtitleOffset = 0.0
     func setSubtitles(_ cues: [SubtitleCue], name: String) { subtitleCues = cues; subtitleName = name; subtitleOffset = 0 }
     func clearSubtitles() { subtitleCues = []; subtitleName = nil; subtitleOffset = 0 }
+    func importSubtitles(from url: URL) async throws {
+        let expected = token
+        guard player.currentItem != nil else { throw SourceError.invalidConfiguration("请先开始播放") }
+        let cues = try await Task.detached {
+            let scoped = url.startAccessingSecurityScopedResource()
+            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+            return try SubtitleDocument.decode(Data(contentsOf: url))
+        }.value
+        guard expected == token, player.currentItem != nil else { throw SourceError.invalidConfiguration("播放内容已经切换，请重新导入字幕") }
+        setSubtitles(cues, name: url.lastPathComponent)
+    }
     let player = AVPlayer()
     let sniffer = WebMediaSniffer()
     @Published private(set) var failure: String?
@@ -187,6 +198,7 @@ final class PlaybackModel: ObservableObject {
         if !enabled && usingLANProxy { stop() }
     }
     func stop() {
+        clearSubtitles()
         usingLANProxy = false
         saveProgress()
         task?.cancel(); token = UUID(); resolving = false

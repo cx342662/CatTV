@@ -4,8 +4,8 @@
 
 | 功能 | Android 依据 | iOS 实现 | 当前验证范围 / 缺口 |
 | --- | --- | --- | --- |
-| 首页、四个导航入口 | ui/page/MainScreen、HomePage、HomeGridLayout | CatTVApp | 早期导航 UI 已通过；新悬浮导航和详情隐藏导航的测试进行中，整体视觉尚未逐像素比对 |
-| 图标资源 | drawable/ic_tab_*.xml、cattv_launcher_foreground.png | SVG 路径复用及构建时生成 AppIcon | 四枚导航图标、直播入口及首页猫图案复用；尺寸对齐后的截图待验收 |
+| 首页、四个导航入口 | ui/page/MainScreen、HomePage、HomeGridLayout | CatTVApp | 悬浮导航、导入后切回首页、详情隐藏底栏 UI 在 cba3ea4b 通过；整体视觉尚未逐像素比对 |
+| 图标资源 | drawable/ic_tab_*.xml、cattv_launcher_foreground.png | SVG 路径复用及构建时生成 AppIcon | 四枚导航图标、直播入口及首页猫图案复用；悬浮导航和媒体页面截图已打开核查；未作 Android APK 逐像素比对 |
 | 配置导入、编辑、切换、删除 | api/ConfigParser、ui/page/ConfigManagePage | ConfigurationCollection、ConfigurationEditor、LibraryModel | 原始 JSON 保留、无效数据回滚有核心测试；相对 api 地址可解析 |
 | 站点请求头 | ConfigParser.parseHeaderObject、SourceHelper.siteGet | HeaderPolicy、CatalogRepository | 原始值归一化、控制字符拦截有测试 |
 | XML 源 type=0 | SortLoader、ListLoader、SearchLoader、SourceResultParser | XMLCatalogDecoder、CatalogQuery | 分类、CDATA、分页元数据、线路及选集有测试 |

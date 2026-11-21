@@ -20,13 +20,7 @@ struct ExternalSubtitleSettings: View {
         }.fileImporter(isPresented: $importing, allowedContentTypes: [.plainText, .data]) { result in
             Task {
                 do {
-                    let url = try result.get()
-                    let cues = try await Task.detached {
-                        let scoped = url.startAccessingSecurityScopedResource()
-                        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
-                        return try SubtitleDocument.decode(Data(contentsOf: url))
-                    }.value
-                    playback.setSubtitles(cues, name: url.lastPathComponent)
+                    try await playback.importSubtitles(from: result.get())
                 } catch { failure = error.localizedDescription }
             }
         }.alert("字幕导入失败", isPresented: Binding(get: { failure != nil }, set: { if !$0 { failure = nil } })) {
