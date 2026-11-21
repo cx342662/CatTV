@@ -14,13 +14,17 @@ foreach ($icon in @('ic_tab_home','ic_tab_records','ic_tab_following','ic_tab_mi
         $translateY = $node.ParentNode.GetAttribute('translateY', $androidNamespace)
         if (!$translateY) { $translateY = '0' }
         if ($icon -eq 'cattv_home_logo') {
+            $fill = $node.GetAttribute('fillColor', $androidNamespace)
+            if (!$fill -or $fill -eq '#00000000') { $fill = 'none' }
             $stroke = $node.GetAttribute('strokeColor', $androidNamespace)
             $strokeWidth = $node.GetAttribute('strokeWidth', $androidNamespace)
+            if (!$stroke) { $stroke = 'none' }
+            if (!$strokeWidth) { $strokeWidth = '0' }
             $cap = $node.GetAttribute('strokeLineCap', $androidNamespace)
             $join = $node.GetAttribute('strokeLineJoin', $androidNamespace)
             if (!$cap) { $cap = 'butt' }
             if (!$join) { $join = 'miter' }
-            "<path fill=`"none`" stroke=`"$stroke`" stroke-width=`"$strokeWidth`" stroke-linecap=`"$cap`" stroke-linejoin=`"$join`" d=`"$pathData`"/>"
+            "<path fill=`"$fill`" stroke=`"$stroke`" stroke-width=`"$strokeWidth`" stroke-linecap=`"$cap`" stroke-linejoin=`"$join`" d=`"$pathData`"/>"
         } else {
             "<path fill=`"#000000`" transform=`"translate(0,$translateY)`" d=`"$pathData`"/>"
         }
@@ -29,5 +33,5 @@ foreach ($icon in @('ic_tab_home','ic_tab_records','ic_tab_following','ic_tab_mi
     New-Item -ItemType Directory -Force $targetDirectory | Out-Null
     "<svg xmlns=`"http://www.w3.org/2000/svg`" width=`"24`" height=`"24`" viewBox=`"0 0 $width $height`">$($paths -join '')</svg>" | Set-Content (Join-Path $targetDirectory "$icon.svg") -Encoding utf8
     $renderingIntent = if ($icon -eq 'cattv_home_logo') { 'original' } else { 'template' }
-    @{ images = @(@{ filename = "$icon.svg"; idiom = 'universal' }); info = @{ author = 'xcode'; version = 1 }; properties = @{ 'preserves-vector-representation' = $true; 'template-rendering-intent' = $renderingIntent } } | ConvertTo-Json -Depth 5 | Set-Content (Join-Path $targetDirectory 'Contents.json') -Encoding utf8
+    [ordered]@{ images = @([ordered]@{ filename = "$icon.svg"; idiom = 'universal' }); info = [ordered]@{ author = 'xcode'; version = 1 }; properties = [ordered]@{ 'preserves-vector-representation' = $true; 'template-rendering-intent' = $renderingIntent } } | ConvertTo-Json -Depth 5 | Set-Content (Join-Path $targetDirectory 'Contents.json') -Encoding utf8
 }

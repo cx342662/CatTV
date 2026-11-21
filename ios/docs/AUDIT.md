@@ -20,7 +20,7 @@
 
 ## 本地验证限制
 
-当前 Windows 没有 swift 或 xcodebuild。实际构建已在 GitHub Actions macOS 上完成，见下述记录。界面运行及真实媒体功能尚未验证，不能把编译通过当作完整功能验收。
+当前 Windows 没有 swift 或 xcodebuild。实际构建已在 GitHub Actions macOS 上完成，见下述记录。已有模拟器界面和受控测试媒体播放验证；真实用户影视源尚未验证，不能把编译通过当作完整功能验收。
 
 ## 已完成的云端构建验证
 
@@ -44,3 +44,12 @@
 - 498d1cd6c32b217e1a42f79efdfe56d6ddcb5687 增加 WKWebView 网页媒体发现；对应 https://github.com/cx342662/CatTV/actions/runs/44802055465 的核心测试与模拟器编译已成功，记录本条时 UI 测试仍进行中。
 
 以上都不构成 JAR/JS/Python 爬虫兼容、真实影视源播放、安卓视觉一致性或真机系统功能验收。
+
+## 受控端到端播放证据
+
+- aaf08c0fcfa7a96a7c133c290072a9678ed2f8c2 对应 https://github.com/cx342662/CatTV/actions/runs/44848339584，核心测试、模拟器编译/UI 测试、设备 Release、无签名 IPA 均成功。
+- UI 测试通过应用的普通配置导入、首页、详情和选集入口请求测试服务；WKWebView 发现媒体、带头代理转发、AVPlayer 解码，断言实际播放时间前进。已人工打开导出的截图，确认渐变测试视频画面及 6 秒进度。不是静态假页面。
+- 测试服务运行在模拟器 UI 测试进程，视频由 CI 用 AVAssetWriter 生成，仅属于测试 bundle，生产 App 无默认影视配置或视频。
+- 本次截图也显示首页标题/搜索及底栏仍与 Android 有差异，因此后续提交复用原版首页猫图案、悬浮底栏、中央直播按钮及尺寸，并在详情隐藏底栏；以新提交独立验证结果为准。
+- 直播 M3U/TXT/内联列表、频道切换和节目单正在新增验证，不借用此轮 VOD 成功状态。
+- 依赖、现有本地二进制 SHA256 及未完成的许可证审计见 DEPENDENCIES.md。

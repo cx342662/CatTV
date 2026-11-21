@@ -7,7 +7,7 @@ struct LibraryEntry: Codable, Identifiable {
     var episodeAddress: String?
     var position: Double
     var updatedAt: Date
-    var id: String { source.key + ":" + video.id }
+    var id: String { LibraryIdentity.video(source: source, videoID: video.id) }
 }
 @MainActor
 final class UserLibrary: ObservableObject {
@@ -26,7 +26,8 @@ final class UserLibrary: ObservableObject {
         } catch { failure = "记录读取失败：\(error.localizedDescription)" }
     }
     func isFollowing(source: SourceSite, video: Video) -> Bool {
-        following.contains { $0.source.key == source.key && $0.video.id == video.id }
+        let id = LibraryIdentity.video(source: source, videoID: video.id)
+        return following.contains { $0.id == id }
     }
     func toggleFollowing(source: SourceSite, video: Video) {
         let entry = LibraryEntry(source: source, video: video, position: 0, updatedAt: Date())
@@ -42,7 +43,8 @@ final class UserLibrary: ObservableObject {
         save()
     }
     func resumePosition(source: SourceSite, video: Video, episode: Episode) -> Double {
-        history.first { $0.source.key == source.key && $0.video.id == video.id && $0.episodeAddress == episode.address }?.position ?? 0
+        let id = LibraryIdentity.video(source: source, videoID: video.id)
+        return history.first { $0.id == id && $0.episodeAddress == episode.address }?.position ?? 0
     }
     func removeHistory(at offsets: IndexSet) { history.remove(atOffsets: offsets); save() }
     private func save() {

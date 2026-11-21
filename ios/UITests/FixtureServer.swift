@@ -72,7 +72,7 @@ final class FixtureServer: @unchecked Sendable {
         do {
             switch path {
             case "/config.json":
-                let config: [String: Any] = ["sites": [["key": "fixture", "name": "CI Fixture Source", "type": 1, "api": baseURL + "/api", "playUrl": baseURL + "/parser?url="]], "lives": [["name": "CI Live", "channels": [["name": "CI Live Channel", "urls": [baseURL + "/test.mp4"]]]]]]
+                let config: [String: Any] = ["sites": [["key": "fixture", "name": "CI Fixture Source", "type": 1, "api": baseURL + "/api", "playUrl": baseURL + "/parser?url="]], "lives": [["name": "CI Live", "epg": baseURL + "/epg?name={name}&date={date}", "channels": [["name": "CI Live Channel", "urls": [baseURL + "/test.mp4"]]]]]]
                 send(connection, data: try JSONSerialization.data(withJSONObject: config), mime: "application/json", headOnly: method == "HEAD")
             case "/api":
                 let item: [String: Any] = ["vod_id": "fixture-1", "vod_name": "CI Fixture Video", "vod_pic": baseURL + "/poster.png", "vod_remarks": "CI generated test media", "vod_year": 2026, "vod_content": "<p>CI-only generated media. Not bundled in the app.</p>", "vod_play_from": "Fixture Line", "vod_play_url": "Episode 1$fixture-video"]
@@ -82,6 +82,9 @@ final class FixtureServer: @unchecked Sendable {
                 let html = "<html><body><video muted autoplay playsinline src=\"\(baseURL)/test.mp4\"></video></body></html>"
                 send(connection, data: Data(html.utf8), mime: "text/html", headOnly: method == "HEAD")
             case "/poster.png": send(connection, data: poster, mime: "image/png", headOnly: method == "HEAD")
+            case "/epg":
+                let guide: [String: Any] = ["epg_data": [["title": "CI Programme", "start": "00:00", "end": "23:59"]]]
+                send(connection, data: try JSONSerialization.data(withJSONObject: guide), mime: "application/json", headOnly: method == "HEAD")
             case "/test.mp4":
                 if let range = headers["range"], range.hasPrefix("bytes=") {
                     let bounds = range.dropFirst(6).split(separator: "-", omittingEmptySubsequences: false)
