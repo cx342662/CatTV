@@ -66,6 +66,7 @@ struct RootView: View {
                             }
                         }.padding(.horizontal, 16)
                         if library.canLoadMore { Button("加载更多") { library.loadMore() }.disabled(library.busy).padding() }
+                        Color.clear.frame(height: 100)
                     }
                 }.navigationTitle("").navigationBarTitleDisplayMode(.inline)
                     .toolbar {
@@ -148,6 +149,7 @@ struct ConfigurationView: View {
                     }
                 }
             }
+            Color.clear.frame(height: 100).listRowBackground(Color.clear).listRowSeparator(.hidden)
         }.navigationTitle("设置").navigationBarTitleDisplayMode(.inline)
             .fileImporter(isPresented: $showFileImporter, allowedContentTypes: [.json, .plainText, .data]) { result in
                 switch result {
@@ -266,6 +268,7 @@ struct SavedLibraryView: View {
                     for offset in offsets { let entry = entries[offset]; userLibrary.toggleFollowing(source: entry.source, video: entry.video) }
                 } else { userLibrary.removeHistory(at: offsets) }
             }
+            Color.clear.frame(height: 100).listRowBackground(Color.clear).listRowSeparator(.hidden)
         }.navigationTitle(following ? "追剧" : "记录").navigationBarTitleDisplayMode(.inline)
     }
 }
