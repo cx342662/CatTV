@@ -51,8 +51,8 @@ struct EPGView: View {
                 ForEach(model.programmes) { programme in
                     HStack(alignment: .top, spacing: 12) {
                         VStack(alignment: .leading) {
-                            Text(programme.start, formatter: Self.timeFormatter)
-                            Text(programme.end, formatter: Self.timeFormatter).foregroundStyle(.secondary)
+                            Text(Self.timeFormatter.string(from: programme.start)).accessibilityIdentifier("epg-start-time")
+                            Text(Self.timeFormatter.string(from: programme.end)).foregroundStyle(.secondary).accessibilityIdentifier("epg-end-time")
                         }.font(.caption).monospacedDigit()
                         Text(programme.title)
                         Spacer()
