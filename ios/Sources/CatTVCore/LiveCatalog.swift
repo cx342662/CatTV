@@ -83,7 +83,7 @@ public enum LiveCatalog {
     public static func decodeText(_ data: Data) throws -> String {
         if data.starts(with: [0xFF, 0xFE]) || data.starts(with: [0xFE, 0xFF]), let decoded = String(data: data, encoding: .utf16) { return decoded }
         if let decoded = String(data: data, encoding: .utf8) { return decoded }
-        let legacy = String.Encoding(rawValue: CFStringConvertEncodingToNSStringEncoding(CFStringEncodings.GB_18030_2000.rawValue))
+        let legacy = String.Encoding(rawValue: CFStringConvertEncodingToNSStringEncoding(CFStringEncoding(CFStringEncodings.GB_18030_2000.rawValue)))
         guard let decoded = String(data: data, encoding: legacy) else { throw SourceError.invalidConfiguration("直播列表编码无法识别") }
         return decoded
     }

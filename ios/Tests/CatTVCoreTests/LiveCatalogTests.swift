@@ -44,7 +44,7 @@ final class LiveCatalogTests: XCTestCase {
     }
     func testGB18030AndUTF16PlaylistDecoding() throws {
         let text = "央视,#genre#\n频道,http://example.invalid/live.m3u8\n"
-        let encoding = String.Encoding(rawValue: CFStringConvertEncodingToNSStringEncoding(CFStringEncodings.GB_18030_2000.rawValue))
+        let encoding = String.Encoding(rawValue: CFStringConvertEncodingToNSStringEncoding(CFStringEncoding(CFStringEncodings.GB_18030_2000.rawValue)))
         XCTAssertEqual(try LiveCatalog.decodeText(XCTUnwrap(text.data(using: encoding))), text)
         XCTAssertEqual(try LiveCatalog.decodeText(XCTUnwrap(text.data(using: .utf16))), text)
     }
