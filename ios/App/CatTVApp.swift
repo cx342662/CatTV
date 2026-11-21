@@ -177,7 +177,7 @@ struct DetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                PlayerHost(player: playback.player).frame(height: 220).background(.black)
+                PlayerHost(player: playback.player, subtitles: playback.subtitleCues, subtitleOffset: playback.subtitleOffset).frame(height: 220).background(.black)
                 if playback.resolving { ProgressView("正在解析播放地址") }
                 Text("播放进度：\(Int(playback.elapsedSeconds))秒").font(.caption).foregroundStyle(.secondary).accessibilityIdentifier("playback-progress")
                 VStack(alignment: .leading, spacing: 8) {

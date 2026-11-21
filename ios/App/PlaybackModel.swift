@@ -5,6 +5,11 @@ import CatTVCore
 
 @MainActor
 final class PlaybackModel: ObservableObject {
+    @Published private(set) var subtitleCues: [SubtitleCue] = []
+    @Published private(set) var subtitleName: String?
+    @Published var subtitleOffset = 0.0
+    func setSubtitles(_ cues: [SubtitleCue], name: String) { subtitleCues = cues; subtitleName = name; subtitleOffset = 0 }
+    func clearSubtitles() { subtitleCues = []; subtitleName = nil; subtitleOffset = 0 }
     let player = AVPlayer()
     let sniffer = WebMediaSniffer()
     @Published private(set) var failure: String?
@@ -76,9 +81,11 @@ final class PlaybackModel: ObservableObject {
         self.resume = resume; onProgress = progress
         title = video.name
         activeLineID = line.id
+        clearSubtitles()
         open(episode)
     }
     private func open(_ episode: Episode) {
+        if currentEpisode?.id != episode.id { clearSubtitles() }
         task?.cancel()
         token = UUID()
         let expected = token
@@ -253,15 +260,69 @@ final class PlaybackModel: ObservableObject {
 }
 struct PlayerHost: UIViewControllerRepresentable {
     let player: AVPlayer
+    var subtitles: [SubtitleCue] = []
+    var subtitleOffset = 0.0
+    func makeCoordinator() -> Coordinator { Coordinator() }
     func makeUIViewController(context: Context) -> AVPlayerViewController {
         let controller = AVPlayerViewController()
         controller.player = player
         controller.allowsPictureInPicturePlayback = true
         controller.canStartPictureInPictureAutomaticallyFromInline = true
         controller.updatesNowPlayingInfoCenter = false
+        controller.loadViewIfNeeded()
+        context.coordinator.attach(to: controller, player: player)
         return controller
     }
     func updateUIViewController(_ controller: AVPlayerViewController, context: Context) {
         if controller.player !== player { controller.player = player }
+        context.coordinator.attach(to: controller, player: player)
+        context.coordinator.cues = subtitles
+        context.coordinator.offset = subtitleOffset
+        context.coordinator.refresh()
+    }
+    static func dismantleUIViewController(_ controller: AVPlayerViewController, coordinator: Coordinator) { coordinator.detach() }
+    final class Coordinator {
+        let label = UILabel()
+        var cues: [SubtitleCue] = []
+        var offset = 0.0
+        private var player: AVPlayer?
+        private var observer: Any?
+        func attach(to controller: AVPlayerViewController, player: AVPlayer) {
+            if label.superview == nil, let overlay = controller.contentOverlayView {
+                label.translatesAutoresizingMaskIntoConstraints = false
+                label.numberOfLines = 0
+                label.textAlignment = .center
+                label.font = .boldSystemFont(ofSize: 18)
+                label.textColor = .white
+                label.layer.shadowColor = UIColor.black.cgColor
+                label.layer.shadowOpacity = 1
+                label.layer.shadowRadius = 3
+                label.layer.shadowOffset = CGSize(width: 0, height: 1)
+                label.isUserInteractionEnabled = false
+                label.accessibilityIdentifier = "external-subtitle"
+                overlay.addSubview(label)
+                NSLayoutConstraint.activate([
+                    label.leadingAnchor.constraint(equalTo: overlay.safeAreaLayoutGuide.leadingAnchor, constant: 20),
+                    label.trailingAnchor.constraint(equalTo: overlay.safeAreaLayoutGuide.trailingAnchor, constant: -20),
+                    label.bottomAnchor.constraint(equalTo: overlay.safeAreaLayoutGuide.bottomAnchor, constant: -48)
+                ])
+            }
+            guard self.player !== player else { return }
+            detachObserver()
+            self.player = player
+            observer = player.addPeriodicTimeObserver(forInterval: CMTime(seconds: 0.2, preferredTimescale: 600), queue: .main) { [weak self] _ in self?.refresh() }
+        }
+        func refresh() {
+            let text = SubtitleDocument.text(at: player?.currentTime().seconds ?? 0, offset: offset, cues: cues)
+            if label.text != text { label.text = text }
+            label.isHidden = text.isEmpty
+        }
+        private func detachObserver() {
+            if let observer { player?.removeTimeObserver(observer) }
+            observer = nil
+            player = nil
+        }
+        func detach() { detachObserver(); label.removeFromSuperview() }
+        deinit { detachObserver() }
     }
 }

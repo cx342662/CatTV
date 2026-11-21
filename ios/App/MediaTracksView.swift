@@ -53,6 +53,7 @@ struct MediaTracksView: View {
             List {
                 if model.loading { ProgressView("正在读取媒体轨道") }
                 if let failure = model.failure { Text(failure).foregroundStyle(.secondary) }
+                ExternalSubtitleSettings()
                 Section("音轨") {
                     if model.audio.isEmpty && !model.loading { Text("当前媒体没有可选音轨").foregroundStyle(.secondary) }
                     if !model.audio.isEmpty { Button("自动选择音轨") { model.automatic(subtitle: false) } }
