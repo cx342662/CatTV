@@ -43,7 +43,7 @@ xcodebuild -project CatTV.xcodeproj -scheme CatTV -configuration Release -sdk ip
 1. 先验证 IPA 的 SHA256 与随附文件相符；外层 artifact ZIP 和内层 IPA 的摘要不同。
 2. 这个 IPA 未签名，不能直接安装。通过用户选择的兼容工具，为 App 与任何嵌套代码重新签名，并加入与签名账号、bundle ID、设备和权限相匹配的有效描述文件。
 3. 签名账号、有效期与设备限制由所选签名方式决定。此仓库不集成商业签名服务，也不需要提交私钥、证书密码或账号口令。
-4. 真机重签安装尚未完成验证；没有可声称已验证可用的具体工具步骤。模拟器编译通过也不能证明 IPA 可安装。
+4. 真机重签安装尚未完成验证；Windows 操作路径见 [自行签名说明](docs/SIGNING_WINDOWS.md)，根据工具官方文档整理，未冒充本 IPA 实测。模拟器编译通过也不能证明 IPA 可安装。
 
 ## 数据与许可
 

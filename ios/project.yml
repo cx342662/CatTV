@@ -26,6 +26,8 @@ targets:
       path: App/Info.plist
       properties:
         CFBundleDisplayName: CatTV
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CatTVSourceURL: https://github.com/cx342662/CatTV/tree/ios/native-port
         NSLocalNetworkUsageDescription: 用户主动启用局域网媒体代理时，供同一网络的 AirPlay 设备访问当前媒体
         NSCameraUsageDescription: 扫描用户提供的影视源配置二维码

@@ -65,11 +65,15 @@ jobs:
           cp -R ios/build/device/Build/Products/Release-iphoneos/CatTV.app ios/build/package/Payload/
           cd ios/build/package
           /usr/bin/ditto -c -k --keepParent Payload ../CatTV-unsigned.ipa
-          shasum -a 256 ../CatTV-unsigned.ipa > ../CatTV-unsigned.ipa.sha256
+          cd ..
+          shasum -a 256 CatTV-unsigned.ipa > CatTV-unsigned.ipa.sha256
+      - name: Verify device IPA structure
+        run: python3 ios/scripts/verify-ipa.py ios/build/CatTV-unsigned.ipa --output ios/build/CatTV-package-report.json
       - uses: actions/upload-artifact@v4
         with:
           name: CatTV-iOS-unsigned
           path: |
             ios/build/CatTV-unsigned.ipa
             ios/build/CatTV-unsigned.ipa.sha256
+            ios/build/CatTV-package-report.json
           if-no-files-found: error
