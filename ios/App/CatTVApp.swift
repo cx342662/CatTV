@@ -111,6 +111,7 @@ struct RootView: View {
     }
 }
 struct ConfigurationView: View {
+    @AppStorage("CatTV.epgURL") private var epgURL = ""
     @EnvironmentObject var library: LibraryModel
     @EnvironmentObject var playback: PlaybackModel
     @State private var editor: ConfigurationDocument?
@@ -145,6 +146,7 @@ struct ConfigurationView: View {
                 Text("用于让同一网络的 AirPlay 设备访问需请求头的媒体。开启后重新播放生效；关闭会停止当前局域网代理播放。").font(.caption).foregroundStyle(.secondary)
             }
             Section("偏好设置") {
+                TextField("节目单地址", text: $epgURL).keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled()
                 NavigationLink("媒体徽章") { BadgeSettingsView() }
                 NavigationLink("缓存管理") { CacheSettingsView() }
                 NavigationLink("关于 CatTV") { AboutView() }

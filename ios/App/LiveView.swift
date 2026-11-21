@@ -77,7 +77,7 @@ struct LiveView: View {
                 .toolbar { ToolbarItem(placement: .cancellationAction) { Button("关闭") { model.cancel(); dismiss() } } }
                 .task { model.configure(library.configuration, origin: library.collection.active?.origin) }
                 .sheet(item: $channel) { item in
-                    LivePlayerView(channel: item, previous: { move(-1) }, next: { move(1) })
+                    LivePlayerView(channel: item, epgAddress: model.selected?.epg, previous: { move(-1) }, next: { move(1) })
                 }
         }
     }
@@ -88,17 +88,21 @@ struct LiveView: View {
 }
 private struct LivePlayerView: View {
     let channel: LiveChannel
+    let epgAddress: String?
     let previous: () -> Void
     let next: () -> Void
     @EnvironmentObject var playback: PlaybackModel
     @EnvironmentObject var library: LibraryModel
     @Environment(\.dismiss) private var dismiss
     @State private var stream = 0
+    @State private var showEPG = false
+    @AppStorage("CatTV.epgURL") private var epgURL = ""
     var body: some View {
         NavigationStack {
             VStack(spacing: 16) {
                 PlayerHost(player: playback.player).frame(height: 240).background(.black)
                 Text(channel.name).font(.title3.bold())
+                Button("节目单") { showEPG = true }
                 Text("播放进度：\(Int(playback.elapsedSeconds))秒").font(.caption).foregroundStyle(.secondary).accessibilityIdentifier("live-playback-progress")
                 Menu("线路 \(stream + 1)") {
                     ForEach(channel.streams.indices, id: \.self) { index in Button("线路 \(index + 1)") { stream = index; play() } }
@@ -109,6 +113,7 @@ private struct LivePlayerView: View {
             }.padding(.horizontal, 6).navigationTitle("直播").navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .cancellationAction) { Button("返回频道") { dismiss() } } }
                 .task(id: channel.id) { stream = 0; play() }
+                .sheet(isPresented: $showEPG) { EPGView(channel: channel, address: epgURL.isEmpty ? (epgAddress ?? "") : epgURL) }
         }
     }
     private func play() {
