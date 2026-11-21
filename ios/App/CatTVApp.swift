@@ -81,7 +81,7 @@ struct RootView: View {
             NavigationStack { SavedLibraryView(following: false) }.tabItem { Label("记录", image: "ic_tab_records") }.tag(1).toolbar(.hidden, for: .tabBar)
             NavigationStack { SavedLibraryView(following: true) }.tabItem { Label("追剧", image: "ic_tab_following") }.tag(2).toolbar(.hidden, for: .tabBar)
             NavigationStack { ConfigurationView() }.tabItem { Label("我的", image: "ic_tab_mine") }.tag(3).toolbar(.hidden, for: .tabBar)
-        }.safeAreaInset(edge: .bottom, spacing: 0) {
+        }.overlay(alignment: .bottom) {
             if !chrome.detailVisible { FloatingNavigation(selection: $selectedTab) { showLive = true } }
         }.sheet(isPresented: $showLive) { LiveView() }
     }
@@ -97,7 +97,7 @@ struct RootView: View {
             Image("cattv_home_logo").resizable().renderingMode(.original).scaledToFit().frame(width: 26, height: 26)
             Text(name).font(.system(size: 14, weight: .medium)).lineLimit(1)
             Image(systemName: "chevron.down").font(.system(size: 9, weight: .semibold))
-        }.padding(.horizontal, 10).padding(.vertical, 6).background(.thinMaterial, in: Capsule()).foregroundStyle(.primary)
+        }.padding(.horizontal, 10).padding(.vertical, 6).background { CatGlassSurface(shape: Capsule()) }.foregroundStyle(.primary)
     }
 }
 struct ConfigurationView: View {

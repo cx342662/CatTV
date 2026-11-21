@@ -24,9 +24,7 @@ struct FloatingNavigation: View {
             tab(2)
             tab(3)
         }.padding(6).frame(height: 64)
-            .background(.ultraThinMaterial, in: Capsule())
-            .overlay(Capsule().strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.5).allowsHitTesting(false))
-            .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
+            .background { CatGlassSurface(shape: Capsule()) }
             .padding(.horizontal, 16).padding(.bottom, 12)
     }
     private func tab(_ index: Int) -> some View {
