@@ -171,6 +171,7 @@ struct DetailView: View {
     @State private var video: Video?
     @State private var lineIndex = 0
     @State private var selectedParser: ParserEndpoint?
+    @State private var showMediaTracks = false
     @EnvironmentObject var chrome: NavigationChrome
     @State private var navigationID = UUID()
     var body: some View {
@@ -227,6 +228,7 @@ struct DetailView: View {
                         Button("下一集") { playback.advance(1) }
                         Button("停止播放") { playback.stop() }
                     }.buttonStyle(.bordered)
+                    Button("音轨与字幕") { showMediaTracks = true }
                     Menu("定时退出播放") {
                         ForEach([15, 30, 60, 90], id: \.self) { minutes in
                             Button("\(minutes) 分钟") { playback.setStopTimer(minutes: minutes) }
@@ -236,6 +238,7 @@ struct DetailView: View {
                 }
             }.padding(6)
         }.navigationBarTitleDisplayMode(.inline)
+            .sheet(isPresented: $showMediaTracks) { MediaTracksView() }
             .onAppear { chrome.enter(navigationID) }
             .onDisappear { chrome.leave(navigationID) }
             .task {
