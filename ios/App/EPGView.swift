@@ -29,10 +29,18 @@ struct EPGView: View {
     @State private var reload = UUID()
     @Environment(\.dismiss) private var dismiss
     private var requestID: String { String(date.timeIntervalSince1970) + reload.uuidString }
+    private static let timeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = EPGDecoder.timeZone
+        formatter.dateFormat = "HH:mm"
+        return formatter
+    }()
     var body: some View {
         NavigationStack {
             List {
                 DatePicker("日期", selection: $date, displayedComponents: .date).environment(\.timeZone, EPGDecoder.timeZone)
+                Text("节目单时间：UTC+8").font(.caption).foregroundStyle(.secondary)
                 if address.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     Text("请在设置中填写节目单地址，或在直播源配置 epg 字段。").foregroundStyle(.secondary)
                 } else if model.loading { ProgressView("正在加载节目单") }
@@ -43,8 +51,8 @@ struct EPGView: View {
                 ForEach(model.programmes) { programme in
                     HStack(alignment: .top, spacing: 12) {
                         VStack(alignment: .leading) {
-                            Text(programme.start, style: .time)
-                            Text(programme.end, style: .time).foregroundStyle(.secondary)
+                            Text(programme.start, formatter: Self.timeFormatter)
+                            Text(programme.end, formatter: Self.timeFormatter).foregroundStyle(.secondary)
                         }.font(.caption).monospacedDigit()
                         Text(programme.title)
                         Spacer()

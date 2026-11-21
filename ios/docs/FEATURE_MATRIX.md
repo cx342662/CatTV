@@ -25,7 +25,7 @@
 | 媒体徽章 | MediaBadges、MediaBadgePackParser、MediaBadgeSettings | MediaBadgeMatcher、BadgeStore | 内置规则及 HDR 分组优先级有测试；包导入/持久化接线；SVG 图片回退文字，RE2 与 ICU 规则差异待对照 |
 | 二维码 | Android ZXing、配置中心 | VisionKit、CoreImage | 配置 URL 扫描、展示、分享及相机错误处理；没有真机相机验证 |
 | 缓存 | Android 播放磁盘预缓存 | CacheSettingsView、URLCache | 只覆盖网络缓存查看/清理；视频预缓存尚未移植 |
-| 直播/EPG | LiveEpgParser、LiveEpgController、直播频道模型 | LiveCatalog、LiveView、EPGDecoder、EPGRepository | M3U/TXT、内联频道、多线路和频道切换已写入；节目单 XMLTV/JSON、GMT+8 日期及午夜处理已写入并提交测试；受控直播 UI 验证进行中，回看尚未移植 |
+| 直播/EPG | LiveEpgParser、LiveEpgController、直播频道模型 | LiveCatalog、LiveView、EPGDecoder、EPGRepository | M3U/TXT、内联频道、多线路和频道切换已写入；节目单 XMLTV/JSON、GMT+8 日期及午夜处理已写入并提交测试；受控点播、直播及节目读取 UI 在 6aff275e 通过；时区显示与导航点击的后续修正另做回归，回看尚未移植 |
 | 构建及无签名 IPA | 独立新工作流 | ios-build.yml、XcodeGen | 早期开发版已有成功产物；每批新增代码的验证记录需看对应 Actions |
 
 

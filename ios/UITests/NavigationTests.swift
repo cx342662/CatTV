@@ -70,6 +70,8 @@ final class NavigationTests: XCTestCase {
         capture(app, name: "live-channel-native-playback-ci-fixture")
         app.buttons["节目单"].tap()
         XCTAssertTrue(app.staticTexts["CI Programme"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.staticTexts["00:00"].exists)
+        XCTAssertTrue(app.staticTexts["23:59"].exists)
         capture(app, name: "live-programme-guide-ci-fixture")
         app.buttons["关闭节目单"].tap()
         app.buttons["停止播放"].tap()
