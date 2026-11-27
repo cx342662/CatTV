@@ -65,7 +65,7 @@ private fun Modifier.glassSurface(
     val density = LocalDensity.current
     val blurPx = with(density) { config.blurDp.dp.toPx() }
     val distortionPx = with(density) { config.distortionDp.dp.toPx() }
-    val supportsLens = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+    val supportsLens = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && supportsGlassLens(shape)
     val isLightTheme = !isSystemInDarkTheme()
     val containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(
         alpha = 0.4f * config.containerAlphaScale

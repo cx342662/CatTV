@@ -40,6 +40,7 @@ object BootGuard {
     const val SCOPE_LIVE = "live"
 
     private val IGNORABLE_FRAME_PREFIXES = arrayOf(
+            "com.kyant.backdrop.", "com.kyant.shapes.",
             "android.", "androidx.", "java.", "javax.", "kotlin.", "kotlinx.", "dalvik.", "libcore.",
             "com.google.android.", "com.android.internal.", "com.github.avbox.osc."
     )
@@ -452,3 +453,4 @@ object BootGuard {
         return next
     }
 }
+
