@@ -696,14 +696,23 @@
     <string name="settings_update_copied">Download URL copied</string>
     <string name="card_preview_compact">Compact cards</string>
     <string name="card_preview_empty">Load titles on Home to preview cards</string>
-    <string name="card_preview_portrait">Portrait posters</string>
+    <string name="card_preview_portrait">Portrait cards</string>
+    
     <string name="card_preview_title">Card previews</string>
-    <string name="card_preview_landscape">Landscape posters</string>
+    <string name="card_preview_landscape">Landscape cards</string>
+
 <string name="card_preview_no_progress">No watch progress for these titles</string>
-<string-array name="card_preview_patterns"><item>Featured carousel</item><item>Two columns</item><item>Three columns</item><item>Horizontal editorial</item><item>Vertical editorial</item><item>Numbered list preview</item><item>Stacked posters</item><item>Masonry</item><item>Mixed collage</item><item>Wide background</item><item>Watch progress</item></string-array>
+<string-array name="card_preview_patterns"><item>Carousel</item><item>Two columns</item><item>Three columns</item><item>Side information card</item><item>Vertical editorial</item><item>Numbered list preview</item><item>Standard stack</item><item>Masonry</item><item>Mixed collage</item><item>Wide background</item><item>Watch progress</item></string-array>
+
 <string name="card_select_view">Select view</string><string name="card_select_data">Select data source</string><string name="card_apply_home">Apply to Home</string>
 <string name="home_clover_browse">Clover content filters</string><string name="home_browse_title">Browse content</string><string name="home_browse_hint">Choose a category and filters from the current source</string><string name="home_browse_view">View results</string>
-<string name="card_local_sample_hint">Local examples only. No source images or TMDB requests.</string><string name="card_categories_not_loaded">Load categories on Home first; previews work offline.</string><string-array name="card_local_sample_titles"><item>Mountain Light</item><item>Quiet City</item><item>Blue Coast</item><item>Autumn Letter</item><item>Star Trail</item><item>Warm Winter</item></string-array>
+<string name="card_local_sample_hint">Local examples only. No source images or TMDB requests.</string><string name="card_categories_not_loaded">Load categories on Home first; previews work offline.</string><string-array name="card_local_sample_titles"><item>Link Click</item><item>Matchbox</item><item>Beast</item><item>Carrie</item><item>Spider-Man</item><item>Under the Tide</item><item>Doctor X</item><item>Take Charge of My Heart</item></string-array>
+
+<string name="card_portrait_deck">Portrait poster stack</string>
+<string name="card_batch_add">Add multiple</string>
+<string name="card_batch_hint">Choose multiple sections to use the selected view</string>
+<string name="card_sample_synopsis">A quiet photo studio, two partners and journeys through different lives. Preview the arrangement of covers, titles, years and descriptions.</string>
+<string-array name="card_view_descriptions"><item>2:3 portrait posters</item><item>16:9 landscape covers</item><item>Featured cover carousel</item><item>Two-column posters</item><item>Three-column posters</item><item>Poster on the left, details on the right</item><item>Landscape cover and details</item><item>Numbered poster list</item><item>Standard stacked carousel</item><item>Mixed-height poster layout</item><item>Mixed-size collage</item><item>Wide background and title</item><item>Poster and watch progress</item><item>Compact posters and details</item><item>Portrait stacked carousel</item></string-array>
 </resources>
 
 

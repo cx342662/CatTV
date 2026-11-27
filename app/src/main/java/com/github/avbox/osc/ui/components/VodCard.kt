@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.avbox.osc.bean.Movie
 
-enum class VodCardStyle { Overlay, Stacked, Wide, Portrait }
+enum class VodCardStyle { Overlay, Stacked, Wide, Portrait, Landscape }
 
 @Composable
 fun VodCard(
@@ -32,31 +32,31 @@ fun VodCard(
     modifier: Modifier = Modifier,
     style: VodCardStyle = VodCardStyle.Overlay,
 ) {
-    if (style == VodCardStyle.Stacked || style == VodCardStyle.Portrait) {
+    if (style == VodCardStyle.Stacked || style == VodCardStyle.Portrait || style == VodCardStyle.Landscape) {
         Column(modifier = modifier) {
             PressableCard(
                 onClick = onClick,
                 onLongClick = onLongClick,
                 shape = RoundedCornerShape(16.dp),
             ) {
-                Box(modifier = Modifier.aspectRatio(if (style == VodCardStyle.Wide) 16f / 9f else 2f / 3f)) {
+                Box(modifier = Modifier.aspectRatio(if (style == VodCardStyle.Wide || style == VodCardStyle.Landscape) 16f / 9f else 2f / 3f)) {
                     VodPoster(video.name, video.pic, year = video.year, sourceKey = video.sourceKey, tmdbCacheOnly = true, altName = video.en)
                     RatingBadge(video, Modifier.align(Alignment.TopEnd))
                 }
             }
             Text(
                 text = video.name ?: "",
-                style = MaterialTheme.typography.titleSmall,
+                style = if (style == VodCardStyle.Stacked) MaterialTheme.typography.titleSmall else MaterialTheme.typography.titleSmall.copy(fontSize = 15.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                textAlign = if (style == VodCardStyle.Portrait) TextAlign.Start else TextAlign.Center,
+                textAlign = if (style != VodCardStyle.Stacked) TextAlign.Start else TextAlign.Center,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 6.dp),
             )
-            if (style == VodCardStyle.Portrait && video.year > 0) {
-                Text(video.year.toString(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+            if (style != VodCardStyle.Stacked && video.year > 0) {
+                Text(video.year.toString(), style = MaterialTheme.typography.bodyMedium, color = Color(0xFF8E8E93),
                     modifier = Modifier.fillMaxWidth().padding(top = 2.dp))
             }
         }
@@ -69,7 +69,7 @@ fun VodCard(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
     ) {
-        Box(modifier = Modifier.aspectRatio(if (style == VodCardStyle.Wide) 16f / 9f else 2f / 3f)) {
+        Box(modifier = Modifier.aspectRatio(if (style == VodCardStyle.Wide || style == VodCardStyle.Landscape) 16f / 9f else 2f / 3f)) {
             VodPoster(video.name, video.pic, year = video.year, sourceKey = video.sourceKey, tmdbCacheOnly = true, altName = video.en)
             Box(
                 modifier = Modifier
@@ -151,5 +151,7 @@ internal fun isRatingNote(note: String?): Boolean {
     if (scoreText.toFloatOrNull() != null) return true
     return ratingBadgeText(scoreText) != scoreText
 }
+
+
 
 

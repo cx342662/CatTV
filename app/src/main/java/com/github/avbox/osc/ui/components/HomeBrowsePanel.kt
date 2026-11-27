@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.GenericShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,26 +17,18 @@ import androidx.compose.ui.window.Dialog
 import com.github.avbox.osc.R
 import com.github.avbox.osc.bean.MovieSort
 
-internal val CloverShape = GenericShape { size, _ ->
-    val w = size.width
-    val h = size.height
-    moveTo(w * .5f, h * .15f)
-    cubicTo(w * .25f, -h * .1f, -w * .1f, h * .25f, w * .15f, h * .5f)
-    cubicTo(-w * .1f, h * .75f, w * .25f, h * 1.1f, w * .5f, h * .85f)
-    cubicTo(w * .75f, h * 1.1f, w * 1.1f, h * .75f, w * .85f, h * .5f)
-    cubicTo(w * 1.1f, h * .25f, w * .75f, -h * .1f, w * .5f, h * .15f)
-    close()
+@Composable
+internal fun CloverBrowseButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    CloverRoundControl(onClick, modifier, Modifier.glassTopBarSurface(CircleShape, MaterialTheme.colorScheme.surfaceContainerHigh))
 }
 
 @Composable
-internal fun CloverBrowseButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+internal fun CloverRoundControl(onClick: () -> Unit, modifier: Modifier = Modifier, decoration: Modifier = Modifier) {
     Box(
-        modifier = modifier.size(64.dp)
-            .glassTopBarSurface(CloverShape, MaterialTheme.colorScheme.surfaceContainerHigh)
-            .clickable(onClick = onClick),
+        modifier = modifier.size(56.dp).then(decoration).clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(painterResource(R.drawable.ic_filter), stringResource(R.string.home_clover_browse), Modifier.size(24.dp), tint = MaterialTheme.colorScheme.onSurface)
+        Icon(painterResource(R.drawable.ic_clover), stringResource(R.string.home_clover_browse), Modifier.size(26.dp), tint = MaterialTheme.colorScheme.onSurface)
     }
 }
 
@@ -80,3 +72,5 @@ internal fun HomeBrowsePanel(sorts: List<MovieSort.SortData>, onDismiss: () -> U
         }
     }
 }
+
+

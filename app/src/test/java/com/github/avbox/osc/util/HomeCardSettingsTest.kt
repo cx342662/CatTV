@@ -4,6 +4,9 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class HomeCardSettingsTest {
+    @Test fun portraitDeckCanBeSavedAndRestored() {
+        assertEquals(14, homeCardLayout(updateHomeCardLayout("{}", "source", "movies", 14), "source", "movies"))
+    }
     @Test fun layoutSurvivesSerializationAndIsScopedToSourceAndSection() {
         val first = updateHomeCardLayout("{}", "source-A", "movies", 3)
         val second = updateHomeCardLayout(first, "source-A", "series", 1)
@@ -27,6 +30,7 @@ class HomeCardSettingsTest {
 
     @Test(expected = IllegalArgumentException::class)
     fun invalidSelectionCannotBeSaved() {
-        updateHomeCardLayout("{}", "source", "movies", 14)
+        updateHomeCardLayout("{}", "source", "movies", 15)
     }
 }
+

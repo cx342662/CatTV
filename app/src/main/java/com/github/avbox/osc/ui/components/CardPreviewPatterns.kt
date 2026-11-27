@@ -16,10 +16,10 @@ import com.github.avbox.osc.R
 import com.github.avbox.osc.bean.Movie
 
 @Composable
-internal fun CardPatternView(pattern: Int, videos: List<Movie.Video>, progress: (Movie.Video) -> Int?, onClick: (Movie.Video) -> Unit, onLongClick: (Movie.Video) -> Unit = {}, onActiveVideo: (Movie.Video) -> Unit = {}) {
+internal fun CardPatternView(pattern: Int, videos: List<Movie.Video>, progress: (Movie.Video) -> Int?, onClick: (Movie.Video) -> Unit, onLongClick: (Movie.Video) -> Unit = {}, onActiveVideo: (Movie.Video) -> Unit = {}, edgePadding: androidx.compose.ui.unit.Dp = 16.dp) {
     if (videos.isEmpty()) return
 
-        Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = edgePadding), verticalArrangement = Arrangement.spacedBy(12.dp)) {
 
             when (pattern) {
                 0 -> {
@@ -47,9 +47,7 @@ internal fun CardPatternView(pattern: Int, videos: List<Movie.Video>, progress: 
                         PreviewTextCard(video, true, onClick, Modifier.weight(1f), onLongClick)
                     }
                 }
-                6 -> Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    videos.take(3).forEach { video -> VodCard(video, { onClick(video) }, { onLongClick(video) }, Modifier.weight(1f), VodCardStyle.Portrait) }
-                }
+                6 -> CardDeck(videos, false, onClick, onLongClick, onActiveVideo)
                 7 -> Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     repeat(2) { column ->
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -85,7 +83,7 @@ internal fun PreviewTextCard(video: Movie.Video, horizontal: Boolean, onClick: (
     PressableCard(onClick = { onClick(video) }, onLongClick = { onLongClick(video) }, modifier = modifier.fillMaxWidth()) {
         if (horizontal) {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.width(88.dp).aspectRatio(2f / 3f)) { PreviewPoster(video) }
+                Box(Modifier.width(108.dp).aspectRatio(2f / 3f)) { PreviewPoster(video) }
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) { PreviewCopy(video) }
             }
         } else {
@@ -105,10 +103,12 @@ private fun PreviewPoster(video: Movie.Video) {
 
 @Composable
 private fun PreviewCopy(video: Movie.Video) {
-    Text(video.name.orEmpty(), style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+    Text(video.name.orEmpty(), style = MaterialTheme.typography.titleLarge.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), maxLines = 2, overflow = TextOverflow.Ellipsis)
     if (video.year > 0) Text(video.year.toString(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    video.des?.takeIf { it.isNotBlank() }?.let { Text(it, maxLines = 3, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall) }
+    video.des?.takeIf { it.isNotBlank() }?.let { Text(it, maxLines = 4, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall) }
 }
+
+
 
 
 

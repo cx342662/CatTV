@@ -7,11 +7,11 @@ import kotlinx.coroutines.flow.asStateFlow
 
 internal fun homeCardLayout(serialized: String, source: String, section: String): Int = runCatching {
     JsonParser.parseString(serialized).asJsonObject.getAsJsonObject(source)?.get(section)?.asInt
-        ?.takeIf { it in 0..13 } ?: -1
+        ?.takeIf { it in 0..14 } ?: -1
 }.getOrDefault(-1)
 
 internal fun updateHomeCardLayout(serialized: String, source: String, section: String, layout: Int): String {
-    require(layout in 0..13)
+    require(layout in 0..14)
     val root = runCatching { JsonParser.parseString(serialized).asJsonObject }.getOrElse { JsonObject() }
     val sections = root.get(source)?.takeIf { it.isJsonObject }?.asJsonObject ?: JsonObject()
     sections.addProperty(section, layout)
@@ -31,3 +31,4 @@ object HomeCardSettings {
         HomeSettings.layout = HomeSettings.HomeLayout.Horizontal
     }
 }
+
