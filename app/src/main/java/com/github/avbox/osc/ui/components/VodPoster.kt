@@ -129,6 +129,10 @@ internal fun VodPoster(
     tmdbPath: String? = null,
     onImage: ((Image) -> Unit)? = null,
 ) {
+    if (LocalCardPreviewMode.current) {
+        LocalCardPreviewArtwork(name, modifier)
+        return
+    }
     val preferLarge = size != PosterSize.THUMB
     val tmdbUrl = if (resolveTmdb && !name.isNullOrBlank() && sourceKey != TMDB_SOURCE_KEY) {
         val path = tmdbPath ?: if (tmdbCacheOnly) LocalTmdbPosterLookup.current(name, year, altName) else null
@@ -222,3 +226,4 @@ private fun PosterFallback(name: String?) {
         )
     }
 }
+

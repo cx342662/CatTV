@@ -460,6 +460,7 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
             sortsLoaded.value = true
             return
         }
+        CardPreviewCatalog.record(key, visible)
         _sorts.value = visible
         val vertical = HomeSettings.layout == HomeSettings.HomeLayout.Vertical
         val active = _activeSortId.value?.takeIf { id -> visible.any { it.id == id } } ?: visible.firstOrNull()?.id
@@ -641,5 +642,6 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
         }
     }
 }
+
 
 

@@ -32,6 +32,7 @@ internal fun CardLayoutPreview(
                     Text(stringResource(R.string.card_select_view), Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)
                     TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_back)) }
                 }
+                Text(stringResource(R.string.card_local_sample_hint), Modifier.padding(horizontal = 16.dp), style = MaterialTheme.typography.bodySmall)
                 LazyColumn(contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     items(14, key = { it }) { layout ->
                         Surface(shape = MaterialTheme.shapes.large, border = BorderStroke(if (selected == layout) 2.dp else 1.dp, if (selected == layout) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant)) {
@@ -50,3 +51,4 @@ internal fun CardLayoutPreview(
         }
     }
 }
+

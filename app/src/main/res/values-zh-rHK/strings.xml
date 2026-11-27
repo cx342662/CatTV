@@ -104,7 +104,9 @@
 <string-array name="card_preview_patterns"><item>大图焦点轮播</item><item>双列海报</item><item>三列海报</item><item>横向图文</item><item>纵向图文</item><item>列表序号预览</item><item>标准堆叠</item><item>瀑布流</item><item>大小混合拼贴</item><item>横向背景</item><item>观看进度</item></string-array>
 <string name="card_select_view">选择视图</string><string name="card_select_data">选择数据源</string><string name="card_apply_home">应用到主页</string>
 <string name="home_clover_browse">四叶草内容筛选</string><string name="home_browse_title">浏览内容</string><string name="home_browse_hint">选好分类与筛选条件后查看</string><string name="home_browse_view">查看内容</string>
+<string name="card_local_sample_hint">本地示例，不读取主页海报，不请求接口图片或 TMDB</string><string name="card_categories_not_loaded">当前接口分类尚未加载，可返回主页加载；卡片预览不受影响</string><string-array name="card_local_sample_titles"><item>山间微光</item><item>安静的城</item><item>蔚蓝海岸</item><item>秋日来信</item><item>星河旅途</item><item>冬日暖阳</item></string-array>
 </resources>
+
 
 
 
