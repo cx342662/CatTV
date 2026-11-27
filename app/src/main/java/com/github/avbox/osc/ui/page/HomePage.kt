@@ -172,7 +172,7 @@ fun HomePage(
 
     var showSourceSheet by remember { mutableStateOf(false) }
     var showSearchSettings by remember { mutableStateOf(false) }
-
+    var showBrowsePanel by remember { mutableStateOf(false) }
 
     var backdropSeed by remember { mutableStateOf<Int?>(null) }
     var backdropPic by remember { mutableStateOf("") }
@@ -193,6 +193,13 @@ fun HomePage(
         topBarStartInset = navStart,
         topScrimEnabled = homeLayout != HomeSettings.HomeLayout.Horizontal,
         containerColor = backdropContainer,
+        floatingBottomInset = navBottom,
+        floatingActions = {
+            if (sorts.isNotEmpty()) com.github.avbox.osc.ui.components.CloverBrowseButton(
+                onClick = { showBrowsePanel = true },
+                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 20.dp, bottom = navBottom + 20.dp),
+            )
+        },
         titleContent = {
             BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
                 Row(
@@ -487,6 +494,22 @@ fun HomePage(
                 modifier = Modifier.align(Alignment.TopCenter),
             )
         }
+    }
+
+    if (showBrowsePanel) {
+        com.github.avbox.osc.ui.components.HomeBrowsePanel(
+            sorts = sorts,
+            onDismiss = { showBrowsePanel = false },
+            onView = { sort, filters ->
+                val request = MovieSort.SortData(sort.id, sort.name).also {
+                    it.filters = ArrayList(sort.filters)
+                    it.filterSelect = HashMap(filters)
+                    it.flag = sort.flag
+                }
+                showBrowsePanel = false
+                PartitionListActivity.startForPartition(context, request)
+            },
+        )
     }
 
     if (showSourceSheet) {
@@ -842,7 +865,6 @@ private fun HomeCapsule(
         }
     }
 }
-
 
 
 

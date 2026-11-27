@@ -62,6 +62,8 @@ fun AppTopBarScaffold(
     collapseEnabled: Boolean = true,
     topBarStartInset: Dp = 0.dp,
     topScrimEnabled: Boolean = true,
+    floatingBottomInset: Dp = 0.dp,
+    floatingActions: (@Composable androidx.compose.foundation.layout.BoxScope.() -> Unit)? = null,
     content: @Composable androidx.compose.foundation.layout.BoxScope.(topPadding: androidx.compose.ui.unit.Dp, bottomPadding: androidx.compose.ui.unit.Dp) -> Unit,
 ) {
     val scrollBehavior = if (collapseEnabled) {
@@ -77,6 +79,7 @@ fun AppTopBarScaffold(
         { drawRect(glassColor); drawContent() }
     }
     val glassBackdrop = rememberLayerBackdrop(onDraw = glassOnDraw)
+    val floatingBackdrop = rememberLayerBackdrop(onDraw = glassOnDraw)
     val pauseGlassRecording = LocalTopBarGlassPauseRecording.current
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -117,6 +120,13 @@ fun AppTopBarScaffold(
         val glassBounds: (Size) -> Rect? = remember(density, glassBandHeight, containerColor) {
             { size -> Rect(0f, 0f, size.width, with(density) { glassBandHeight.toPx() }) }
         }
+        val floatingBounds: (Size) -> Rect? = remember(density, floatingBottomInset) {
+            { size ->
+                val extent = with(density) { 108.dp.toPx() }
+                val bottom = size.height - with(density) { floatingBottomInset.toPx() }
+                Rect((size.width - extent).coerceAtLeast(0f), (bottom - extent).coerceAtLeast(0f), size.width, bottom.coerceAtLeast(0f))
+            }
+        }
         Box(modifier = Modifier.fillMaxSize()) {
             Box(
                 modifier = Modifier
@@ -124,6 +134,7 @@ fun AppTopBarScaffold(
                     .then(
                         if (glassEnabled) {
                             Modifier.layerBackdrop(glassBackdrop, glassBounds, pauseGlassRecording)
+                                .then(if (floatingActions != null) Modifier.layerBackdrop(floatingBackdrop, floatingBounds, pauseGlassRecording) else Modifier)
                         } else {
                             Modifier
                         }
@@ -133,6 +144,11 @@ fun AppTopBarScaffold(
                     topPadding,
                     padding.calculateBottomPadding(),
                 )
+            }
+            if (floatingActions != null) {
+                CompositionLocalProvider(LocalTopBarGlassBackdrop provides floatingBackdrop.takeIf { glassEnabled }) {
+                    floatingActions()
+                }
             }
             if (topScrimEnabled) {
                 TopScrim(height = topPadding)
@@ -187,3 +203,5 @@ fun TopBarActionBox(
         )
     }
 }
+
+
