@@ -34,6 +34,7 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -84,6 +85,8 @@ private const val PresetSeedWideColumns = 8
 
 @Composable
 fun ThemeSettingsScreen(onNavigateBack: () -> Unit) {
+    val cardConfig by com.github.avbox.osc.util.HomeCardSettings.config.collectAsState()
+    val cardsEnabled = com.github.avbox.osc.util.homeCardsEnabled(cardConfig)
     val config = AppThemeState.config
     val isCustom = config.source == ThemeSource.CUSTOM
     var seedPickerOpen by remember { mutableStateOf(false) }
@@ -130,10 +133,23 @@ fun ThemeSettingsScreen(onNavigateBack: () -> Unit) {
             }
 
             SettingsGroup(title = stringResource(R.string.card_preview_title)) {
-                SettingsCard(SettingsCardPosition.SINGLE) {
+                SettingsCard(SettingsCardPosition.FIRST) {
+                    SettingsSwitchRow(
+                        title = stringResource(R.string.card_custom_enabled),
+                        checked = cardsEnabled,
+                        onCheckedChange = { com.github.avbox.osc.util.HomeCardSettings.setEnabled(it) },
+                    )
+                }
+                SettingsCard(SettingsCardPosition.MIDDLE) {
                     com.github.avbox.osc.ui.components.SettingsRow(
                         title = stringResource(R.string.card_preview_title),
                         onClick = { cardPreviewOpen = true },
+                    )
+                }
+                SettingsCard(SettingsCardPosition.LAST) {
+                    com.github.avbox.osc.ui.components.SettingsRow(
+                        title = stringResource(R.string.card_restore_default),
+                        onClick = { com.github.avbox.osc.util.HomeCardSettings.reset() },
                     )
                 }
             }

@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 internal fun homeCardLayout(serialized: String, source: String, section: String): Int = runCatching {
+    if (!homeCardsEnabled(serialized)) return@runCatching -1
     JsonParser.parseString(serialized).asJsonObject.getAsJsonObject(source)?.get(section)?.asInt
         ?.takeIf { it in 0..14 } ?: -1
 }.getOrDefault(-1)
@@ -19,15 +20,46 @@ internal fun updateHomeCardLayout(serialized: String, source: String, section: S
     return root.toString()
 }
 
+internal fun homeCardsEnabled(serialized: String): Boolean = runCatching {
+    val root = JsonParser.parseString(serialized).asJsonObject
+    root.get("@enabled")?.asBoolean ?: root.entrySet().any { it.value.isJsonObject }
+}.getOrDefault(false)
+
+internal fun toggleHomeCards(serialized: String, enabled: Boolean, currentLayout: String): String {
+    val root = runCatching { JsonParser.parseString(serialized).asJsonObject }.getOrElse { JsonObject() }
+    if (enabled && !homeCardsEnabled(serialized)) root.addProperty("@defaultLayout", currentLayout)
+    root.addProperty("@enabled", enabled)
+    return root.toString()
+}
+
 object HomeCardSettings {
     private const val KEY = "home_card_layouts_v1"
     private val mutableConfig = MutableStateFlow(KV.get(KEY, "{}"))
     val config = mutableConfig.asStateFlow()
 
-    fun apply(source: String, section: String, layout: Int) {
-        val next = updateHomeCardLayout(mutableConfig.value, source, section, layout)
+    fun setEnabled(enabled: Boolean) {
+        save(toggleHomeCards(mutableConfig.value, enabled, HomeSettings.layout.name))
+        if (enabled) HomeSettings.layout = HomeSettings.HomeLayout.Horizontal else restoreLayout()
+    }
+
+    fun reset() {
+        restoreLayout()
+        save("{}")
+    }
+
+    private fun restoreLayout() {
+        val name = runCatching { JsonParser.parseString(mutableConfig.value).asJsonObject.get("@defaultLayout")?.asString }.getOrNull()
+        HomeSettings.HomeLayout.entries.firstOrNull { it.name == name }?.let { HomeSettings.layout = it }
+    }
+
+    private fun save(next: String) {
         check(KV.put(KEY, next))
         mutableConfig.value = next
+    }
+
+    fun apply(source: String, section: String, layout: Int) {
+        val enabled = toggleHomeCards(mutableConfig.value, true, HomeSettings.layout.name)
+        save(updateHomeCardLayout(enabled, source, section, layout))
         HomeSettings.layout = HomeSettings.HomeLayout.Horizontal
     }
 }

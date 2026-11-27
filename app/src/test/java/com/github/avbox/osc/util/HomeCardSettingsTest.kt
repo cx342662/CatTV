@@ -4,6 +4,17 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class HomeCardSettingsTest {
+    @Test fun disablingPreservesSelectionAndReenablingRestoresIt() {
+        val selected = updateHomeCardLayout("{}", "source", "movies", 3)
+        val off = toggleHomeCards(selected, false, "Vertical")
+        assertEquals(false, homeCardsEnabled(off))
+        assertEquals(-1, homeCardLayout(off, "source", "movies"))
+        val on = toggleHomeCards(off, true, "Vertical")
+        assertEquals(true, homeCardsEnabled(on))
+        assertEquals(3, homeCardLayout(on, "source", "movies"))
+        assertEquals(false, homeCardsEnabled("{}"))
+    }
+
     @Test fun portraitDeckCanBeSavedAndRestored() {
         assertEquals(14, homeCardLayout(updateHomeCardLayout("{}", "source", "movies", 14), "source", "movies"))
     }

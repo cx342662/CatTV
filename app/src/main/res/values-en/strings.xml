@@ -713,6 +713,8 @@
 <string name="card_batch_hint">Choose multiple sections to use the selected view</string>
 <string name="card_sample_synopsis">A quiet photo studio, two partners and journeys through different lives. Preview the arrangement of covers, titles, years and descriptions.</string>
 <string-array name="card_view_descriptions"><item>2:3 portrait posters</item><item>16:9 landscape covers</item><item>Featured cover carousel</item><item>Two-column posters</item><item>Three-column posters</item><item>Poster on the left, details on the right</item><item>Landscape cover and details</item><item>Numbered poster list</item><item>Standard stacked carousel</item><item>Mixed-height poster layout</item><item>Mixed-size collage</item><item>Wide background and title</item><item>Poster and watch progress</item><item>Compact posters and details</item><item>Portrait stacked carousel</item></string-array>
+    <string name="card_custom_enabled">Custom home cards</string>
+    <string name="card_restore_default">Restore default cards</string>
 </resources>
 
 
