@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.avbox.osc.bean.Movie
 
-enum class VodCardStyle { Overlay, Stacked }
+enum class VodCardStyle { Overlay, Stacked, Wide }
 
 @Composable
 fun VodCard(
@@ -39,7 +39,7 @@ fun VodCard(
                 onLongClick = onLongClick,
                 shape = RoundedCornerShape(16.dp),
             ) {
-                Box(modifier = Modifier.aspectRatio(2f / 3f)) {
+                Box(modifier = Modifier.aspectRatio(if (style == VodCardStyle.Wide) 16f / 9f else 2f / 3f)) {
                     VodPoster(video.name, video.pic, year = video.year, sourceKey = video.sourceKey, tmdbCacheOnly = true, altName = video.en)
                     RatingBadge(video, Modifier.align(Alignment.TopEnd))
                 }
@@ -65,7 +65,7 @@ fun VodCard(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
     ) {
-        Box(modifier = Modifier.aspectRatio(2f / 3f)) {
+        Box(modifier = Modifier.aspectRatio(if (style == VodCardStyle.Wide) 16f / 9f else 2f / 3f)) {
             VodPoster(video.name, video.pic, year = video.year, sourceKey = video.sourceKey, tmdbCacheOnly = true, altName = video.en)
             Box(
                 modifier = Modifier
@@ -147,3 +147,4 @@ internal fun isRatingNote(note: String?): Boolean {
     if (scoreText.toFloatOrNull() != null) return true
     return ratingBadgeText(scoreText) != scoreText
 }
+

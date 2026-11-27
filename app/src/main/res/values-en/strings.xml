@@ -694,4 +694,17 @@
     <string name="settings_update_source">Download source: CatTV GitHub repository</string>
     <string name="settings_update_copy_url">Copy download URL</string>
     <string name="settings_update_copied">Download URL copied</string>
+    <string name="card_preview_compact">Compact cards</string>
+    <string name="card_preview_empty">Load titles on Home to preview cards</string>
+    <string name="card_preview_portrait">Portrait posters</string>
+    <string name="card_preview_title">Card previews</string>
+    <string name="card_preview_landscape">Landscape posters</string>
+<string name="card_preview_no_progress">No watch progress for these titles</string>
+<string-array name="card_preview_patterns"><item>Featured carousel</item><item>Two columns</item><item>Three columns</item><item>Horizontal editorial</item><item>Vertical editorial</item><item>Numbered list preview</item><item>Stacked posters</item><item>Masonry</item><item>Mixed collage</item><item>Wide background</item><item>Watch progress</item></string-array>
+<string name="card_select_view">Select view</string><string name="card_select_data">Select data source</string><string name="card_apply_home">Apply to Home</string>
+<string name="home_clover_browse">Clover content filters</string><string name="home_browse_title">Browse content</string><string name="home_browse_hint">Choose a category and filters from the current source</string><string name="home_browse_view">View results</string>
 </resources>
+
+
+
+

@@ -695,4 +695,17 @@
     <string name="settings_update_source">下载来源：CatTV GitHub 仓库</string>
     <string name="settings_update_copy_url">复制下载地址</string>
     <string name="settings_update_copied">下载地址已复制</string>
+    <string name="card_preview_compact">紧凑图文</string>
+    <string name="card_preview_empty">请先加载首页影片，再预览卡片</string>
+    <string name="card_preview_portrait">竖向海报</string>
+    <string name="card_preview_title">卡片预览</string>
+    <string name="card_preview_landscape">横向海报</string>
+<string name="card_preview_no_progress">当前影片暂无观看进度</string>
+<string-array name="card_preview_patterns"><item>大图焦点轮播</item><item>双列海报</item><item>三列海报</item><item>横向图文</item><item>纵向图文</item><item>列表序号预览</item><item>标准堆叠</item><item>瀑布流</item><item>大小混合拼贴</item><item>横向背景</item><item>观看进度</item></string-array>
+<string name="card_select_view">选择视图</string><string name="card_select_data">选择数据源</string><string name="card_apply_home">应用到主页</string>
+<string name="home_clover_browse">四叶草内容筛选</string><string name="home_browse_title">浏览内容</string><string name="home_browse_hint">选好分类与筛选条件后查看</string><string name="home_browse_view">查看内容</string>
 </resources>
+
+
+
+
