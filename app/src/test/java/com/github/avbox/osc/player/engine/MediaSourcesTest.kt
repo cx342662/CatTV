@@ -7,6 +7,14 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class MediaSourcesTest {
+    @Test
+    fun explicitFlvDoesNotBecomeHlsBecauseOfLivePath() {
+        assertFalse(MediaSources.isHlsUri("https://cdn.example/live/room.flv?signature=abc"))
+        assertEquals(C.TYPE_OTHER, MediaSources.inferContentType("https://cdn.example/live/room.flv", null))
+        assertTrue(MediaSources.isHlsUri("https://cdn.example/live/room.m3u8"))
+        assertEquals(C.TYPE_HLS, MediaSources.inferContentType("https://cdn.example/live/room.flv", mapOf("TVBox-Format" to "hls")))
+    }
+
 
     @Test
     fun formatHeader_winsOverFileName() {

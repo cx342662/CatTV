@@ -86,8 +86,8 @@ class MediaSources(
             C.TYPE_HLS -> HlsMediaSource.Factory(factory)
                 .setLoadErrorHandlingPolicy(HlsErrorHandlingPolicy())
                 .createMediaSource(mediaItem)
-            else -> ProgressiveMediaSource.Factory(factory).createMediaSource(mediaItem)
-        }
+            else -> ProgressiveMediaSource.Factory(factory, DiagnosticExtractorsFactory()).createMediaSource(mediaItem)
+        }.also { AppLog.i("echo-player-media-source: ${it.javaClass.simpleName} inferredType=$contentType uri=$uri cache=$isCache") }
     }
 
     fun isoMediaSource(uri: String, headers: Map<String, String>?, seekMs: Long): MediaSource =
@@ -366,6 +366,7 @@ class MediaSources(
             if (isAudioUri(uri)) {
                 return false
             }
+            if (uri.substringBefore('?').substringBefore('#').endsWith(".flv", ignoreCase = true)) return false
             if (uri.contains("m3u8") || uri.contains("type=hls") || uri.contains("format=hls")) {
                 return true
             }

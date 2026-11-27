@@ -131,7 +131,7 @@ class PlayLoader(
                     ""
                 }
             }, sourceBean.playTimeoutSeconds() * 1000L, "echo--getPlay--" + sourceBean.key)
-            AppLog.i("echo--getPlay--result:$json")
+            AppLog.longI("echo-player-spider-result: ", json)
             if (TextUtils.isEmpty(json)) {
                 postPlayResult(seqHolder, resultChannel, requestSeq, null)
                 return@execute

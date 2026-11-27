@@ -151,7 +151,7 @@ internal fun EpisodeRow(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             itemsIndexed(episodes) { index, ep ->
-                if (thumbnails) {
+                if (thumbnails && !com.github.avbox.osc.bean.StreamLabels.isQuality(ep.name)) {
                     EpisodeCard(
                         name = ep.name ?: (index + 1).toString(),
                         episodeNumber = episodeNumbers.getOrNull(index)?.takeIf { it > 0 } ?: (index + 1),

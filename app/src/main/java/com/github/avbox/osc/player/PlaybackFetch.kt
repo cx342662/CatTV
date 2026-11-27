@@ -161,6 +161,7 @@ class PlaybackFetch(private val controller: PlaybackController) {
                     }
                 }
             } catch (th: Throwable) {
+                AppLog.e("PlaybackFetch", "echo-player-resolve-failure", th)
                 controller.handleResolvePlayUrlFailed(PlaybackController.str(R.string.player_get_info_error))
             }
         } else {

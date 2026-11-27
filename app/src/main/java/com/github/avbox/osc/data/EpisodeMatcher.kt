@@ -100,7 +100,7 @@ object EpisodeMatcher {
 
     @JvmStatic
     fun extractEpisodeNumber(name: String?): Int {
-        if (isEmpty(name)) {
+        if (isEmpty(name) || com.github.avbox.osc.bean.StreamLabels.isQuality(name)) {
             return -1
         }
         val raw = name ?: return -1

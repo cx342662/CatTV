@@ -105,6 +105,7 @@ data class VodInfo(
         }
 
         private fun extractNumber(name: String): Int {
+            if (StreamLabels.isQuality(name)) return 0
             val matcher = RegexUtils.getPattern("\\d+").matcher(name)
             if (matcher.find()) {
                 return Integer.parseInt(matcher.group())

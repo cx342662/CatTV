@@ -35,7 +35,8 @@ object AppLog {
             }
         }
         if (!match) return
-        val line = SimpleDateFormat("MM-dd HH:mm:ss.SSS", Locale.US).format(Date()) + " " + level + " " + msg
+        val safeMessage = PlaybackLogSanitizer.redact(msg)
+        val line = SimpleDateFormat("MM-dd HH:mm:ss.SSS", Locale.US).format(Date()) + " " + level + " " + safeMessage
         synchronized(AppLog::class.java) {
             if (fileLogExecutor == null) fileLogExecutor = Executors.newSingleThreadExecutor()
         }
@@ -62,14 +63,14 @@ object AppLog {
 
     @JvmStatic
     fun e(msg: String?) {
-        Log.e(TAG, "" + msg)
+        Log.e(TAG, PlaybackLogSanitizer.redact("" + msg))
         fileLog("E", msg.toString())
     }
 
     @JvmStatic
     fun i(msg: String?) {
         if (!BuildConfig.DEBUG) return
-        Log.i(TAG, "" + msg)
+        Log.i(TAG, PlaybackLogSanitizer.redact("" + msg))
         fileLog("I", msg.toString())
     }
 
@@ -82,15 +83,15 @@ object AppLog {
     @JvmStatic
     fun d(tag: String?, msg: String?) {
         if (!BuildConfig.DEBUG) return
-        Log.d(TAG, tag + ": " + msg)
+        Log.d(TAG, PlaybackLogSanitizer.redact(tag + ": " + msg))
         fileLog("D", msg.toString())
     }
 
     @JvmStatic
     fun e(tag: String?, msg: String?, tr: Throwable?) {
-        Log.e(TAG, tag + ": " + msg, tr)
-        fileLog("E", msg.toString())
-        if (tr != null) tr.printStackTrace()
+        val detail = PlaybackLogSanitizer.redact(tag + ": " + msg + (tr?.let { "\n" + it.stackTraceToString() } ?: ""))
+        longLog(Log.ERROR, "", detail)
+        fileLog("E", detail)
     }
 
     @JvmStatic
@@ -110,8 +111,9 @@ object AppLog {
     }
 
     private fun longLog(priority: Int, prefix: String?, msg: String?) {
-        val text = msg ?: "null"
+        val text = PlaybackLogSanitizer.redact(msg ?: "null")
         val title = prefix ?: ""
+        if (priority == Log.INFO) fileLog("I", title + text)
         val length = text.length
         if (length <= MAX_LOG_LENGTH) {
             Log.println(priority, TAG, title + text)

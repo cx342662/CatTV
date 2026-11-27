@@ -201,12 +201,21 @@ class PlayerEngine(
     private val engineListener = object : Player.Listener {
 
         override fun onTracksChanged(tracks: Tracks) {
+            for (group in tracks.groups) {
+                for (index in 0 until group.length) {
+                    if (group.isTrackSelected(index)) {
+                        val format = group.getTrackFormat(index)
+                        AppLog.i("echo-player-format: mime=${format.sampleMimeType} codecs=${format.codecs} size=${format.width}x${format.height} channels=${format.channelCount} rate=${format.sampleRate}")
+                    }
+                }
+            }
             trackSelection.loadDefaultSubtitleTrackBeforeReady()
             reportVideoSizeFromTracks(tracks)
             reportAudioFormat(tracks)
         }
 
         override fun onPlaybackStateChanged(playbackState: Int) {
+            AppLog.i("echo-player-buffer-state: state=$playbackState bufferedMs=${internalPlayer?.totalBufferedDuration} positionMs=${internalPlayer?.currentPosition}")
             if (playbackState == Player.STATE_READY) {
                 trackSelection.markSubtitleSelectionClosed()
             }
@@ -243,6 +252,18 @@ class PlayerEngine(
     }
 
     private val analyticsListener = object : AnalyticsListener {
+
+        override fun onRenderedFirstFrame(eventTime: AnalyticsListener.EventTime, output: Any, renderTimeMs: Long) {
+            AppLog.i("echo-player-first-frame: renderTimeMs=$renderTimeMs")
+        }
+
+        override fun onVideoDecoderInitialized(eventTime: AnalyticsListener.EventTime, decoderName: String, initializedTimestampMs: Long, initializationDurationMs: Long) {
+            AppLog.i("echo-player-video-decoder: name=$decoderName initializationMs=$initializationDurationMs")
+        }
+
+        override fun onAudioDecoderInitialized(eventTime: AnalyticsListener.EventTime, decoderName: String, initializedTimestampMs: Long, initializationDurationMs: Long) {
+            AppLog.i("echo-player-audio-decoder: name=$decoderName initializationMs=$initializationDurationMs")
+        }
         override fun onDroppedVideoFrames(eventTime: AnalyticsListener.EventTime, droppedFrames: Int, elapsedMs: Long) {
             droppedFramesTotal += droppedFrames
         }
@@ -308,7 +329,7 @@ class PlayerEngine(
         val exo = builder.build()
         exo.playWhenReady = true
         if (config.enableLog) {
-            exo.addAnalyticsListener(EventLogger(trackSelector, "ExoPlayer"))
+            AppLog.i("echo-player-diagnostics-enabled")
         }
         return exo
     }
@@ -318,7 +339,7 @@ class PlayerEngine(
     }
 
     fun setDataSource(path: String, headers: Map<String, String>?, isLive: Boolean) {
-        AppLog.i("echo-setDataSource:$path")
+        AppLog.i("echo-setDataSource:$path live=$isLive headers=$headers")
         var playPath = path
         if (SourcePolicy.isRtmp(playPath) && isLive) {
             val flagged = SourcePolicy.applyRtmpLiveFlag(playPath, true)

@@ -99,6 +99,7 @@ class OkHttpDataSource private constructor(
         transferInitializing(dataSpec)
 
         val request = makeRequest(dataSpec)
+        com.github.avbox.osc.util.AppLog.i("echo-player-http-request: ${request.method} ${request.url} headers=${request.headers}")
         val response: Response
         val responseBody: okhttp3.ResponseBody
         val call = callFactory.newCall(request)
@@ -115,6 +116,7 @@ class OkHttpDataSource private constructor(
             )
         }
 
+        com.github.avbox.osc.util.AppLog.i("echo-player-http-response: url=${response.request.url} status=${response.code} type=${response.header("Content-Type")} length=${responseBody.contentLength()} redirected=${response.priorResponse != null}")
         val responseCode = response.code
         if (!response.isSuccessful) {
             if (responseCode == 416) {
