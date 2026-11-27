@@ -22,6 +22,9 @@ dependencyResolutionManagement {
     repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS
     repositories {
         google()
+        maven("https://maven.aliyun.com/repository/public") {
+            content { includeGroup("org.robolectric") }
+        }
         mavenCentral()
         maven("http://4thline.org/m2") {
             isAllowInsecureProtocol = true
@@ -37,3 +40,4 @@ include(":app")
 include(":quickjs")
 include(":pyramid")
 include(":libs:backdrop")
+
