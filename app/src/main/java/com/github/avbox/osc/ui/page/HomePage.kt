@@ -380,6 +380,8 @@ fun HomePage(
                                             vm.cardLayout("@recommendations", cardConfig), rec.videos,
                                             { vm.cardPlayedPercent(it, cardPercents) },
                                             { handleCardClick(vm, it, context) },
+                                            { vodMenu.show(it) },
+                                            { backdropPic = it.pic.orEmpty(); backdropSeed = null },
                                         )
                                     }
                                 }
@@ -778,7 +780,7 @@ private fun PartitionSection(
             }
 
             HomeViewModel.PartitionState.Ready -> if (cardLayout >= 0) {
-                com.github.avbox.osc.ui.components.HomeCardCollection(cardLayout, videos, cardProgress, onCardClick)
+                com.github.avbox.osc.ui.components.HomeCardCollection(cardLayout, videos, cardProgress, onCardClick, onCardLongClick)
             } else LazyRow(
                 contentPadding = PaddingValues(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -865,6 +867,8 @@ private fun HomeCapsule(
         }
     }
 }
+
+
 
 
 

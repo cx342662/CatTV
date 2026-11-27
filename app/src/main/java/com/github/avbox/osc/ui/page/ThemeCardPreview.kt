@@ -26,7 +26,8 @@ internal fun ThemeCardPreview(onDismiss: () -> Unit) {
     val percents by vm.cardPlayedPercents.collectAsStateWithLifecycle()
     var chosen by remember { mutableStateOf<Int?>(null) }
     var section by remember { mutableStateOf("@recommendations") }
-    var applied by remember { mutableStateOf(-1) }
+    val layoutConfig by vm.cardLayoutConfig.collectAsStateWithLifecycle()
+    val applied = vm.cardLayout(section, layoutConfig)
     val context = LocalContext.current
     val click: (com.github.avbox.osc.bean.Movie.Video) -> Unit = { video ->
         vm.rememberCardDouban(video)
@@ -62,7 +63,7 @@ internal fun ThemeCardPreview(onDismiss: () -> Unit) {
                         }
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             TextButton(onClick = { chosen = null }) { Text(stringResource(R.string.common_back)) }
-                            Button(enabled = selectedVideos.isNotEmpty(), onClick = { vm.applyCardLayout(section, layout); applied = layout; chosen = null }) { Text(stringResource(R.string.card_apply_home)) }
+                            Button(enabled = selectedVideos.isNotEmpty(), onClick = { vm.applyCardLayout(section, layout); chosen = null }) { Text(stringResource(R.string.card_apply_home)) }
                         }
                     }
                 }
@@ -70,4 +71,5 @@ internal fun ThemeCardPreview(onDismiss: () -> Unit) {
         }
     }
 }
+
 
