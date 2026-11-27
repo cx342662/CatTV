@@ -1,0 +1,60 @@
+name: CatTV Mobile Cards Signed Test
+on:
+  push:
+    branches: [feat/mobile-cards-clover-test]
+permissions:
+  contents: read
+jobs:
+  signed-debug:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Install Android SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | sort -V | tail -n1)"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" --install "platform-tools" "platforms;android-37.0" "build-tools;37.0.0" "ndk;27.2.12479018"
+          if [ -d "$ANDROID_HOME/platforms/android-37.0" ] && [ ! -e "$ANDROID_HOME/platforms/android-37" ]; then
+            ln -s android-37.0 "$ANDROID_HOME/platforms/android-37"
+          fi
+      - name: Test and build debug
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:testDebugUnitTest :app:assembleDebug --no-daemon -PCATTV_VERSION_NAME=1.3.6-cards-test -PCATTV_VERSION_CODE=42
+      - name: Sign test APK with existing mobile identity
+        env:
+          CATTV_KEYSTORE_BASE64: ${{ secrets.CATTV_KEYSTORE_BASE64 }}
+          CATTV_KEY_ALIAS: ${{ secrets.CATTV_KEY_ALIAS }}
+          CATTV_STORE_PASSWORD: ${{ secrets.CATTV_STORE_PASSWORD }}
+          CATTV_KEY_PASSWORD: ${{ secrets.CATTV_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CATTV_KEYSTORE_BASE64"
+          printf '%s' "$CATTV_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/mobile-test.jks"
+          chmod 600 "$RUNNER_TEMP/mobile-test.jks"
+          mkdir -p test-delivery
+          "$ANDROID_HOME/build-tools/37.0.0/apksigner" sign --ks "$RUNNER_TEMP/mobile-test.jks" --ks-key-alias "$CATTV_KEY_ALIAS" --ks-pass env:CATTV_STORE_PASSWORD --key-pass env:CATTV_KEY_PASSWORD --out test-delivery/CatTV-mobile-cards-clover-test.apk app/build/outputs/apk/debug/AVBox_debug.apk
+          "$ANDROID_HOME/build-tools/37.0.0/apksigner" verify --print-certs test-delivery/CatTV-mobile-cards-clover-test.apk > test-delivery/signature.txt
+          grep -qi '59749dbdd0679fc48d9546b88e16cd345896b9664e5d42bf34552da23483bd62' test-delivery/signature.txt
+          "$ANDROID_HOME/build-tools/37.0.0/aapt" dump badging test-delivery/CatTV-mobile-cards-clover-test.apk > test-delivery/package.txt
+          grep -q "name='com.cattv.mobile'" test-delivery/package.txt
+          sha256sum test-delivery/CatTV-mobile-cards-clover-test.apk > test-delivery/sha256.txt
+          rm "$RUNNER_TEMP/mobile-test.jks"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cattv-mobile-cards-clover-signed-test
+          path: |
+            test-delivery/
+            app/build/test-results/testDebugUnitTest/
+          retention-days: 14
