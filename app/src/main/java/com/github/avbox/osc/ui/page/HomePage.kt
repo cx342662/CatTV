@@ -154,6 +154,8 @@ fun HomePage(
     val pageLoading by vm.pageLoading.collectAsStateWithLifecycle()
     val sortLoadFailed by vm.sortLoadFailed.collectAsStateWithLifecycle()
     val homeLayout by HomeSettings.layoutFlow.collectAsStateWithLifecycle()
+    val cardConfig by vm.cardLayoutConfig.collectAsStateWithLifecycle()
+    val cardPercents by vm.cardPlayedPercents.collectAsStateWithLifecycle()
     LaunchedEffect(homeLayout) { vm.onLayoutChanged() }
     LaunchedEffect(vm) {
         vm.pageErrorEvents.collect { msg ->
@@ -170,6 +172,8 @@ fun HomePage(
 
     var showSourceSheet by remember { mutableStateOf(false) }
     var showSearchSettings by remember { mutableStateOf(false) }
+
+
     var backdropSeed by remember { mutableStateOf<Int?>(null) }
     var backdropPic by remember { mutableStateOf("") }
     val heroBackdropEnabled = homeLayout == HomeSettings.HomeLayout.Horizontal &&
@@ -247,6 +251,7 @@ fun HomePage(
             }
         },
         actions = {
+
             Row(
                 modifier = Modifier
                     .height(40.dp)
@@ -351,6 +356,7 @@ fun HomePage(
                     when {
                         rec.state == HomeViewModel.PartitionState.Ready && rec.videos.isNotEmpty() -> {
                             ProvideTmdbPosterLookup(vm) {
+                                if (vm.cardLayout("@recommendations", cardConfig) < 0) {
                                 HeroSpotlight(
                                     videos = rec.videos.take(HomeViewModel.HERO_VIDEO_COUNT),
                                     backdropColor = backdropContainer,
@@ -361,6 +367,15 @@ fun HomePage(
                                     loadDoubanRating = vm::heroDoubanRating,
                                     loadRatings = vm::heroRatings,
                                 )
+                                } else {
+                                    Column(Modifier.padding(top = topPad + 12.dp)) {
+                                        com.github.avbox.osc.ui.components.HomeCardCollection(
+                                            vm.cardLayout("@recommendations", cardConfig), rec.videos,
+                                            { vm.cardPlayedPercent(it, cardPercents) },
+                                            { handleCardClick(vm, it, context) },
+                                        )
+                                    }
+                                }
                             }
                         }
                         rec.state == HomeViewModel.PartitionState.Loading -> {
@@ -402,7 +417,7 @@ fun HomePage(
                         modifier = Modifier.padding(start = navStart),
                     )
                 }
-                if (rec.state != HomeViewModel.PartitionState.Empty &&
+                if (vm.cardLayout("@recommendations", cardConfig) < 0 && rec.state != HomeViewModel.PartitionState.Empty &&
                     (rec.state == HomeViewModel.PartitionState.Loading ||
                         rec.videos.size > HomeViewModel.HERO_VIDEO_COUNT)
                 ) {
@@ -447,6 +462,8 @@ fun HomePage(
                             title = p.sort.name ?: "",
                             state = p.state,
                             videos = p.videos,
+                            cardLayout = vm.cardLayout(p.sort.id.orEmpty(), cardConfig),
+                            cardProgress = { vm.cardPlayedPercent(it, cardPercents) },
                             onLoadMore = { vm.loadMorePartition(p) },
                             onCardClick = { video -> handleCardClick(vm, video, context) },
                             onCardLongClick = { video -> vodMenu.show(video) },
@@ -664,6 +681,8 @@ private fun PartitionSection(
     onOpenAll: (() -> Unit)? = null,
     onRetry: (() -> Unit)? = null,
     cardWidth: Dp = 110.dp,
+    cardLayout: Int = -1,
+    cardProgress: (Movie.Video) -> Int? = { null },
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.padding(vertical = 8.dp)) {
@@ -735,7 +754,9 @@ private fun PartitionSection(
                 }
             }
 
-            HomeViewModel.PartitionState.Ready -> LazyRow(
+            HomeViewModel.PartitionState.Ready -> if (cardLayout >= 0) {
+                com.github.avbox.osc.ui.components.HomeCardCollection(cardLayout, videos, cardProgress, onCardClick)
+            } else LazyRow(
                 contentPadding = PaddingValues(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
@@ -821,3 +842,10 @@ private fun HomeCapsule(
         }
     }
 }
+
+
+
+
+
+
+

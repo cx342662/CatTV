@@ -53,6 +53,7 @@ class KVKeySpec : KVDecoder.TypeRegistry {
             register(KVKeys.MEDIA_BADGES + "_player", true)
             register(KVKeys.MEDIA_BADGES + "_controls", true)
             register(KVKeys.MEDIA_BADGES + "_cards", true)
+            register("home_card_layouts_v1", "")
             register("background_playback", false)
             register(KVKeys.API_URL, "")
             register(KVKeys.EPG_URL, "")
@@ -192,3 +193,4 @@ class KVKeySpec : KVDecoder.TypeRegistry {
         }
     }
 }
+

@@ -87,6 +87,8 @@ fun ThemeSettingsScreen(onNavigateBack: () -> Unit) {
     val config = AppThemeState.config
     val isCustom = config.source == ThemeSource.CUSTOM
     var seedPickerOpen by remember { mutableStateOf(false) }
+    var cardPreviewOpen by remember { mutableStateOf(false) }
+    if (cardPreviewOpen) ThemeCardPreview(onDismiss = { cardPreviewOpen = false })
     val glassConfig = LiquidGlassState.config
     var blurValue by remember(glassConfig.blurDp) { mutableStateOf(glassConfig.blurDp) }
     var distortionValue by remember(glassConfig.distortionDp) { mutableStateOf(glassConfig.distortionDp) }
@@ -124,6 +126,15 @@ fun ThemeSettingsScreen(onNavigateBack: () -> Unit) {
                     contentAlignment = Alignment.Center,
                 ) {
                     PhoneMockupPreview()
+                }
+            }
+
+            SettingsGroup(title = stringResource(R.string.card_preview_title)) {
+                SettingsCard(SettingsCardPosition.SINGLE) {
+                    com.github.avbox.osc.ui.components.SettingsRow(
+                        title = stringResource(R.string.card_preview_title),
+                        onClick = { cardPreviewOpen = true },
+                    )
                 }
             }
 
@@ -589,3 +600,4 @@ private fun PresetSeedCard(
         }
     }
 }
+

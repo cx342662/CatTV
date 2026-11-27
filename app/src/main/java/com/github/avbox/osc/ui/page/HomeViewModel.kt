@@ -48,6 +48,13 @@ import com.github.avbox.osc.ui.components.toVodInfo
 import kotlinx.coroutines.withContext
 
 class HomeViewModel : ViewModel(), TmdbPosterCache {
+    val cardLayoutConfig = com.github.avbox.osc.util.HomeCardSettings.config
+    fun cardLayout(section: String, config: String): Int = com.github.avbox.osc.util.homeCardLayout(config, currentSource.value?.key.orEmpty(), section)
+    fun applyCardLayout(section: String, layout: Int) = com.github.avbox.osc.util.HomeCardSettings.apply(currentSource.value?.key.orEmpty(), section, layout)
+    val cardPlayedPercents = com.github.avbox.osc.data.PlaybackProgress.percents
+    fun cardPlayedPercent(video: Movie.Video, percents: Map<String, Int>): Int? =
+        if (HistoryHelper.isIncognito()) null else percents[com.github.avbox.osc.data.PlaybackProgress.key(video.sourceKey, video.id)]
+
 
     suspend fun heroRatings(video: Movie.Video, onRatings: (Map<String, Double>) -> Unit) {
         val source = ApiConfig.get().getSource(video.sourceKey)
@@ -634,3 +641,5 @@ class HomeViewModel : ViewModel(), TmdbPosterCache {
         }
     }
 }
+
+
