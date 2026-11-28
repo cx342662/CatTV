@@ -116,8 +116,8 @@ CatTV 在 AVBox 的开源代码基础上进行品牌调整、适配和后续优�
 
 ### TV端
 
-<img src="images/7.jpg?v=2" alt="CatTV TV端主页" width="100%" />
-<br />主页
+<img src="images/7.jpg?v=2" alt="CatTV TV端首页" width="100%" />
+<br />首页
 
 <img src="images/8.jpg?v=2" alt="CatTV TV端播放页" width="100%" />
 <br />播放页
