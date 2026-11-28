@@ -1,6 +1,5 @@
 package com.github.avbox.osc.ui.components
 
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -9,7 +8,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -21,7 +19,7 @@ import com.github.avbox.osc.bean.MovieSort
 
 @Composable
 internal fun CloverBrowseButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
-    CloverRoundControl(onClick, modifier, Modifier.glassTopBarSurface(CircleShape, Color.White.copy(alpha = 0.24f), surfaceTint = Color.White.copy(alpha = 0.24f), forceGlass = true).border(0.5.dp, Color.White.copy(alpha = 0.35f), CircleShape))
+    CloverRoundControl(onClick, modifier, Modifier.glassTopBarSurface(CircleShape, MaterialTheme.colorScheme.surfaceContainer))
 }
 
 @Composable
@@ -30,7 +28,7 @@ internal fun CloverRoundControl(onClick: () -> Unit, modifier: Modifier = Modifi
         modifier = modifier.size(56.dp).then(decoration).clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(painterResource(R.drawable.ic_clover), stringResource(R.string.home_clover_browse), Modifier.size(26.dp), tint = Color.White.copy(alpha = 0.95f))
+        Icon(painterResource(R.drawable.ic_clover), stringResource(R.string.home_clover_browse), Modifier.size(26.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

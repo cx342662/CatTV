@@ -74,7 +74,7 @@ fun AppTopBarScaffold(
     val glassConfig = LiquidGlassState.config
     val glassEnabled = glassConfig.controlsEnabled &&
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-    val floatingGlassEnabled = floatingActions != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    val floatingGlassEnabled = floatingActions != null && glassEnabled
     val glassColor by rememberUpdatedState(containerColor)
     val glassOnDraw: ContentDrawScope.() -> Unit = remember {
         { drawRect(glassColor); drawContent() }
