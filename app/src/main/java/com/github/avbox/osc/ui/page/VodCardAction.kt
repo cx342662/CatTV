@@ -69,3 +69,11 @@ private fun Context.openVodFolder(video: Movie.Video) {
     }
     PartitionListActivity.startForFolder(this, folderId, video.name.orEmpty(), video.sourceKey)
 }
+
+fun Context.dispatchHomeCardClick(video: Movie.Video, onAction: (Movie.Video) -> Unit = {}) {
+    if (video.action.isNullOrEmpty() && !video.isFolderCard() && !video.name.isNullOrBlank()) {
+        jumpToSourcePicker(video.name.orEmpty())
+    } else {
+        dispatchVodCardClick(video, onAction)
+    }
+}

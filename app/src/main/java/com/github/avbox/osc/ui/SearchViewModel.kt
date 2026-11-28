@@ -50,6 +50,8 @@ class SearchViewModel(initialTitle: String? = null) : ViewModel(), TmdbPosterCac
         val arrivedAt: Int = Int.MAX_VALUE,
     )
 
+    private val rawSourceResults = mutableMapOf<String, List<Movie.Video>>()
+
     private val _results = MutableStateFlow<List<SourceResult>>(emptyList())
     val results = _results.asStateFlow()
     private val _running = MutableStateFlow(false)
@@ -230,6 +232,7 @@ class SearchViewModel(initialTitle: String? = null) : ViewModel(), TmdbPosterCac
             semaphorePermits = configured
             semaphore = Semaphore(configured)
         }
+        rawSourceResults.clear()
         token = SEARCH_SEQ.incrementAndGet()
         val myToken = token
         val tokenStr = myToken.toString()
@@ -297,10 +300,21 @@ class SearchViewModel(initialTitle: String? = null) : ViewModel(), TmdbPosterCac
         if (_results.value.none { it.sourceKey == sourceKey }) return
         pendingSources.remove(sourceKey)?.complete(Unit)
         val videos = data.movie?.videoList.orEmpty()
-            .filter { !_exactMatch.value || SearchSettings.isExactMatch(it.name, _searchedTitle.value) }
-            .sortedByDescending { it.name?.trim() == _searchedTitle.value }
-        updateResult(sourceKey, videos)
+        rawSourceResults[sourceKey] = videos
+        updateResult(sourceKey, matchingVideos(videos))
     }
+
+    fun setExactMatch(enabled: Boolean) {
+        SearchSettingsState.exactMatch = enabled
+        _exactMatch.value = enabled
+        _results.value = _results.value.map { result ->
+            result.copy(videos = matchingVideos(rawSourceResults[result.sourceKey].orEmpty()))
+        }
+    }
+
+    private fun matchingVideos(videos: List<Movie.Video>): List<Movie.Video> = videos
+        .filter { !_exactMatch.value || SearchSettings.isExactMatch(it.name, _searchedTitle.value) }
+        .sortedByDescending { it.name?.trim() == _searchedTitle.value }
 
     private fun updateResult(sourceKey: String, videos: List<Movie.Video>) {
         _results.value = _results.value.map {

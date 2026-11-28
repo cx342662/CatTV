@@ -20,6 +20,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Text
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -69,6 +71,8 @@ fun SearchScreen(vm: SearchViewModel = rememberSearchViewModel()) {
     val context = LocalContext.current
     val activity = context as? android.app.Activity
     val focusManager = LocalFocusManager.current
+    val sourcePicker = activity?.intent?.getBooleanExtra("sourcePicker", false) == true
+    LaunchedEffect(sourcePicker) { if (sourcePicker) vm.setExactMatch(true) }
     val results by vm.results.collectAsState()
     val running by vm.running.collectAsState()
     val hotSearch by vm.hotSearch.collectAsState()
@@ -85,7 +89,7 @@ fun SearchScreen(vm: SearchViewModel = rememberSearchViewModel()) {
         lookupCollected = vm::isVideoCollected,
         onCollectToggle = vm::toggleVideoCollect,
     )
-    var resultLayout by remember { mutableStateOf(SearchSettingsState.resultLayout) }
+    var resultLayout by remember { mutableStateOf(if (sourcePicker) SearchSettingsState.SearchLayout.Horizontal else SearchSettingsState.resultLayout) }
 
     LaunchedEffect(query) {
         val t = query.trim()
@@ -123,6 +127,7 @@ fun SearchScreen(vm: SearchViewModel = rememberSearchViewModel()) {
                     .fillMaxWidth()
                     .padding(start = 4.dp),
                 trailing = {
+                    FilterChip(selected = exactMatch, onClick = { selectedSource = null; vm.setExactMatch(!exactMatch) }, label = { Text(stringResource(R.string.search_strict_short)) })
                     LayoutSwitchAction(
                         selected = resultLayout,
                         onSelect = {
@@ -271,12 +276,11 @@ private fun SearchResultsContent(
             }
         } else {
             ProvideTmdbPosterLookup(tmdbCache) {
-                SearchListResults(
+                SourcePickerGrid(
                     done = hits,
                     running = running,
                     selectedSource = selectedSource,
                     onSelectSource = onSelectSource,
-                    listState = listState,
                     topPad = topPad,
                     onCardClick = onCardClick,
                     onCardLongClick = onCardLongClick,

@@ -23,3 +23,7 @@ fun Context.jumpToSearch(title: String) {
     bundle.putString("title", title)
     startActivity(Intent(this, SearchActivity::class.java).putExtras(bundle))
 }
+
+fun Context.jumpToSourcePicker(title: String) {
+    startActivity(Intent(this, SearchActivity::class.java).putExtra("title", title).putExtra("sourcePicker", true))
+}
