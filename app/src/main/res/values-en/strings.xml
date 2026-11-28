@@ -715,6 +715,19 @@
 <string-array name="card_view_descriptions"><item>2:3 portrait posters</item><item>16:9 landscape covers</item><item>Featured cover carousel</item><item>Two-column posters</item><item>Three-column posters</item><item>Poster on the left, details on the right</item><item>Landscape cover and details</item><item>Numbered poster list</item><item>Standard stacked carousel</item><item>Mixed-height poster layout</item><item>Mixed-size collage</item><item>Wide background and title</item><item>Poster and watch progress</item><item>Compact posters and details</item><item>Portrait stacked carousel</item></string-array>
     <string name="card_custom_enabled">Custom home cards</string>
     <string name="card_restore_default">Restore default cards</string>
+    <string name="player_scale_height">Fit height</string>
+    <string name="player_scale_width">Fit width</string>
+    <string name="player_scale_adaptive">Fit video</string>
+    <string name="player_direction_auto">Automatic</string>
+    <string name="player_direction_landscape">Landscape</string>
+    <string name="player_direction_portrait">Portrait</string>
+    <string name="player_direction_sensor">Follow device</string>
+    <string name="player_direction_title">Screen orientation</string>
+    <string name="player_scale_mode_hint">Fit keeps the full frame. Crop may remove edges. Stretch and fixed ratios can change the image shape.</string>
+    <string name="player_direction_hint">Landscape or portrait locks orientation immediately. Follow device uses the orientation sensor.</string>
+    <string name="player_panel_close">Close</string>
+    <string name="search_strict_short">Strict</string>
+    <string name="search_source_filter">Filter sources</string>
 </resources>
 
 

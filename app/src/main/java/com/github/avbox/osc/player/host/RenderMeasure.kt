@@ -8,6 +8,11 @@ object RenderMeasure {
     const val SCALE_MATCH_PARENT = 3
     const val SCALE_ORIGINAL = 4
     const val SCALE_CENTER_CROP = 5
+    const val SCALE_FIT_HEIGHT = 6
+    const val SCALE_FIT_WIDTH = 7
+    const val SCALE_1_1 = 8
+    const val SCALE_9_16 = 9
+    const val SCALE_COUNT = 10
 
     fun measure(
         widthSpec: Int,
@@ -54,6 +59,13 @@ object RenderMeasure {
                 } else {
                     intArrayOf(widthSpec, heightSpec)
                 }
+            }
+            SCALE_FIT_HEIGHT -> w = (h.toLong() * videoWidth / videoHeight).toInt().coerceAtLeast(1)
+            SCALE_FIT_WIDTH -> h = (w.toLong() * videoHeight / videoWidth).toInt().coerceAtLeast(1)
+            SCALE_1_1 -> { w = minOf(w, h); h = w }
+            SCALE_9_16 -> {
+                if (w.toLong() * 16 > h.toLong() * 9) w = (h.toLong() * 9 / 16).toInt()
+                else h = (w.toLong() * 16 / 9).toInt()
             }
             SCALE_CENTER_CROP -> {
                 if (videoWidth * h > w * videoHeight) {

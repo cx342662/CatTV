@@ -234,6 +234,7 @@ internal class PlayerActionsDelegate(private val host: VideoPlayerController) : 
 
     override fun onRotateClicked() {
         if (host.state.locked) return
+        host.config.markOrientationManual()
         val toPortrait =
             host.resources.configuration.orientation != Configuration.ORIENTATION_PORTRAIT
         host.playerActivity()?.requestedOrientation =

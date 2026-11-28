@@ -406,7 +406,8 @@ class ApiConfig private constructor() {
         val scaleItems = ArrayList(
             listOf(
                 str(R.string.common_default), "16:9", "4:3",
-                str(R.string.player_scale_fill), str(R.string.player_scale_origin), str(R.string.player_scale_crop)
+                str(R.string.player_scale_fill), str(R.string.player_scale_origin), str(R.string.player_scale_crop),
+                str(R.string.player_scale_height), str(R.string.player_scale_width), "1:1", "9:16"
             )
         )
         val playerDecoderItems = ArrayList(

@@ -28,6 +28,10 @@ internal class PlayerConfigDelegate(private val host: VideoPlayerController) {
 
     private data class PendingDecode(val value: String, val at: Long, val generation: Int)
 
+    private var aspectOrientationAutomatic = false
+
+    fun markOrientationManual() { aspectOrientationAutomatic = false }
+
     private var speedRetryCount = 0
 
     private val pendingDecode = MutableStateFlow<PendingDecode?>(null)
@@ -83,8 +87,8 @@ internal class PlayerConfigDelegate(private val host: VideoPlayerController) {
                 onSelect = { applyPlayer(players[it]) },
             ),
             scale = ParamsChoice(
-                options = (0..5).map { PlayerTextFormat.scaleName(it) },
-                selected = scaleType.coerceIn(0, 5),
+                options = (0 until com.github.avbox.osc.player.host.RenderMeasure.SCALE_COUNT).map { PlayerTextFormat.scaleName(it) },
+                selected = scaleType.coerceIn(0, 9),
                 onSelect = { applyScale(it) },
             ),
             picture = PictureParamsState(
@@ -265,22 +269,42 @@ internal class PlayerConfigDelegate(private val host: VideoPlayerController) {
     }
 
     fun showScaleDialog() {
-        try {
-            val cfg = host.playerConfig ?: return
-            val scaleType = cfg.getInt("sc")
-            val scales = ArrayList<String>()
-            for (i in 0..5) {
-                scales.add(PlayerTextFormat.scaleName(i))
-            }
-            host.state.openSelectDialog(SelectDialogState(
-                tip = host.context.getString(R.string.player_select_scale),
-                items = scales,
-                defaultIndex = scaleType.coerceIn(0, 5),
-                onSelected = { index -> applyScale(index) },
-            ))
-        } catch (e: JSONException) {
-            AppLog.e("VideoPlayerController", e)
+        val cfg = host.playerConfig ?: return
+        val modes = listOf(0, 5, 3, 6, 7, 1, 2, 8, 9)
+        val activity = host.playerActivity()
+        val orientation = if (aspectOrientationAutomatic) 0 else when (activity?.requestedOrientation) {
+            android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE, android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE -> 1
+            android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT, android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT -> 2
+            android.content.pm.ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR, android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR -> 3
+            else -> 0
         }
+        val labels = modes.map { PlayerTextFormat.scaleName(it) }.toMutableList()
+        labels[0] = host.context.getString(R.string.player_scale_adaptive)
+        val size = host.videoView?.videoSize
+        val resolution = if (size != null && size[0] > 0 && size[1] > 0) "${size[0]} × ${size[1]}" else ""
+        host.state.openSelectDialog(SelectDialogState(
+            tip = host.context.getString(R.string.player_select_scale),
+            items = labels,
+            defaultIndex = modes.indexOf(cfg.optInt("sc", 0)),
+            onSelected = { index -> applyScale(modes[index]); showScaleDialog() },
+            orientation = ParamsChoice(
+                options = listOf(R.string.player_direction_auto, R.string.player_direction_landscape, R.string.player_direction_portrait, R.string.player_direction_sensor).map { host.context.getString(it) },
+                selected = orientation,
+                onSelect = { index ->
+                    aspectOrientationAutomatic = index == 0
+                    activity?.requestedOrientation = when (index) {
+                        1 -> android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                        2 -> android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+                        3 -> android.content.pm.ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR
+                        else -> if (size != null && size[0] > 0 && size[1] > 0) {
+                            if (size[1] > size[0]) android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT else android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                        } else android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                    }
+                    showScaleDialog()
+                },
+            ),
+            helperText = resolution,
+        ))
     }
 
     fun showSpeedDialog() {

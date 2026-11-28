@@ -518,6 +518,8 @@ class SelectDialogState(
     val tip: String,
     val items: List<String>,
     val defaultIndex: Int,
+    val orientation: ParamsChoice? = null,
+    val helperText: String = "",
     val onSelected: (Int) -> Unit,
 )
 

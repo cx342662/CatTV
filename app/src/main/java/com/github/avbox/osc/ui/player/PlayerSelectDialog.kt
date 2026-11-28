@@ -17,6 +17,10 @@ fun PlayerSelectDialog(
     dialogState: SelectDialogState,
     onDismiss: () -> Unit,
 ) {
+    if (dialogState.orientation != null) {
+        PlayerAspectPanel(dialogState, onDismiss)
+        return
+    }
     PlayerDialog(onDismiss = onDismiss) {
         val dismiss = LocalPlayerSheetDismiss.current
         SheetPanel(width = playerDim(R.dimen.vs_480)) {

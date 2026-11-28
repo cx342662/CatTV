@@ -715,6 +715,19 @@
 <string-array name="card_view_descriptions"><item>2:3 竖版海报卡片</item><item>16:9 横版封面卡片</item><item>大图封面轮播</item><item>双列竖版海报</item><item>三列竖版海报</item><item>左侧海报 + 右侧信息</item><item>横版封面 + 下方信息</item><item>影片序号与封面列表</item><item>标准堆叠轮播（无描述）</item><item>不同高度的海报排列</item><item>大小海报混合排列</item><item>横向背景与标题</item><item>影片封面与观看进度</item><item>紧凑型海报与信息</item><item>竖版海报堆叠轮播（无描述）</item></string-array>
     <string name="card_custom_enabled">自定义首页卡片</string>
     <string name="card_restore_default">恢复默认卡片</string>
+    <string name="player_scale_height">高度拉伸</string>
+    <string name="player_scale_width">宽度拉伸</string>
+    <string name="player_scale_adaptive">自适应</string>
+    <string name="player_direction_auto">自动</string>
+    <string name="player_direction_landscape">横屏</string>
+    <string name="player_direction_portrait">竖屏</string>
+    <string name="player_direction_sensor">跟随手机</string>
+    <string name="player_direction_title">屏幕方向</string>
+    <string name="player_scale_mode_hint">自适应保留完整画面；裁剪铺满可能裁掉边缘；拉伸与固定比例可能改变画面形状。</string>
+    <string name="player_direction_hint">横屏或竖屏会立即切换并锁定方向；跟随手机使用方向传感器。</string>
+    <string name="player_panel_close">关闭</string>
+    <string name="search_strict_short">严格</string>
+    <string name="search_source_filter">筛选片源</string>
 </resources>
 
 

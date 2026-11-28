@@ -108,6 +108,10 @@ fun PlaySettingsScreen(onNavigateBack: () -> Unit) {
                         BasePlayerView.SCREEN_SCALE_MATCH_PARENT to stringResource(R.string.player_scale_fill),
                         BasePlayerView.SCREEN_SCALE_ORIGINAL to stringResource(R.string.player_scale_origin),
                         BasePlayerView.SCREEN_SCALE_CENTER_CROP to stringResource(R.string.player_scale_crop),
+                        BasePlayerView.SCREEN_SCALE_FIT_HEIGHT to stringResource(R.string.player_scale_height),
+                        BasePlayerView.SCREEN_SCALE_FIT_WIDTH to stringResource(R.string.player_scale_width),
+                        BasePlayerView.SCREEN_SCALE_1_1 to "1:1",
+                        BasePlayerView.SCREEN_SCALE_9_16 to "9:16",
                     )
                     SettingsOptionMenuRow(
                         title = stringResource(R.string.settings_play_scale),

@@ -714,6 +714,10 @@ open class BasePlayerView @JvmOverloads constructor(
         const val SCREEN_SCALE_MATCH_PARENT = 3
         const val SCREEN_SCALE_ORIGINAL = 4
         const val SCREEN_SCALE_CENTER_CROP = 5
+        const val SCREEN_SCALE_FIT_HEIGHT = 6
+        const val SCREEN_SCALE_FIT_WIDTH = 7
+        const val SCREEN_SCALE_1_1 = 8
+        const val SCREEN_SCALE_9_16 = 9
 
         const val PLAYER_NORMAL = ScreenMode.PLAYER_NORMAL
         const val PLAYER_FULL_SCREEN = ScreenMode.PLAYER_FULL_SCREEN

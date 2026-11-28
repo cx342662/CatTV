@@ -25,6 +25,10 @@ object PlayerTextFormat {
         return when (screenScaleType) {
             BasePlayerView.SCREEN_SCALE_16_9 -> "16:9"
             BasePlayerView.SCREEN_SCALE_4_3 -> "4:3"
+            BasePlayerView.SCREEN_SCALE_FIT_HEIGHT -> str(R.string.player_scale_height)
+            BasePlayerView.SCREEN_SCALE_FIT_WIDTH -> str(R.string.player_scale_width)
+            BasePlayerView.SCREEN_SCALE_1_1 -> "1:1"
+            BasePlayerView.SCREEN_SCALE_9_16 -> "9:16"
             BasePlayerView.SCREEN_SCALE_MATCH_PARENT -> str(R.string.player_scale_fill)
             BasePlayerView.SCREEN_SCALE_ORIGINAL -> str(R.string.player_scale_origin)
             BasePlayerView.SCREEN_SCALE_CENTER_CROP -> str(R.string.player_scale_crop)

@@ -4,6 +4,14 @@ import org.junit.Assert.assertArrayEquals
 import org.junit.Test
 
 class RenderMeasureTest {
+    @Test fun newRatiosAndAxisFitHaveExpectedBounds() {
+        assertArrayEquals(intArrayOf(1000, 1000), measure(scaleType = RenderMeasure.SCALE_1_1))
+        assertArrayEquals(intArrayOf(562, 1000), measure(scaleType = RenderMeasure.SCALE_9_16))
+        assertArrayEquals(intArrayOf(1777, 1000), measure(scaleType = RenderMeasure.SCALE_FIT_HEIGHT))
+        assertArrayEquals(intArrayOf(1000, 562), measure(scaleType = RenderMeasure.SCALE_FIT_WIDTH))
+        assertArrayEquals(intArrayOf(1000, 1777), measure(scaleType = RenderMeasure.SCALE_FIT_WIDTH, videoWidth = 1080, videoHeight = 1920))
+    }
+
 
     private fun measure(
         width: Int = 1000,
