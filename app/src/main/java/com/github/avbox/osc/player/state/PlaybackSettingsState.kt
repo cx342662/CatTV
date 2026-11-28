@@ -28,6 +28,7 @@ data class PlaybackSettingsConfig(
     val subtitleTextStyle: Int,
     val autoExitPip: Boolean = false,
     val backgroundPlayback: Boolean = false,
+    val shortDramaMode: Boolean = false,
 )
 
 object PlaybackSettingsState {
@@ -56,6 +57,7 @@ object PlaybackSettingsState {
         anime4kDeblur = KV.get(KVKeys.ANIME4K_DEBLUR, false),
         autoExitPip = KV.get(KVKeys.AUTO_EXIT_PIP, false),
         backgroundPlayback = KV.get("background_playback", false),
+        shortDramaMode = KV.get("short_drama_mode", false),
         subtitleTextStyle = KV.get(KVKeys.SUBTITLE_TEXT_STYLE, 0),
     )
 
@@ -64,6 +66,13 @@ object PlaybackSettingsState {
         set(value) {
             check(KV.put("background_playback", value))
             current = current.copy(backgroundPlayback = value)
+        }
+
+    var shortDramaMode: Boolean
+        get() = current.shortDramaMode
+        set(value) {
+            check(KV.put("short_drama_mode", value))
+            current = current.copy(shortDramaMode = value)
         }
 
     var autoExitPip: Boolean

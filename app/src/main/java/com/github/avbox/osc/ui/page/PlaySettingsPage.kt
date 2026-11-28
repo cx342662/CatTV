@@ -198,6 +198,12 @@ fun PlaySettingsScreen(onNavigateBack: () -> Unit) {
                 }
                 SettingsCard(SettingsCardPosition.MIDDLE) {
                     SettingsSwitchRow(
+                        title = stringResource(R.string.settings_short_drama),
+                        subtitle = stringResource(R.string.settings_short_drama_hint),
+                        checked = config.shortDramaMode,
+                        onCheckedChange = { PlaybackSettingsState.shortDramaMode = it },
+                    )
+                    SettingsSwitchRow(
                         title = stringResource(R.string.settings_background_playback),
                         leadingIconRes = R.drawable.ic_background_music_cute,
                         checked = PlaybackSettingsState.config.backgroundPlayback,

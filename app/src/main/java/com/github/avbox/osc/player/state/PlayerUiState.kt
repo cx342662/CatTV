@@ -57,6 +57,10 @@ class PlayerUiState {
 
     var title: String by mutableStateOf("")
         private set
+    var portraitVideo: Boolean by mutableStateOf(false)
+        private set
+    fun updatePortraitVideo(width: Int, height: Int) { portraitVideo = width > 0 && height > width }
+
     var videoSize: String by mutableStateOf(VideoSizeGate.UNKNOWN)
         private set
     var videoRect: VideoRect by mutableStateOf(VideoRect(0, 0, 0, 0))

@@ -129,6 +129,8 @@
     <string name="player_panel_close">关闭</string>
     <string name="search_strict_short">严格</string>
     <string name="search_source_filter">筛选片源</string>
+    <string name="settings_short_drama">短剧模式</string>
+    <string name="settings_short_drama_hint">竖屏全屏隐藏控件，上滑下一集、下滑上一集，轻点显示操作</string>
 </resources>
 
 

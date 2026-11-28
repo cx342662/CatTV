@@ -728,6 +728,8 @@
     <string name="player_panel_close">Close</string>
     <string name="search_strict_short">Strict</string>
     <string name="search_source_filter">Filter sources</string>
+    <string name="settings_short_drama">Short drama mode</string>
+    <string name="settings_short_drama_hint">Portrait fullscreen: swipe up/down to change episodes; tap to show controls.</string>
 </resources>
 
 

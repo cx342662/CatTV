@@ -18,12 +18,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -34,7 +34,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.dp
 import com.github.avbox.osc.R
 import com.github.avbox.osc.player.state.ParamsChoice
 import com.github.avbox.osc.player.state.PlayerActions
@@ -55,6 +54,10 @@ fun PlayerOverlay(
     onTapPending: () -> Unit,
     onPictureInPicture: () -> Unit,
 ) {
+    val shortMode = !state.locked && shortDramaModeActive(com.github.avbox.osc.player.state.PlaybackSettingsState.config.shortDramaMode, state.portraitVideo, !state.previewMode && state.playerState == com.github.avbox.osc.player.state.ScreenMode.PLAYER_FULL_SCREEN, LocalConfiguration.current.orientation == Configuration.ORIENTATION_PORTRAIT)
+    var shortControls by remember { mutableStateOf(false) }
+    LaunchedEffect(shortMode, state.title) { shortControls = false }
+    LaunchedEffect(shortControls) { if (shortControls) { delay(4000); shortControls = false } }
     val context = LocalContext.current
     val pipSupported = remember(context) {
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
@@ -65,7 +68,13 @@ fun PlayerOverlay(
     BoxWithConstraints(
         Modifier
             .fillMaxSize()
-            .videoGestureLayer(
+            .then(if (shortMode && !state.overlayPanelOpen && !state.locked) Modifier.shortDramaGestures(
+                onTap = { shortControls = !shortControls; if (shortControls && !state.controlsVisible) actions.toggleControls() },
+                onEpisode = { direction ->
+                    shortControls = false
+                    if (state.episodeBtnVisible) { if (direction > 0) actions.onNextClicked() else actions.onPreClicked() }
+                },
+            ) else Modifier.videoGestureLayer(
                 handler = gestureHandler,
                 sessionProvider = { size, downY ->
                     val sizeW = size.width
@@ -77,8 +86,9 @@ fun PlayerOverlay(
                     }
                 },
                 onTapPending = onTapPending,
-            ),
+            )),
     ) {
+        if (!shortMode || shortControls || state.overlayPanelOpen || state.tipVisible) {
         val iconBox = playerIconBox(maxWidth - playerEdgePadding() * 2)
         PlayerTipLayer(state)
         PlayerSlideVisibility(
@@ -152,6 +162,7 @@ fun PlayerOverlay(
         }
         state.subtitleSearchSheet?.let { sheet ->
             SubtitleSearchSheet(sheet) { state.dismissSubtitleSearchSheet() }
+        }
         }
     }
 

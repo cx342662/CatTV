@@ -380,6 +380,7 @@ class VideoPlayerController(
     }
 
     override fun onVideoSizeChanged(width: Int, height: Int) {
+        state.updatePortraitVideo(width, height)
         state.updateVideoSize(videoSizeGate.textFor(width, height))
         onVideoSizeReady?.invoke(width, height)
     }
@@ -574,6 +575,7 @@ class VideoPlayerController(
             "echo-progress-reset: onNewPlayStarted cleared uiPosition=${state.position}"
                 + " uiDuration=${state.duration}",
         )
+        state.updatePortraitVideo(size[0], size[1])
         state.updateVideoSize(videoSizeGate.onNewSession(size[0], size[1]))
         state.updatePosition(0)
         state.updateDuration(0)
