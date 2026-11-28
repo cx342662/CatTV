@@ -54,7 +54,7 @@ fun PlayerOverlay(
     onTapPending: () -> Unit,
     onPictureInPicture: () -> Unit,
 ) {
-    val shortMode = !state.locked && shortDramaModeActive(com.github.avbox.osc.player.state.PlaybackSettingsState.config.shortDramaMode, state.portraitVideo, !state.previewMode && state.playerState == com.github.avbox.osc.player.state.ScreenMode.PLAYER_FULL_SCREEN, LocalConfiguration.current.orientation == Configuration.ORIENTATION_PORTRAIT)
+    val shortMode = !state.locked && shortDramaModeActive(com.github.avbox.osc.player.state.PlaybackSettingsState.config.shortDramaMode, state.portraitVideo, !state.previewMode, LocalConfiguration.current.orientation == Configuration.ORIENTATION_PORTRAIT)
     var shortControls by remember { mutableStateOf(false) }
     LaunchedEffect(shortMode, state.title) { shortControls = false }
     LaunchedEffect(shortControls) { if (shortControls) { delay(4000); shortControls = false } }
