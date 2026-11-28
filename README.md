@@ -4,8 +4,17 @@
   <p><strong>随心乐享，每一天</strong></p>
   <p>一款面向 Android 手机的轻量视频播放器，支持本地播放与用户自主配置点播、直播源。</p>
   <p>
-    <img src="https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white" alt="Android" />
-    <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0" />
+    <a href="https://github.com/cx342662/CatTV/stargazers"><img src="https://img.shields.io/github/stars/cx342662/CatTV?style=for-the-badge&logo=github&logoColor=white&color=ff6b81" alt="Stars" /></a>
+    <a href="https://github.com/cx342662/CatTV/forks"><img src="https://img.shields.io/github/forks/cx342662/CatTV?style=for-the-badge&logo=git&logoColor=white&color=4a90d9" alt="Forks" /></a>
+    <a href="https://github.com/cx342662/CatTV/issues"><img src="https://img.shields.io/github/issues/cx342662/CatTV?style=for-the-badge&logo=github&logoColor=white&color=ffa94d" alt="Issues" /></a>
+    <a href="https://github.com/cx342662/CatTV/releases"><img src="https://img.shields.io/github/downloads/cx342662/CatTV/total?style=for-the-badge&logo=github&logoColor=white&color=2ecc71" alt="Downloads" /></a>
+  </p>
+
+  <p>
+    <a href="https://www.android.com/"><img src="https://img.shields.io/badge/Platform-Android-3DDC84?style=for-the-badge&logo=android&logoColor=white" alt="Android" /></a>
+    <a href="https://kotlinlang.org/"><img src="https://img.shields.io/badge/Kotlin-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white" alt="Kotlin" /></a>
+    <a href="https://github.com/cx342662/CatTV/blob/main/LICENSE"><img src="https://img.shields.io/github/license/cx342662/CatTV?style=for-the-badge&logo=github&logoColor=white&color=007ec6" alt="AGPL-3.0" /></a>
+    <a href="https://github.com/cx342662/CatTV/releases"><img src="https://img.shields.io/badge/Download-APK-ff6f00?style=for-the-badge&logo=android&logoColor=white" alt="Download APK" /></a>
   </p>
 </div>
 
@@ -87,23 +96,23 @@ CatTV 在 AVBox 的开源代码基础上进行品牌调整、适配和后续优�
 <table>
   <tr>
     <td align="center">
-      <img src="images/1.jpg?v=2" alt="CatTV 手机端首页" width="150" />
+      <img src="images/phone-home.jpg" alt="CatTV 手机端首页" width="150" />
       <br />首页
     </td>
     <td align="center">
-      <img src="images/2.jpg?v=2" alt="CatTV 手机端播放页" width="150" />
+      <img src="images/phone-detail.jpg" alt="CatTV 手机端播放页" width="150" />
       <br />播放页
     </td>
     <td align="center">
-      <img src="images/3.jpg?v=2" alt="CatTV 手机端小窗口播放" width="150" />
+      <img src="images/phone-pip.jpg" alt="CatTV 手机端小窗口播放" width="150" />
       <br />小窗口
     </td>
     <td align="center">
-      <img src="images/4.jpg?v=2" alt="CatTV 手机端记录页" width="150" />
+      <img src="images/phone-history.jpg" alt="CatTV 手机端记录页" width="150" />
       <br />记录页
     </td>
     <td align="center">
-      <img src="images/5.jpg?v=2" alt="CatTV 手机端设置页" width="150" />
+      <img src="images/phone-settings.jpg" alt="CatTV 手机端设置页" width="150" />
       <br />设置页
     </td>
   </tr>
@@ -111,15 +120,15 @@ CatTV 在 AVBox 的开源代码基础上进行品牌调整、适配和后续优�
 
 ### 平板端
 
-<img src="images/6.jpg?v=2" alt="CatTV 平板端首页" width="70%" />
+<img src="images/tablet-home.jpg" alt="CatTV 平板端首页" width="70%" />
 <br />首页
 
 ### TV端
 
-<img src="images/7.jpg?v=2" alt="CatTV TV端首页" width="100%" />
+<img src="images/tv-home.jpg" alt="CatTV TV端首页" width="100%" />
 <br />首页
 
-<img src="images/8.jpg?v=2" alt="CatTV TV端播放页" width="100%" />
+<img src="images/tv-detail.jpg" alt="CatTV TV端播放页" width="100%" />
 <br />播放页
 
 </div>
