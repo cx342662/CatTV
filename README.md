@@ -4,17 +4,20 @@
   <p><strong>随心乐享，每一天</strong></p>
   <p>一款面向 Android 手机的轻量视频播放器，支持本地播放与用户自主配置点播、直播源。</p>
   <p>
-    <a href="https://github.com/cx342662/CatTV/stargazers"><img src="https://img.shields.io/github/stars/cx342662/CatTV?style=for-the-badge&logo=github&logoColor=white&color=ff6b81" alt="Stars" /></a>
-    <a href="https://github.com/cx342662/CatTV/forks"><img src="https://img.shields.io/github/forks/cx342662/CatTV?style=for-the-badge&logo=git&logoColor=white&color=4a90d9" alt="Forks" /></a>
-    <a href="https://github.com/cx342662/CatTV/issues"><img src="https://img.shields.io/github/issues/cx342662/CatTV?style=for-the-badge&logo=github&logoColor=white&color=ffa94d" alt="Issues" /></a>
-    <a href="https://github.com/cx342662/CatTV/releases"><img src="https://img.shields.io/github/downloads/cx342662/CatTV/total?style=for-the-badge&logo=github&logoColor=white&color=2ecc71" alt="Downloads" /></a>
+    <a href="https://github.com/cx342662/CatTV/releases"><img src="https://img.shields.io/badge/release-v1.3.6-fe7d37?logo=github&logoColor=white" alt="release v1.3.6" /></a>
+    <a href="https://github.com/cx342662/CatTV/blob/main/LICENSE"><img src="https://img.shields.io/github/license/cx342662/CatTV?logo=github&logoColor=white&color=fe7d37" alt="license" /></a>
+    <a href="https://github.com/cx342662/CatTV/stargazers"><img src="https://img.shields.io/github/stars/cx342662/CatTV?logo=github&logoColor=white&color=ff6b81" alt="stars" /></a>
+    <a href="https://github.com/cx342662/CatTV/forks"><img src="https://img.shields.io/github/forks/cx342662/CatTV?logo=git&logoColor=white&color=4a90d9" alt="forks" /></a>
+    <a href="https://github.com/cx342662/CatTV/issues"><img src="https://img.shields.io/github/issues/cx342662/CatTV?logo=github&logoColor=white&color=ffa94d" alt="issues" /></a>
+    <a href="https://github.com/cx342662/CatTV/releases"><img src="https://img.shields.io/github/downloads/cx342662/CatTV/total?logo=github&logoColor=white&color=2ecc71" alt="downloads" /></a>
+    <a href="https://www.android.com/"><img src="https://img.shields.io/badge/platform-Android-3DDC84?logo=android&logoColor=white" alt="platform Android" /></a>
+    <a href="https://kotlinlang.org/"><img src="https://img.shields.io/badge/language-Kotlin-7F52FF?logo=kotlin&logoColor=white" alt="language Kotlin" /></a>
+    <a href="https://github.com/cx342662/CatTV/pulls"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen?logo=github&logoColor=white" alt="PRs welcome" /></a>
+    <a href="https://github.com/cx342662/CatTV/releases"><img src="https://img.shields.io/badge/download-APK-ff6f00?logo=android&logoColor=white" alt="download APK" /></a>
   </p>
 
   <p>
-    <a href="https://www.android.com/"><img src="https://img.shields.io/badge/Platform-Android-3DDC84?style=for-the-badge&logo=android&logoColor=white" alt="Android" /></a>
-    <a href="https://kotlinlang.org/"><img src="https://img.shields.io/badge/Kotlin-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white" alt="Kotlin" /></a>
-    <a href="https://github.com/cx342662/CatTV/blob/main/LICENSE"><img src="https://img.shields.io/github/license/cx342662/CatTV?style=for-the-badge&logo=github&logoColor=white&color=007ec6" alt="AGPL-3.0" /></a>
-    <a href="https://github.com/cx342662/CatTV/releases"><img src="https://img.shields.io/badge/Download-APK-ff6f00?style=for-the-badge&logo=android&logoColor=white" alt="Download APK" /></a>
+    <a href="https://github.com/cx342662/CatTV/releases">下载 APK</a> &middot; <a href="#应用截图">应用截图</a> &middot; <a href="#免责声明与用户协议">免责声明</a> &middot; <a href="#致谢">致谢</a>
   </p>
 </div>
 
