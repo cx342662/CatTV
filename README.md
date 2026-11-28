@@ -87,26 +87,39 @@ CatTV 在 AVBox 的开源代码基础上进行品牌调整、适配和后续优�
 <table>
   <tr>
     <td align="center">
-      <img src="images/1.jpg" alt="CatTV 手机端首页" width="180" />
+      <img src="images/1.jpg" alt="CatTV 手机端首页" width="150" />
       <br />首页
     </td>
     <td align="center">
-      <img src="images/2.jpg" alt="CatTV 播放详情页" width="180" />
+      <img src="images/2.jpg" alt="CatTV 手机端播放页" width="150" />
       <br />播放页
     </td>
     <td align="center">
-      <img src="images/3.jpg" alt="CatTV 记录页" width="180" />
+      <img src="images/3.jpg" alt="CatTV 手机端小窗口播放" width="150" />
+      <br />小窗口
+    </td>
+    <td align="center">
+      <img src="images/4.jpg" alt="CatTV 手机端记录页" width="150" />
       <br />记录页
     </td>
     <td align="center">
-      <img src="images/4.jpg" alt="CatTV 我的页面" width="180" />
+      <img src="images/5.jpg" alt="CatTV 手机端设置页" width="150" />
       <br />设置页
     </td>
   </tr>
 </table>
 
-### 电视端
+### 平板端
 
-<img src="images/5.jpg" alt="CatTV 电视端宽屏首页" width="100%" />
+<img src="images/6.jpg" alt="CatTV 平板端首页" width="70%" />
+<br />首页
+
+### TV端
+
+<img src="images/7.jpg" alt="CatTV TV端主页" width="100%" />
+<br />主页
+
+<img src="images/8.jpg" alt="CatTV TV端播放页" width="100%" />
+<br />播放页
 
 </div>
