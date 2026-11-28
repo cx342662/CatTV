@@ -17,7 +17,7 @@
   </p>
 
   <p>
-    <a href="https://github.com/cx342662/CatTV/releases">下载 APK</a> &middot; <a href="#应用截图">应用截图</a> &middot; <a href="#免责声明与用户协议">免责声明</a> &middot; <a href="#致谢">致谢</a>
+    <a href="https://github.com/cx342662/CatTV/releases">下载地址</a> &middot; <a href="#应用截图">应用截图</a> &middot; <a href="#免责声明与用户协议">免责声明</a> &middot; <a href="#致谢">致谢</a>
   </p>
 </div>
 
