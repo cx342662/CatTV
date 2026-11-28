@@ -56,6 +56,7 @@ import java.util.concurrent.atomic.AtomicLong
 
 data class PlayerEngineConfig(
     val bufferTimes: Int = DEFAULT_BUFFER_TIMES,
+    val adaptiveBuffering: Boolean = true,
     val tunnelingRequested: Boolean = false,
     val surfaceRender: Boolean = true,
     val preferAac: Boolean = false,
@@ -306,14 +307,18 @@ class PlayerEngine(
         AppLog.i("echo-exo-video-dynamic-scheduling: ${config.dynamicScheduling}")
 
         val bufferTimes = config.bufferTimes.coerceIn(1, 10)
-        val loadControl = DefaultLoadControl.Builder()
-            .setBufferDurationsMs(
-                DefaultLoadControl.DEFAULT_MIN_BUFFER_MS * bufferTimes,
-                DefaultLoadControl.DEFAULT_MAX_BUFFER_MS * bufferTimes,
-                DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_MS,
-                DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS,
-            )
-            .build()
+        val manager = appContext.getSystemService(Context.ACTIVITY_SERVICE) as? android.app.ActivityManager
+        val profile = AdaptiveBufferProfile.forDevice(manager?.memoryClass ?: 256, manager?.isLowRamDevice == true)
+        val loadControl = DefaultLoadControl.Builder().apply {
+            if (config.adaptiveBuffering && bufferTimes == PlayerEngineConfig.DEFAULT_BUFFER_TIMES) {
+                setBufferDurationsMs(profile.minMs, profile.maxMs, profile.startMs, profile.resumeMs)
+                setTargetBufferBytes(profile.bytes)
+                setPrioritizeTimeOverSizeThresholds(true)
+                AppLog.i("echo-player-buffer-profile: $profile")
+            } else {
+                setBufferDurationsMs(DefaultLoadControl.DEFAULT_MIN_BUFFER_MS * bufferTimes, DefaultLoadControl.DEFAULT_MAX_BUFFER_MS * bufferTimes, DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_MS, DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS)
+            }
+        }.build()
         AppLog.i("echo-exo-low-memory-load-control")
 
         val builder = ExoPlayer.Builder(
@@ -1162,3 +1167,4 @@ class PlayerEngine(
     }
 
 }
+

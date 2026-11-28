@@ -12,6 +12,8 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -119,24 +121,12 @@ fun SearchScreen(vm: SearchViewModel = rememberSearchViewModel()) {
     AppTopBarScaffold(
         collapseEnabled = false,
         titleContent = {
-            SearchField(
-                query = query,
-                onQueryChange = { query = it },
-                onSearch = { submit(query) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 4.dp),
-                trailing = {
-                    FilterChip(selected = exactMatch, onClick = { selectedSource = null; vm.setExactMatch(!exactMatch) }, label = { Text(stringResource(R.string.search_strict_short)) })
-                    LayoutSwitchAction(
-                        selected = resultLayout,
-                        onSelect = {
-                            resultLayout = it
-                            SearchSettingsState.resultLayout = it
-                        },
-                    )
-                },
-            )
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                SearchField(query = query, onQueryChange = { query = it }, onSearch = { submit(query) }, modifier = Modifier.weight(1f), trailing = {
+                    LayoutSwitchAction(selected = resultLayout, onSelect = { resultLayout = it; SearchSettingsState.resultLayout = it })
+                })
+                FilterChip(selected = exactMatch, onClick = { selectedSource = null; vm.setExactMatch(!exactMatch) }, label = { Text(stringResource(R.string.search_strict_short)) })
+            }
         },
         navigationIcon = {
             Box(
