@@ -5,14 +5,16 @@ import com.google.gson.JsonParser
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
+internal val referenceHomeCardLayouts = listOf(1, 0, 5, 2, 8, 14)
+
 internal fun homeCardLayout(serialized: String, source: String, section: String): Int = runCatching {
     if (!homeCardsEnabled(serialized)) return@runCatching -1
     JsonParser.parseString(serialized).asJsonObject.getAsJsonObject(source)?.get(section)?.asInt
-        ?.takeIf { it in 0..14 } ?: -1
+        ?.takeIf { it in referenceHomeCardLayouts } ?: -1
 }.getOrDefault(-1)
 
 internal fun updateHomeCardLayout(serialized: String, source: String, section: String, layout: Int): String {
-    require(layout in 0..14)
+    require(layout in referenceHomeCardLayouts)
     val root = runCatching { JsonParser.parseString(serialized).asJsonObject }.getOrElse { JsonObject() }
     val sections = root.get(source)?.takeIf { it.isJsonObject }?.asJsonObject ?: JsonObject()
     sections.addProperty(section, layout)

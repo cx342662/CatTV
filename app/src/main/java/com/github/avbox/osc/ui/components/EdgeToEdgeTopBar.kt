@@ -74,6 +74,7 @@ fun AppTopBarScaffold(
     val glassConfig = LiquidGlassState.config
     val glassEnabled = glassConfig.controlsEnabled &&
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    val floatingGlassEnabled = floatingActions != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
     val glassColor by rememberUpdatedState(containerColor)
     val glassOnDraw: ContentDrawScope.() -> Unit = remember {
         { drawRect(glassColor); drawContent() }
@@ -134,11 +135,11 @@ fun AppTopBarScaffold(
                     .then(
                         if (glassEnabled) {
                             Modifier.layerBackdrop(glassBackdrop, glassBounds, pauseGlassRecording)
-                                .then(if (floatingActions != null) Modifier.layerBackdrop(floatingBackdrop, floatingBounds, pauseGlassRecording) else Modifier)
                         } else {
                             Modifier
                         }
-                    ),
+                    )
+                    .then(if (floatingGlassEnabled) Modifier.layerBackdrop(floatingBackdrop, floatingBounds, pauseGlassRecording) else Modifier),
             ) {
                 content(
                     topPadding,
@@ -146,7 +147,7 @@ fun AppTopBarScaffold(
                 )
             }
             if (floatingActions != null) {
-                CompositionLocalProvider(LocalTopBarGlassBackdrop provides floatingBackdrop.takeIf { glassEnabled }) {
+                CompositionLocalProvider(LocalTopBarGlassBackdrop provides floatingBackdrop.takeIf { floatingGlassEnabled }) {
                     floatingActions()
                 }
             }

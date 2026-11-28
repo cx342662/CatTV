@@ -19,11 +19,9 @@ internal fun HomeCardCollection(layout: Int, videos: List<Movie.Video>, progress
                 VodCard(video, { onClick(video) }, { onLongClick(video) }, Modifier.width(if (layout == 0) 128.dp else 256.dp), if (layout == 0) VodCardStyle.Portrait else VodCardStyle.Landscape)
             }
         }
-        14 -> Box(Modifier.padding(horizontal = edgePadding)) { CardDeck(videos, true, onClick, onLongClick, onActiveVideo) }
-        13 -> Column(Modifier.padding(horizontal = edgePadding), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            videos.take(8).forEach { PreviewTextCard(it, true, onClick, onLongClick = onLongClick) }
-        }
-        in 2..12 -> CardPatternView(layout - 2, videos, progress, onClick, onLongClick, onActiveVideo, edgePadding)
+        2 -> ReferenceCardCarousel(videos, false, onClick, onLongClick, onActiveVideo, edgePadding)
+        5 -> ReferenceCardCarousel(videos, true, onClick, onLongClick, onActiveVideo, edgePadding)
+        8, 14 -> Box(Modifier.padding(horizontal = edgePadding)) { CardDeck(videos, layout == 14, onClick, onLongClick, onActiveVideo) }
     }
 }
 

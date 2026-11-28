@@ -22,7 +22,7 @@ internal fun CardLayoutPreview(videos: List<Movie.Video>, progress: (Movie.Video
     val patterns = stringArrayResource(R.array.card_preview_patterns)
     val names = listOf(stringResource(R.string.card_preview_portrait), stringResource(R.string.card_preview_landscape)) + patterns.toList() + stringResource(R.string.card_preview_compact) + stringResource(R.string.card_portrait_deck)
     val descriptions = stringArrayResource(R.array.card_view_descriptions)
-    val order = listOf(1, 0, 5, 2, 8, 14, 6, 3, 4, 7, 9, 10, 11, 12, 13)
+    val order = com.github.avbox.osc.util.referenceHomeCardLayouts
     CardPickerSheet(stringResource(R.string.card_select_view), onDismiss, backLabel = R.string.common_cancel) {
         LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(start = 12.dp, end = 12.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             items(order.size, key = { order[it] }) { index ->

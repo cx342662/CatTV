@@ -1,5 +1,8 @@
 package com.github.avbox.osc.ui.components
 
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeLeft
+import androidx.compose.runtime.mutableStateOf
 import android.graphics.Bitmap
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.lightColorScheme
@@ -74,23 +77,45 @@ class CardPickerPresentationTest {
                 }
             }
         }
-        for (layout in 0..14) {
+        for (layout in com.github.avbox.osc.util.referenceHomeCardLayouts) {
             compose.runOnIdle { selected.intValue = layout }
             compose.waitForIdle()
             assertTrue(compose.onNodeWithTag("layout").fetchSemanticsNode().boundsInRoot.height > 0f)
-            if (layout in listOf(5, 8, 14)) System.getenv("CATTV_UI_SCREENSHOT_DIR")?.let { directory ->
-                File(directory, "card-layout-$layout.png").outputStream().use {
+            if (layout in listOf(2, 5, 8, 14)) System.getenv("CATTV_UI_SCREENSHOT_DIR")?.let { directory ->
+                File(File(directory).also { it.mkdirs() }, "card-layout-$layout.png").outputStream().use {
                     compose.onNodeWithTag("layout").captureToImage().asAndroidBitmap().compress(Bitmap.CompressFormat.PNG, 100, it)
                 }
             }
         }
     }
 
+    @Test fun sideInfoSwipesAndShrinkingSourceKeepsAValidSelection() {
+        val samples = localCardPreviewVideos(listOf("时光代理人", "火柴盒大电影", "人性本兽", "魔女嘉莉"), "照片中的时光与故事。")
+        val videos = mutableStateOf(samples)
+        var active: String? = null
+        compose.setContent {
+            MaterialTheme {
+                CompositionLocalProvider(LocalCardPreviewMode provides true) {
+                    Box(Modifier.size(420.dp, 240.dp).testTag("swipe-card")) {
+                        HomeCardCollection(5, videos.value, { null }, {}, onActiveVideo = { active = it.name })
+                    }
+                }
+            }
+        }
+        compose.waitForIdle()
+        compose.onNodeWithTag("swipe-card").performTouchInput { swipeLeft(startX = width * .8f, endX = width * .25f, durationMillis = 600) }
+        compose.waitForIdle()
+        compose.runOnIdle { assertEquals(samples[1].name, active) }
+        compose.runOnIdle { videos.value = samples.take(1) }
+        compose.waitForIdle()
+        compose.runOnIdle { assertEquals(samples[0].name, active) }
+    }
+
     @Test fun cloverControlHasCircularButtonDimensions() {
         compose.setContent { MaterialTheme { CloverRoundControl({}, Modifier.testTag("clover"), Modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh, CircleShape)) } }
         compose.onNodeWithTag("clover").assertWidthIsEqualTo(56.dp).assertHeightIsEqualTo(56.dp)
         System.getenv("CATTV_UI_SCREENSHOT_DIR")?.let { directory ->
-            File(directory, "clover-round-button.png").outputStream().use {
+            File(File(directory).also { it.mkdirs() }, "clover-round-button.png").outputStream().use {
                 compose.onNodeWithTag("clover").captureToImage().asAndroidBitmap().compress(Bitmap.CompressFormat.PNG, 100, it)
             }
         }

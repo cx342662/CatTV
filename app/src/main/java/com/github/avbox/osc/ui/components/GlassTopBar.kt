@@ -38,7 +38,9 @@ fun Modifier.glassTopBarSurface(
     shape: Shape,
     fallbackColor: Color,
     pressEffect: Boolean = true,
-): Modifier = glassSurface(LocalTopBarGlassBackdrop.current, shape, fallbackColor, pressEffect)
+    surfaceTint: Color? = null,
+    forceGlass: Boolean = false,
+): Modifier = glassSurface(LocalTopBarGlassBackdrop.current, shape, fallbackColor, pressEffect, surfaceTint, forceGlass)
 
 @Composable
 fun Modifier.glassSurface(
@@ -53,21 +55,23 @@ private fun Modifier.glassSurface(
     shape: Shape,
     fallbackColor: Color,
     pressEffect: Boolean,
+    surfaceTint: Color? = null,
+    forceGlass: Boolean = false,
 ): Modifier {
     val config = LiquidGlassState.config
     val glassEnabled = backdrop != null &&
-        config.controlsEnabled &&
+        (config.controlsEnabled || forceGlass) &&
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
     if (!glassEnabled) {
         return this.clip(shape).background(fallbackColor)
     }
 
     val density = LocalDensity.current
-    val blurPx = with(density) { config.blurDp.dp.toPx() }
+    val blurPx = with(density) { (if (forceGlass) config.blurDp.coerceAtLeast(16f) else config.blurDp).dp.toPx() }
     val distortionPx = with(density) { config.distortionDp.dp.toPx() }
     val supportsLens = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && supportsGlassLens(shape)
     val isLightTheme = !isSystemInDarkTheme()
-    val containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(
+    val containerColor = surfaceTint ?: MaterialTheme.colorScheme.surfaceContainer.copy(
         alpha = 0.4f * config.containerAlphaScale
     )
     val animationScope = rememberCoroutineScope()

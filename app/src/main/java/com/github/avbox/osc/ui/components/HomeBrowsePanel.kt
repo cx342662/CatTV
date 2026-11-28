@@ -21,7 +21,7 @@ import com.github.avbox.osc.bean.MovieSort
 
 @Composable
 internal fun CloverBrowseButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
-    CloverRoundControl(onClick, modifier, Modifier.glassTopBarSurface(CircleShape, Color.White.copy(alpha = 0.24f)).border(0.5.dp, Color.White.copy(alpha = 0.35f), CircleShape))
+    CloverRoundControl(onClick, modifier, Modifier.glassTopBarSurface(CircleShape, Color.White.copy(alpha = 0.24f), surfaceTint = Color.White.copy(alpha = 0.24f), forceGlass = true).border(0.5.dp, Color.White.copy(alpha = 0.35f), CircleShape))
 }
 
 @Composable
@@ -30,7 +30,7 @@ internal fun CloverRoundControl(onClick: () -> Unit, modifier: Modifier = Modifi
         modifier = modifier.size(56.dp).then(decoration).clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(painterResource(R.drawable.ic_clover), stringResource(R.string.home_clover_browse), Modifier.size(26.dp), tint = MaterialTheme.colorScheme.onSurface)
+        Icon(painterResource(R.drawable.ic_clover), stringResource(R.string.home_clover_browse), Modifier.size(26.dp), tint = Color.White.copy(alpha = 0.95f))
     }
 }
 
